@@ -66,3 +66,7 @@ func (sbt *storeBusTest) GetType() string {
 func (sbt *storeBusTest) GetId() string {
 	return sbt.Id
 }
+
+func (sbt *storeBusTest) SetId(id string) {
+	sbt.Id = id
+}

@@ -67,3 +67,7 @@ func (st *storeTest) GetType() string {
 func (st *storeTest) GetId() string {
 	return st.Id
 }
+
+func (st *storeTest) SetId(id string) {
+	st.Id = id
+}

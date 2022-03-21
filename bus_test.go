@@ -85,6 +85,10 @@ func (bt *busTest1) GetId() string {
 	return bt.Id
 }
 
+func (bt *busTest1) SetId(id string) {
+	bt.Id = id
+}
+
 type busTest2 struct {
 	Id string
 }
@@ -95,4 +99,8 @@ func (bt *busTest2) GetType() string {
 
 func (bt *busTest2) GetId() string {
 	return bt.Id
+}
+
+func (bt *busTest2) SetId(id string) {
+	bt.Id = id
 }

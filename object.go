@@ -6,6 +6,7 @@ import "fmt"
 type Object interface {
 	GetType() string
 	GetId() string
+	SetId(string)
 }
 
 func ObjectSafeId(obj Object) string {
