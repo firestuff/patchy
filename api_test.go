@@ -47,24 +47,61 @@ func TestAPI(t *testing.T) {
 	c := resty.New().
 		SetHeader("Content-Type", "application/json")
 
-	resp := &TestType{}
+	created := &TestType{}
 
 	_, err = c.R().
 		SetBody(&TestType{
 			Text: "foo",
 		}).
-		SetResult(resp).
+		SetResult(created).
 		Post(fmt.Sprintf("%s/testtype", urlBase))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if resp.Text != "foo" {
-		t.Fatalf("%s", resp.Text)
+	if created.Text != "foo" {
+		t.Fatalf("%s", created.Text)
 	}
 
-	if resp.Id == "" {
+	if created.Id == "" {
 		t.Fatalf("empty Id")
+	}
+
+	updated := &TestType{}
+
+	_, err = c.R().
+		SetBody(&TestType{
+			Text: "bar",
+		}).
+		SetResult(updated).
+		Patch(fmt.Sprintf("%s/testtype/%s", urlBase, created.Id))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if updated.Text != "bar" {
+		t.Fatalf("%s", updated.Text)
+	}
+
+	if updated.Id != created.Id {
+		t.Fatalf("%s %s", updated.Id, created.Id)
+	}
+
+	read := &TestType{}
+
+	_, err = c.R().
+		SetResult(read).
+		Get(fmt.Sprintf("%s/testtype/%s", urlBase, created.Id))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if read.Text != "bar" {
+		t.Fatalf("%s", read.Text)
+	}
+
+	if read.Id != read.Id {
+		t.Fatalf("%s %s", read.Id, created.Id)
 	}
 
 	srv.Shutdown(context.Background())
@@ -92,11 +129,25 @@ func factory(t string) (Object, error) {
 	case "testtype":
 		return &TestType{}, nil
 	default:
-		return nil, fmt.Errorf("Unknown type: %s", t)
+		return nil, fmt.Errorf("Unsupported type: %s", t)
 	}
 }
 
 func update(obj Object, newObj Object) error {
+	switch o := obj.(type) {
+
+	case *TestType:
+		no := newObj.(*TestType)
+
+		if no.Text != "" {
+			o.Text = no.Text
+		}
+
+	default:
+		return fmt.Errorf("Unsupported type: %s", obj.GetType())
+
+	}
+
 	return nil
 }
 
