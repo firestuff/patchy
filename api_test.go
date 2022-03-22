@@ -201,29 +201,29 @@ func factory(t string) (Object, error) {
 	}
 }
 
-func update(obj Object, newObj Object) error {
+func update(obj Object, patch Object) error {
 	switch o := obj.(type) {
 
 	case *TestType:
-		no := newObj.(*TestType)
+		p := patch.(*TestType)
 
-		if no.Text != "" {
-			o.Text = no.Text
+		if p.Text != "" {
+			o.Text = p.Text
 		}
+
+		return nil
 
 	default:
 		return fmt.Errorf("Unsupported type: %s", obj.GetType())
 
 	}
-
-	return nil
 }
 
 func mayCreate(obj Object, r *http.Request) error {
 	return nil
 }
 
-func mayUpdate(obj Object, newObj Object, r *http.Request) error {
+func mayUpdate(obj Object, patch Object, r *http.Request) error {
 	return nil
 }
 
