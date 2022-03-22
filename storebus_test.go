@@ -4,6 +4,8 @@ import "os"
 import "testing"
 
 func TestStoreBus(t *testing.T) {
+  t.Parallel()
+
 	dir, err := os.MkdirTemp("", "")
 	if err != nil {
 		t.Fatal(err)

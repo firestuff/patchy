@@ -3,6 +3,8 @@ package storebus
 import "testing"
 
 func TestBus(t *testing.T) {
+  t.Parallel()
+
 	bus := NewBus()
 
 	// Announce with no subscribers
