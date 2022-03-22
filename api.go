@@ -1,6 +1,7 @@
 package storebus
 
 import "encoding/json"
+import "fmt"
 import "net/http"
 
 import "github.com/google/uuid"
@@ -21,7 +22,12 @@ type APIConfig struct {
 	MayRead   func(Object, *http.Request) error
 }
 
-func NewAPI(root string, config *APIConfig) *API {
+func NewAPI(root string, config *APIConfig) (*API, error) {
+	err := config.Validate()
+	if err != nil {
+		return nil, err
+	}
+
 	api := &API{
 		router: mux.NewRouter(),
 		sb:     NewStoreBus(root),
@@ -32,7 +38,7 @@ func NewAPI(root string, config *APIConfig) *API {
 	api.router.HandleFunc("/{type}/{id}", api.update).Methods("PATCH").Headers("Content-Type", "application/json")
 	api.router.HandleFunc("/{type}/{id}", api.read).Methods("GET")
 
-	return api
+	return api, nil
 }
 
 func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -169,4 +175,28 @@ func writeJson(w http.ResponseWriter, obj Object) error {
 	w.Header().Set("Content-Type", "application/json")
 	enc := json.NewEncoder(w)
 	return enc.Encode(obj)
+}
+
+func (conf *APIConfig) Validate() error {
+	if conf.Factory == nil {
+		return fmt.Errorf("APIConfig.Factory must be set")
+	}
+
+	if conf.Update == nil {
+		return fmt.Errorf("APIConfig.Update must be set")
+	}
+
+	if conf.MayCreate == nil {
+		return fmt.Errorf("APIConfig.MayCreate must be set")
+	}
+
+	if conf.MayUpdate == nil {
+		return fmt.Errorf("APIConfig.MayUpdate must be set")
+	}
+
+	if conf.MayRead == nil {
+		return fmt.Errorf("APIConfig.MayRead must be set")
+	}
+
+	return nil
 }
