@@ -37,11 +37,6 @@ func TestStoreBus(t *testing.T) {
 		Id: "id1",
 	})
 
-	out2 := (<-ch).(*storeBusTest)
-	if out2.Opaque != "foo" {
-		t.Errorf("%+v", out2)
-	}
-
 	sb.Write(&storeBusTest{
 		Id:     "id1",
 		Opaque: "bar",
