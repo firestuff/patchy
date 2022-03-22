@@ -2,6 +2,7 @@ package storebus
 
 import "context"
 import "fmt"
+import "io"
 import "net"
 import "net/http"
 import "os"
@@ -47,6 +48,7 @@ func TestAPI(t *testing.T) {
 	c := resty.New().
 		SetHeader("Content-Type", "application/json")
 
+		// Create (POST)
 	created := &TestType{}
 
 	_, err = c.R().
@@ -67,6 +69,7 @@ func TestAPI(t *testing.T) {
 		t.Fatalf("empty Id")
 	}
 
+	// Update (PATCH)
 	updated := &TestType{}
 
 	_, err = c.R().
@@ -87,6 +90,7 @@ func TestAPI(t *testing.T) {
 		t.Fatalf("%s %s", updated.Id, created.Id)
 	}
 
+	// Read (GET)
 	read := &TestType{}
 
 	_, err = c.R().
@@ -104,7 +108,71 @@ func TestAPI(t *testing.T) {
 		t.Fatalf("%s %s", read.Id, created.Id)
 	}
 
+	// Stream (GET with SSE)
+	resp, err := c.R().
+		SetDoNotParseResponse(true).
+		SetHeader("Accept", "text/event-stream").
+		Get(fmt.Sprintf("%s/testtype/%s", urlBase, created.Id))
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := resp.RawBody()
+	defer body.Close()
+
+	// Initial event (saved object)
+	buf, err := readString(body)
+
+	if buf != fmt.Sprintf(`event: testtype
+data: {"id":"%s","text":"bar"}
+
+`, created.Id) {
+		t.Fatalf("%s", buf)
+	}
+
+	// Heartbeat (after 5 seconds)
+	buf, err = readString(body)
+
+	if buf != `event: heartbeat
+data: {}
+
+` {
+		t.Fatalf("%s", buf)
+	}
+
+	// Round trip PATCH -> SSE
+	_, err = c.R().
+		SetBody(&TestType{
+			Text: "zig",
+		}).
+		SetResult(updated).
+		Patch(fmt.Sprintf("%s/testtype/%s", urlBase, created.Id))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	buf, err = readString(body)
+
+	if buf != fmt.Sprintf(`event: testtype
+data: {"id":"%s","text":"zig"}
+
+`, created.Id) {
+		t.Fatalf("%s", buf)
+	}
+
+	body.Close()
+
 	srv.Shutdown(context.Background())
+}
+
+func readString(r io.Reader) (string, error) {
+	buf := make([]byte, 256)
+
+	n, err := r.Read(buf)
+	if err != nil {
+		return "", err
+	}
+
+	return string(buf[:n]), nil
 }
 
 type TestType struct {

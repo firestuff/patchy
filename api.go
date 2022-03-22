@@ -157,13 +157,29 @@ func (api *API) stream(w http.ResponseWriter, r *http.Request) {
 
 	obj.SetId(vars["id"])
 
+	err = api.sb.Read(obj)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	err = api.config.MayRead(obj, r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	err = writeEvent(w, obj)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	closeChan := w.(http.CloseNotifier).CloseNotify()
 	objChan := api.sb.Subscribe(obj)
 	ticker := time.NewTicker(5 * time.Second)
 
 	connected := true
-	first := true
-
 	for connected {
 		select {
 
@@ -171,16 +187,6 @@ func (api *API) stream(w http.ResponseWriter, r *http.Request) {
 			connected = false
 
 		case msg := <-objChan:
-			if first {
-				first = false
-
-				err = api.config.MayRead(msg, r)
-				if err != nil {
-					http.Error(w, err.Error(), http.StatusUnauthorized)
-					return
-				}
-			}
-
 			err = writeEvent(w, msg)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
