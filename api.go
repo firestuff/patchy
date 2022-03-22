@@ -3,6 +3,7 @@ package storebus
 import "encoding/json"
 import "fmt"
 import "net/http"
+import "time"
 
 import "github.com/google/uuid"
 import "github.com/gorilla/mux"
@@ -23,7 +24,7 @@ type APIConfig struct {
 }
 
 func NewAPI(root string, config *APIConfig) (*API, error) {
-	err := config.Validate()
+	err := config.validate()
 	if err != nil {
 		return nil, err
 	}
@@ -36,6 +37,7 @@ func NewAPI(root string, config *APIConfig) (*API, error) {
 
 	api.router.HandleFunc("/{type}", api.create).Methods("POST").Headers("Content-Type", "application/json")
 	api.router.HandleFunc("/{type}/{id}", api.update).Methods("PATCH").Headers("Content-Type", "application/json")
+	api.router.HandleFunc("/{type}/{id}", api.stream).Methods("GET").Headers("Accept", "text/event-stream")
 	api.router.HandleFunc("/{type}/{id}", api.read).Methods("GET")
 
 	return api, nil
@@ -135,6 +137,63 @@ func (api *API) update(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (api *API) stream(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	_, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "Streaming not supported", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+
+	obj, err := api.config.Factory(vars["type"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	obj.SetId(vars["id"])
+
+	closeChan := w.(http.CloseNotifier).CloseNotify()
+	objChan := api.sb.Subscribe(obj)
+	ticker := time.NewTicker(5 * time.Second)
+
+	connected := true
+	first := true
+
+	for connected {
+		select {
+
+		case <-closeChan:
+			connected = false
+
+		case msg := <-objChan:
+			if first {
+				first = false
+
+				err = api.config.MayRead(msg, r)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusUnauthorized)
+					return
+				}
+			}
+
+			err = writeEvent(w, msg)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+		case <-ticker.C:
+			writeEvent(w, newHeartbeat())
+
+		}
+	}
+}
+
 func (api *API) read(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
@@ -177,7 +236,37 @@ func writeJson(w http.ResponseWriter, obj Object) error {
 	return enc.Encode(obj)
 }
 
-func (conf *APIConfig) Validate() error {
+type heartbeat struct {
+}
+
+func newHeartbeat() *heartbeat {
+	return &heartbeat{}
+}
+
+func (h *heartbeat) GetType() string {
+	return "heartbeat"
+}
+
+func (h *heartbeat) GetId() string {
+	return ""
+}
+
+func (h *heartbeat) SetId(id string) {
+}
+
+func writeEvent(w http.ResponseWriter, obj Object) error {
+	data, err := json.Marshal(obj)
+	if err != nil {
+		return fmt.Errorf("Failed to encode JSON: %s", err)
+	}
+
+	fmt.Fprintf(w, "event: %s\ndata: %s\n\n", obj.GetType(), data)
+	w.(http.Flusher).Flush()
+
+	return nil
+}
+
+func (conf *APIConfig) validate() error {
 	if conf.Factory == nil {
 		return fmt.Errorf("APIConfig.Factory must be set")
 	}
