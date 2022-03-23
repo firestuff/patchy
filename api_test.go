@@ -276,13 +276,16 @@ func TestAPIStreamRace(t *testing.T) {
 		}
 
 		quitUpdate := make(chan bool)
+		doneUpdate := make(chan bool)
 		quitStream := make(chan bool)
+		doneStream := make(chan bool)
 
 		go func() {
 			for {
 				select {
 				case <-quitUpdate:
-					break
+					close(doneUpdate)
+					return
 				default:
 					created.Num++
 
@@ -300,7 +303,8 @@ func TestAPIStreamRace(t *testing.T) {
 			for {
 				select {
 				case <-quitStream:
-					break
+					close(doneStream)
+					return
 				default:
 					resp, err := c.R().
 						SetDoNotParseResponse(true).
@@ -345,9 +349,9 @@ func TestAPIStreamRace(t *testing.T) {
 
 		time.Sleep(3 * time.Second)
 		close(quitStream)
-		time.Sleep(1 * time.Second)
+		<-doneStream
 		close(quitUpdate)
-		time.Sleep(1 * time.Second)
+		<-doneUpdate
 	})
 }
 
