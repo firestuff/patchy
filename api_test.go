@@ -113,6 +113,73 @@ func TestAPIUpdate(t *testing.T) {
 	})
 }
 
+func TestAPIDelete(t *testing.T) {
+	t.Parallel()
+
+	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
+		created := &TestType{}
+
+		_, err := c.R().
+			SetBody(&TestType{
+				Text: "foo",
+			}).
+			SetResult(created).
+			Post(fmt.Sprintf("%s/testtype", baseURL))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		resp, err := c.R().
+			SetDoNotParseResponse(true).
+			SetHeader("Accept", "text/event-stream").
+			Get(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+		if err != nil {
+			t.Fatal(err)
+		}
+		body := resp.RawBody()
+		defer body.Close()
+
+		scan := bufio.NewScanner(body)
+
+		initial := &TestType{}
+		eventType, err := readEvent(scan, initial)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if eventType != "update" {
+			t.Error(eventType)
+		}
+
+		if initial.Text != "foo" {
+			t.Error(initial)
+		}
+
+		_, err = c.R().
+			Delete(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		eventType, err = readEvent(scan, nil)
+
+		if eventType != "delete" {
+			t.Error(eventType)
+		}
+
+		body.Close()
+
+		read := &TestType{}
+
+		resp, err = c.R().
+			SetResult(read).
+			Get(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+		if !resp.IsError() {
+			t.Fatal(read)
+		}
+	})
+}
+
 func TestAPIStream(t *testing.T) {
 	t.Parallel()
 
@@ -296,6 +363,7 @@ func withAPI(t *testing.T, cb func(*testing.T, *API, string, *resty.Client)) {
 			Update:    update,
 			MayCreate: mayCreate,
 			MayUpdate: mayUpdate,
+      MayDelete: mayDelete,
 			MayRead:   mayRead,
 		},
 	})
@@ -403,6 +471,10 @@ func mayCreate(obj Object, r *http.Request) error {
 }
 
 func mayUpdate(obj Object, patch Object, r *http.Request) error {
+	return nil
+}
+
+func mayDelete(obj Object, r *http.Request) error {
 	return nil
 }
 

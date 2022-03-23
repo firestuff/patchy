@@ -20,6 +20,7 @@ type APIConfig struct {
 
 	MayCreate func(Object, *http.Request) error
 	MayUpdate func(Object, Object, *http.Request) error
+	MayDelete func(Object, *http.Request) error
 	MayRead   func(Object, *http.Request) error
 
 	mu sync.RWMutex
@@ -50,6 +51,12 @@ func NewAPI(root string, configs map[string]*APIConfig) (*API, error) {
 		).
 			Methods("PATCH").
 			Headers("Content-Type", "application/json")
+
+		api.router.HandleFunc(
+			fmt.Sprintf("/%s/{id}", t),
+			func(w http.ResponseWriter, r *http.Request) { api.del(config, w, r) },
+		).
+			Methods("DELETE")
 
 		api.router.HandleFunc(
 			fmt.Sprintf("/%s/{id}", t),
@@ -163,6 +170,39 @@ func (api *API) update(config *APIConfig, w http.ResponseWriter, r *http.Request
 	}
 }
 
+func (api *API) del(config *APIConfig, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	obj, err := config.Factory()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	obj.SetId(vars["id"])
+
+	config.mu.Lock()
+	defer config.mu.Unlock()
+
+	err = api.sb.Read(obj)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	err = config.MayDelete(obj, r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	err = api.sb.Delete(obj)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
 func (api *API) stream(config *APIConfig, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
@@ -200,7 +240,7 @@ func (api *API) stream(config *APIConfig, w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = writeEvent(w, obj)
+	err = writeUpdate(w, obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		config.mu.RUnlock()
@@ -220,11 +260,16 @@ func (api *API) stream(config *APIConfig, w http.ResponseWriter, r *http.Request
 		case <-closeChan:
 			connected = false
 
-		case msg := <-objChan:
-			err = writeEvent(w, msg)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
+		case msg, ok := <-objChan:
+			if ok {
+				err = writeUpdate(w, msg)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+			} else {
+				writeDelete(w)
+				connected = false
 			}
 
 		case <-ticker.C:
@@ -276,7 +321,7 @@ func writeJson(w http.ResponseWriter, obj Object) error {
 	return enc.Encode(obj)
 }
 
-func writeEvent(w http.ResponseWriter, obj Object) error {
+func writeUpdate(w http.ResponseWriter, obj Object) error {
 	data, err := json.Marshal(obj)
 	if err != nil {
 		return fmt.Errorf("Failed to encode JSON: %s", err)
@@ -286,6 +331,11 @@ func writeEvent(w http.ResponseWriter, obj Object) error {
 	w.(http.Flusher).Flush()
 
 	return nil
+}
+
+func writeDelete(w http.ResponseWriter) {
+	fmt.Fprintf(w, "event: delete\ndata: {}\n\n")
+	w.(http.Flusher).Flush()
 }
 
 func writeHeartbeat(w http.ResponseWriter) {
@@ -308,6 +358,10 @@ func (conf *APIConfig) validate() error {
 
 	if conf.MayUpdate == nil {
 		return fmt.Errorf("APIConfig.MayUpdate must be set")
+	}
+
+	if conf.MayDelete == nil {
+		return fmt.Errorf("APIConfig.MayDelete must be set")
 	}
 
 	if conf.MayRead == nil {
