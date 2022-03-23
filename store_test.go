@@ -57,6 +57,53 @@ func TestStore(t *testing.T) {
 	}
 }
 
+func TestStoreDelete(t *testing.T) {
+	t.Parallel()
+
+	dir, err := os.MkdirTemp("", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+
+	store := NewStore(dir)
+
+	err = store.Write(&storeTest{
+		Id:     "id1",
+		Opaque: "foo",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	out1 := &storeTest{
+		Id: "id1",
+	}
+
+	err = store.Read(out1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if out1.Opaque != "foo" {
+		t.Errorf("%+v", out1)
+	}
+
+	err = store.Delete(&storeTest{
+		Id: "id1",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = store.Read(&storeTest{
+		Id: "id1",
+	})
+	if err == nil {
+		t.Fatal("Read() succeeded")
+	}
+}
+
 type storeTest struct {
 	Id     string
 	Opaque string
