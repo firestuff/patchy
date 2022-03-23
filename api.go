@@ -9,13 +9,13 @@ import "github.com/google/uuid"
 import "github.com/gorilla/mux"
 
 type API struct {
-	router *mux.Router
-	sb     *StoreBus
-	config *APIConfig
+	router  *mux.Router
+	sb      *StoreBus
+	configs map[string]*APIConfig
 }
 
 type APIConfig struct {
-	Factory func(string) (Object, error)
+	Factory func() (Object, error)
 	Update  func(Object, Object) error
 
 	MayCreate func(Object, *http.Request) error
@@ -23,16 +23,18 @@ type APIConfig struct {
 	MayRead   func(Object, *http.Request) error
 }
 
-func NewAPI(root string, config *APIConfig) (*API, error) {
-	err := config.validate()
-	if err != nil {
-		return nil, err
+func NewAPI(root string, configs map[string]*APIConfig) (*API, error) {
+	for _, config := range configs {
+		err := config.validate()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	api := &API{
-		router: mux.NewRouter(),
-		sb:     NewStoreBus(root),
-		config: config,
+		router:  mux.NewRouter(),
+		sb:      NewStoreBus(root),
+		configs: configs,
 	}
 
 	api.router.HandleFunc("/{type}", api.create).Methods("POST").Headers("Content-Type", "application/json")
@@ -50,7 +52,13 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (api *API) create(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	obj, err := api.config.Factory(vars["type"])
+	config := api.configs[vars["type"]]
+	if config == nil {
+		http.Error(w, fmt.Sprintf("Unsupported type %s", vars["type"]), http.StatusNotFound)
+		return
+	}
+
+	obj, err := config.Factory()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -64,7 +72,7 @@ func (api *API) create(w http.ResponseWriter, r *http.Request) {
 
 	obj.SetId(uuid.NewString())
 
-	err = api.config.MayCreate(obj, r)
+	err = config.MayCreate(obj, r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
@@ -86,70 +94,13 @@ func (api *API) create(w http.ResponseWriter, r *http.Request) {
 func (api *API) update(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	oldObj, err := api.config.Factory(vars["type"])
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	config := api.configs[vars["type"]]
+	if config == nil {
+		http.Error(w, fmt.Sprintf("Unsupported type %s", vars["type"]), http.StatusNotFound)
 		return
 	}
 
-	oldObj.SetId(vars["id"])
-
-	err = api.sb.Read(oldObj)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
-
-	newObj, err := api.config.Factory(vars["type"])
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	err = readJson(r, newObj)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	err = api.config.MayUpdate(oldObj, newObj, r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
-	}
-
-	err = api.config.Update(oldObj, newObj)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	err = api.sb.Write(oldObj)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	err = writeJson(w, oldObj)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-func (api *API) stream(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-
-	_, ok := w.(http.Flusher)
-	if !ok {
-		http.Error(w, "Streaming not supported", http.StatusBadRequest)
-		return
-	}
-
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-
-	obj, err := api.config.Factory(vars["type"])
+	obj, err := config.Factory()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -163,7 +114,76 @@ func (api *API) stream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = api.config.MayRead(obj, r)
+	patch, err := config.Factory()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = readJson(r, patch)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = config.MayUpdate(obj, patch, r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	err = config.Update(obj, patch)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = api.sb.Write(obj)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = writeJson(w, obj)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (api *API) stream(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	config := api.configs[vars["type"]]
+	if config == nil {
+		http.Error(w, fmt.Sprintf("Unsupported type %s", vars["type"]), http.StatusNotFound)
+		return
+	}
+
+	_, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "Streaming not supported", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+
+	obj, err := config.Factory()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	obj.SetId(vars["id"])
+
+	err = api.sb.Read(obj)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	err = config.MayRead(obj, r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
@@ -205,7 +225,13 @@ func (api *API) stream(w http.ResponseWriter, r *http.Request) {
 func (api *API) read(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	obj, err := api.config.Factory(vars["type"])
+	config := api.configs[vars["type"]]
+	if config == nil {
+		http.Error(w, fmt.Sprintf("Unsupported type %s", vars["type"]), http.StatusNotFound)
+		return
+	}
+
+	obj, err := config.Factory()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -219,7 +245,7 @@ func (api *API) read(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = api.config.MayRead(obj, r)
+	err = config.MayRead(obj, r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
