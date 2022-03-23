@@ -75,6 +75,34 @@ func TestBus(t *testing.T) {
 	}
 }
 
+func TestBusDelete(t *testing.T) {
+	t.Parallel()
+
+	bus := NewBus()
+
+	ch := bus.Subscribe(&busTest1{
+		Id: "id1",
+	})
+
+	bus.Announce(&busTest1{
+		Id: "id1",
+	})
+
+	msg := <-ch
+	if msg.(*busTest1).Id != "id1" {
+		t.Errorf("%+v", msg)
+	}
+
+	bus.Delete(&busTest1{
+		Id: "id1",
+	})
+
+	msg, ok := <-ch
+	if ok {
+		t.Errorf("%+v", msg)
+	}
+}
+
 type busTest1 struct {
 	Id string
 }

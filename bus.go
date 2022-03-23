@@ -36,6 +36,20 @@ func (b *Bus) Announce(obj Object) {
 	}
 }
 
+func (b *Bus) Delete(obj Object) {
+	key := ObjectKey(obj)
+
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	chans := b.chans[key]
+	for _, ch := range chans {
+		close(ch)
+	}
+
+	delete(b.chans, key)
+}
+
 func (b *Bus) Subscribe(obj Object) chan Object {
 	key := ObjectKey(obj)
 
