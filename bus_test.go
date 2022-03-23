@@ -9,29 +9,41 @@ func TestBus(t *testing.T) {
 
 	// Announce with no subscribers
 	bus.Announce("busTest1", &busTest{
-		Id: "id-nosub",
+		Metadata: Metadata{
+			Id: "id-nosub",
+		},
 	})
 
 	// Complex subscription layout
 	ch1a := bus.Subscribe("busTest1", &busTest{
-		Id: "id-overlap",
+		Metadata: Metadata{
+			Id: "id-overlap",
+		},
 	})
 
 	ch2a := bus.Subscribe("busTest2", &busTest{
-		Id: "id-overlap",
+		Metadata: Metadata{
+			Id: "id-overlap",
+		},
 	})
 
 	ch2b := bus.Subscribe("busTest2", &busTest{
-		Id: "id-dupe",
+		Metadata: Metadata{
+			Id: "id-dupe",
+		},
 	})
 
 	ch2c := bus.Subscribe("busTest2", &busTest{
-		Id: "id-dupe",
+		Metadata: Metadata{
+			Id: "id-dupe",
+		},
 	})
 
 	// Overlapping IDs but not types
 	bus.Announce("busTest1", &busTest{
-		Id: "id-overlap",
+		Metadata: Metadata{
+			Id: "id-overlap",
+		},
 	})
 
 	msg := <-ch1a
@@ -46,7 +58,9 @@ func TestBus(t *testing.T) {
 	}
 
 	bus.Announce("busTest2", &busTest{
-		Id: "id-overlap",
+		Metadata: Metadata{
+			Id: "id-overlap",
+		},
 	})
 
 	select {
@@ -61,7 +75,9 @@ func TestBus(t *testing.T) {
 	}
 
 	bus.Announce("busTest2", &busTest{
-		Id: "id-dupe",
+		Metadata: Metadata{
+			Id: "id-dupe",
+		},
 	})
 
 	msg = <-ch2b
@@ -81,11 +97,15 @@ func TestBusDelete(t *testing.T) {
 	bus := NewBus()
 
 	ch := bus.Subscribe("busTest", &busTest{
-		Id: "id1",
+		Metadata: Metadata{
+			Id: "id1",
+		},
 	})
 
 	bus.Announce("busTest", &busTest{
-		Id: "id1",
+		Metadata: Metadata{
+			Id: "id1",
+		},
 	})
 
 	msg := <-ch
@@ -94,7 +114,9 @@ func TestBusDelete(t *testing.T) {
 	}
 
 	bus.Delete("busTest", &busTest{
-		Id: "id1",
+		Metadata: Metadata{
+			Id: "id1",
+		},
 	})
 
 	msg, ok := <-ch
@@ -104,13 +126,5 @@ func TestBusDelete(t *testing.T) {
 }
 
 type busTest struct {
-	Id string
-}
-
-func (bt *busTest) GetId() string {
-	return bt.Id
-}
-
-func (bt *busTest) SetId(id string) {
-	bt.Id = id
+	Metadata
 }

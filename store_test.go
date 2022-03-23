@@ -15,7 +15,9 @@ func TestStore(t *testing.T) {
 	store := NewStore(dir)
 
 	err = store.Write("storeTest", &storeTest{
-		Id:     "id1",
+		Metadata: Metadata{
+			Id: "id1",
+		},
 		Opaque: "foo",
 	})
 	if err != nil {
@@ -23,7 +25,9 @@ func TestStore(t *testing.T) {
 	}
 
 	err = store.Write("storeTest", &storeTest{
-		Id:     "id2",
+		Metadata: Metadata{
+			Id: "id2",
+		},
 		Opaque: "bar",
 	})
 	if err != nil {
@@ -31,7 +35,9 @@ func TestStore(t *testing.T) {
 	}
 
 	out1 := &storeTest{
-		Id: "id1",
+		Metadata: Metadata{
+			Id: "id1",
+		},
 	}
 
 	err = store.Read("storeTest", out1)
@@ -44,7 +50,9 @@ func TestStore(t *testing.T) {
 	}
 
 	out2 := &storeTest{
-		Id: "id2",
+		Metadata: Metadata{
+			Id: "id2",
+		},
 	}
 
 	err = store.Read("storeTest", out2)
@@ -69,7 +77,9 @@ func TestStoreDelete(t *testing.T) {
 	store := NewStore(dir)
 
 	err = store.Write("storeTest", &storeTest{
-		Id:     "id1",
+		Metadata: Metadata{
+			Id: "id1",
+		},
 		Opaque: "foo",
 	})
 	if err != nil {
@@ -77,7 +87,9 @@ func TestStoreDelete(t *testing.T) {
 	}
 
 	out1 := &storeTest{
-		Id: "id1",
+		Metadata: Metadata{
+			Id: "id1",
+		},
 	}
 
 	err = store.Read("storeTest", out1)
@@ -90,14 +102,18 @@ func TestStoreDelete(t *testing.T) {
 	}
 
 	err = store.Delete("storeTest", &storeTest{
-		Id: "id1",
+		Metadata: Metadata{
+			Id: "id1",
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	err = store.Read("storeTest", &storeTest{
-		Id: "id1",
+		Metadata: Metadata{
+			Id: "id1",
+		},
 	})
 	if err == nil {
 		t.Fatal("Read() succeeded")
@@ -105,14 +121,6 @@ func TestStoreDelete(t *testing.T) {
 }
 
 type storeTest struct {
-	Id     string
+	Metadata
 	Opaque string
-}
-
-func (st *storeTest) GetId() string {
-	return st.Id
-}
-
-func (st *storeTest) SetId(id string) {
-	st.Id = id
 }

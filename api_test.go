@@ -435,24 +435,16 @@ func readEvent(scan *bufio.Scanner, out interface{}) (string, error) {
 }
 
 type TestType struct {
-	Id   string `json:"id"`
+	Metadata
 	Text string `json:"text"`
 	Num  int64  `json:"num"`
 }
 
-func (tt *TestType) GetId() string {
-	return tt.Id
-}
-
-func (tt *TestType) SetId(id string) {
-	tt.Id = id
-}
-
-func factory() (Object, error) {
+func factory() (interface{}, error) {
 	return &TestType{}, nil
 }
 
-func update(obj Object, patch Object) error {
+func update(obj interface{}, patch interface{}) error {
 	o := obj.(*TestType)
 	p := patch.(*TestType)
 
@@ -467,18 +459,18 @@ func update(obj Object, patch Object) error {
 	return nil
 }
 
-func mayCreate(obj Object, r *http.Request) error {
+func mayCreate(obj interface{}, r *http.Request) error {
 	return nil
 }
 
-func mayUpdate(obj Object, patch Object, r *http.Request) error {
+func mayUpdate(obj interface{}, patch interface{}, r *http.Request) error {
 	return nil
 }
 
-func mayDelete(obj Object, r *http.Request) error {
+func mayDelete(obj interface{}, r *http.Request) error {
 	return nil
 }
 
-func mayRead(obj Object, r *http.Request) error {
+func mayRead(obj interface{}, r *http.Request) error {
 	return nil
 }
