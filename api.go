@@ -11,7 +11,6 @@ import "github.com/gorilla/mux"
 type API struct {
 	router  *mux.Router
 	sb      *StoreBus
-	configs map[string]*APIConfig
 }
 
 type APIConfig struct {
@@ -24,23 +23,44 @@ type APIConfig struct {
 }
 
 func NewAPI(root string, configs map[string]*APIConfig) (*API, error) {
-	for _, config := range configs {
+	api := &API{
+		router:  mux.NewRouter(),
+		sb:      NewStoreBus(root),
+	}
+
+	for t, config := range configs {
 		err := config.validate()
 		if err != nil {
 			return nil, err
 		}
-	}
 
-	api := &API{
-		router:  mux.NewRouter(),
-		sb:      NewStoreBus(root),
-		configs: configs,
-	}
+		api.router.HandleFunc(
+			fmt.Sprintf("/%s", t),
+			func(w http.ResponseWriter, r *http.Request) { api.create(config, w, r) },
+		).
+			Methods("POST").
+			Headers("Content-Type", "application/json")
 
-	api.router.HandleFunc("/{type}", api.create).Methods("POST").Headers("Content-Type", "application/json")
-	api.router.HandleFunc("/{type}/{id}", api.update).Methods("PATCH").Headers("Content-Type", "application/json")
-	api.router.HandleFunc("/{type}/{id}", api.stream).Methods("GET").Headers("Accept", "text/event-stream")
-	api.router.HandleFunc("/{type}/{id}", api.read).Methods("GET")
+		api.router.HandleFunc(
+			fmt.Sprintf("/%s/{id}", t),
+			func(w http.ResponseWriter, r *http.Request) { api.update(config, w, r) },
+		).
+			Methods("PATCH").
+			Headers("Content-Type", "application/json")
+
+		api.router.HandleFunc(
+			fmt.Sprintf("/%s/{id}", t),
+			func(w http.ResponseWriter, r *http.Request) { api.stream(config, w, r) },
+		).
+			Methods("GET").
+			Headers("Accept", "text/event-stream")
+
+		api.router.HandleFunc(
+			fmt.Sprintf("/%s/{id}", t),
+			func(w http.ResponseWriter, r *http.Request) { api.read(config, w, r) },
+		).
+			Methods("GET")
+	}
 
 	return api, nil
 }
@@ -49,15 +69,7 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	api.router.ServeHTTP(w, r)
 }
 
-func (api *API) create(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-
-	config := api.configs[vars["type"]]
-	if config == nil {
-		http.Error(w, fmt.Sprintf("Unsupported type %s", vars["type"]), http.StatusNotFound)
-		return
-	}
-
+func (api *API) create(config *APIConfig, w http.ResponseWriter, r *http.Request) {
 	obj, err := config.Factory()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -91,14 +103,8 @@ func (api *API) create(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (api *API) update(w http.ResponseWriter, r *http.Request) {
+func (api *API) update(config *APIConfig, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-
-	config := api.configs[vars["type"]]
-	if config == nil {
-		http.Error(w, fmt.Sprintf("Unsupported type %s", vars["type"]), http.StatusNotFound)
-		return
-	}
 
 	obj, err := config.Factory()
 	if err != nil {
@@ -151,14 +157,8 @@ func (api *API) update(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (api *API) stream(w http.ResponseWriter, r *http.Request) {
+func (api *API) stream(config *APIConfig, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-
-	config := api.configs[vars["type"]]
-	if config == nil {
-		http.Error(w, fmt.Sprintf("Unsupported type %s", vars["type"]), http.StatusNotFound)
-		return
-	}
 
 	_, ok := w.(http.Flusher)
 	if !ok {
@@ -222,14 +222,8 @@ func (api *API) stream(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (api *API) read(w http.ResponseWriter, r *http.Request) {
+func (api *API) read(config *APIConfig, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-
-	config := api.configs[vars["type"]]
-	if config == nil {
-		http.Error(w, fmt.Sprintf("Unsupported type %s", vars["type"]), http.StatusNotFound)
-		return
-	}
 
 	obj, err := config.Factory()
 	if err != nil {
