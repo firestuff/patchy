@@ -4,23 +4,23 @@ import "sync"
 
 type Bus struct {
 	mu    sync.Mutex
-	chans map[string][]chan Object
+	chans map[string][]chan interface{}
 }
 
 func NewBus() *Bus {
 	return &Bus{
-		chans: map[string][]chan Object{},
+		chans: map[string][]chan interface{}{},
 	}
 }
 
-func (b *Bus) Announce(t string, obj Object) {
-	key := ObjectKey(t, obj)
+func (b *Bus) Announce(t string, obj interface{}) {
+	key := getMetadata(obj).getKey(t)
 
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
 	chans := b.chans[key]
-	newChans := []chan Object{}
+	newChans := []chan interface{}{}
 
 	for _, ch := range chans {
 		select {
@@ -36,8 +36,8 @@ func (b *Bus) Announce(t string, obj Object) {
 	}
 }
 
-func (b *Bus) Delete(t string, obj Object) {
-	key := ObjectKey(t, obj)
+func (b *Bus) Delete(t string, obj interface{}) {
+	key := getMetadata(obj).getKey(t)
 
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -50,13 +50,13 @@ func (b *Bus) Delete(t string, obj Object) {
 	delete(b.chans, key)
 }
 
-func (b *Bus) Subscribe(t string, obj Object) chan Object {
-	key := ObjectKey(t, obj)
+func (b *Bus) Subscribe(t string, obj interface{}) chan interface{} {
+	key := getMetadata(obj).getKey(t)
 
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	ch := make(chan Object, 100)
+	ch := make(chan interface{}, 100)
 
 	b.chans[key] = append(b.chans[key], ch)
 

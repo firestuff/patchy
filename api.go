@@ -15,13 +15,13 @@ type API struct {
 }
 
 type APIConfig struct {
-	Factory func() (Object, error)
-	Update  func(Object, Object) error
+	Factory func() (interface{}, error)
+	Update  func(interface{}, interface{}) error
 
-	MayCreate func(Object, *http.Request) error
-	MayUpdate func(Object, Object, *http.Request) error
-	MayDelete func(Object, *http.Request) error
-	MayRead   func(Object, *http.Request) error
+	MayCreate func(interface{}, *http.Request) error
+	MayUpdate func(interface{}, interface{}, *http.Request) error
+	MayDelete func(interface{}, *http.Request) error
+	MayRead   func(interface{}, *http.Request) error
 
 	mu sync.RWMutex
 }
@@ -92,7 +92,7 @@ func (api *API) create(t string, config *APIConfig, w http.ResponseWriter, r *ht
 		return
 	}
 
-	obj.SetId(uuid.NewString())
+	getMetadata(obj).Id = uuid.NewString()
 
 	err = config.MayCreate(obj, r)
 	if err != nil {
@@ -122,7 +122,7 @@ func (api *API) update(t string, config *APIConfig, w http.ResponseWriter, r *ht
 		return
 	}
 
-	obj.SetId(vars["id"])
+	getMetadata(obj).Id = vars["id"]
 
 	config.mu.Lock()
 	defer config.mu.Unlock()
@@ -179,7 +179,7 @@ func (api *API) del(t string, config *APIConfig, w http.ResponseWriter, r *http.
 		return
 	}
 
-	obj.SetId(vars["id"])
+	getMetadata(obj).Id = vars["id"]
 
 	config.mu.Lock()
 	defer config.mu.Unlock()
@@ -221,7 +221,7 @@ func (api *API) stream(t string, config *APIConfig, w http.ResponseWriter, r *ht
 		return
 	}
 
-	obj.SetId(vars["id"])
+	getMetadata(obj).Id = vars["id"]
 
 	config.mu.RLock()
 	// THIS LOCK REQUIRES MANUAL UNLOCKING IN ALL BRANCHES
@@ -288,7 +288,7 @@ func (api *API) read(t string, config *APIConfig, w http.ResponseWriter, r *http
 		return
 	}
 
-	obj.SetId(vars["id"])
+	getMetadata(obj).Id = vars["id"]
 
 	err = api.sb.Read(t, obj)
 	if err != nil {
@@ -309,19 +309,19 @@ func (api *API) read(t string, config *APIConfig, w http.ResponseWriter, r *http
 	}
 }
 
-func readJson(r *http.Request, obj Object) error {
+func readJson(r *http.Request, obj interface{}) error {
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 	return dec.Decode(obj)
 }
 
-func writeJson(w http.ResponseWriter, obj Object) error {
+func writeJson(w http.ResponseWriter, obj interface{}) error {
 	w.Header().Set("Content-Type", "application/json")
 	enc := json.NewEncoder(w)
 	return enc.Encode(obj)
 }
 
-func writeUpdate(w http.ResponseWriter, obj Object) error {
+func writeUpdate(w http.ResponseWriter, obj interface{}) error {
 	data, err := json.Marshal(obj)
 	if err != nil {
 		return fmt.Errorf("Failed to encode JSON: %s", err)

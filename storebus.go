@@ -12,7 +12,7 @@ func NewStoreBus(root string) *StoreBus {
 	}
 }
 
-func (sb *StoreBus) Write(t string, obj Object) error {
+func (sb *StoreBus) Write(t string, obj interface{}) error {
 	err := sb.store.Write(t, obj)
 	if err != nil {
 		return err
@@ -23,7 +23,7 @@ func (sb *StoreBus) Write(t string, obj Object) error {
 	return nil
 }
 
-func (sb *StoreBus) Delete(t string, obj Object) error {
+func (sb *StoreBus) Delete(t string, obj interface{}) error {
 	err := sb.store.Delete(t, obj)
 	if err != nil {
 		return err
@@ -34,10 +34,10 @@ func (sb *StoreBus) Delete(t string, obj Object) error {
 	return nil
 }
 
-func (sb *StoreBus) Read(t string, obj Object) error {
+func (sb *StoreBus) Read(t string, obj interface{}) error {
 	return sb.store.Read(t, obj)
 }
 
-func (sb *StoreBus) Subscribe(t string, obj Object) chan Object {
+func (sb *StoreBus) Subscribe(t string, obj interface{}) chan interface{} {
 	return sb.bus.Subscribe(t, obj)
 }
