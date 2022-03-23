@@ -195,12 +195,14 @@ func withAPI(t *testing.T, cb func(*testing.T, *API, string, *resty.Client)) {
 	}
 	defer os.RemoveAll(dir)
 
-	api, err := NewAPI(dir, &APIConfig{
-		Factory:   factory,
-		Update:    update,
-		MayCreate: mayCreate,
-		MayUpdate: mayUpdate,
-		MayRead:   mayRead,
+	api, err := NewAPI(dir, map[string]*APIConfig{
+		"testtype": &APIConfig{
+			Factory:   factory,
+			Update:    update,
+			MayCreate: mayCreate,
+			MayUpdate: mayUpdate,
+			MayRead:   mayRead,
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -281,31 +283,19 @@ func (tt *TestType) SetId(id string) {
 	tt.Id = id
 }
 
-func factory(t string) (Object, error) {
-	switch t {
-	case "testtype":
-		return &TestType{}, nil
-	default:
-		return nil, fmt.Errorf("Unsupported type: %s", t)
-	}
+func factory() (Object, error) {
+	return &TestType{}, nil
 }
 
 func update(obj Object, patch Object) error {
-	switch o := obj.(type) {
+	o := obj.(*TestType)
+	p := patch.(*TestType)
 
-	case *TestType:
-		p := patch.(*TestType)
-
-		if p.Text != "" {
-			o.Text = p.Text
-		}
-
-		return nil
-
-	default:
-		return fmt.Errorf("Unsupported type: %s", obj.GetType())
-
+	if p.Text != "" {
+		o.Text = p.Text
 	}
+
+	return nil
 }
 
 func mayCreate(obj Object, r *http.Request) error {
