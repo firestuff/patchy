@@ -23,6 +23,17 @@ func (sb *StoreBus) Write(obj Object) error {
 	return nil
 }
 
+func (sb *StoreBus) Delete(obj Object) error {
+	err := sb.store.Delete(obj)
+	if err != nil {
+		return err
+	}
+
+	sb.bus.Delete(obj)
+
+	return nil
+}
+
 func (sb *StoreBus) Read(obj Object) error {
 	return sb.store.Read(obj)
 }

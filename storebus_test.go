@@ -48,7 +48,41 @@ func TestStoreBus(t *testing.T) {
 	if out3.Opaque != "bar" {
 		t.Errorf("%+v", out3)
 	}
+}
 
+func TestStoreBusDelete(t *testing.T) {
+	t.Parallel()
+
+	dir, err := os.MkdirTemp("", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+
+	sb := NewStoreBus(dir)
+
+	ch := sb.Subscribe(&storeBusTest{
+		Id: "id1",
+	})
+
+	sb.Write(&storeBusTest{
+		Id:     "id1",
+		Opaque: "foo",
+	})
+
+	out := (<-ch).(*storeBusTest)
+	if out.Opaque != "foo" {
+		t.Errorf("%+v", out)
+	}
+
+	sb.Delete(&storeBusTest{
+		Id: "id1",
+	})
+
+	out2, ok := <-ch
+	if ok {
+		t.Errorf("%+v", out2)
+	}
 }
 
 type storeBusTest struct {
