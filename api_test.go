@@ -264,17 +264,6 @@ func readEvent(scan *bufio.Scanner, out interface{}) (string, error) {
 	return "", io.EOF
 }
 
-func readString(r io.Reader) (string, error) {
-	buf := make([]byte, 256)
-
-	n, err := r.Read(buf)
-	if err != nil {
-		return "", err
-	}
-
-	return string(buf[:n]), nil
-}
-
 type TestType struct {
 	Id   string `json:"id"`
 	Text string `json:"text"`
