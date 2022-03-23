@@ -9,18 +9,32 @@ type Metadata struct {
 }
 
 func getMetadata(obj interface{}) *Metadata {
-	v := reflect.ValueOf(obj)
+	return getMetadataField(obj).Addr().Interface().(*Metadata)
+}
 
-	if v.Kind() == reflect.Ptr {
-		v = reflect.Indirect(v)
-	}
+func clearMetadata(obj interface{}) {
+	getMetadataField(obj).Set(reflect.ValueOf(Metadata{}))
+}
+
+func getMetadataField(obj interface{}) reflect.Value {
+	v := maybeIndirect(obj)
 
 	m := v.FieldByName("Metadata")
 	if !m.IsValid() {
 		panic(fmt.Sprintf("Metadata field missing in %s", v.Type()))
 	}
 
-	return m.Addr().Interface().(*Metadata)
+	return m
+}
+
+func maybeIndirect(obj interface{}) reflect.Value {
+	v := reflect.ValueOf(obj)
+
+	if v.Kind() == reflect.Ptr {
+		v = reflect.Indirect(v)
+	}
+
+	return v
 }
 
 func (m *Metadata) getSafeId() string {

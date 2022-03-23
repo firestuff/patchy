@@ -145,6 +145,9 @@ func (api *API) update(t string, config *APIConfig, w http.ResponseWriter, r *ht
 		return
 	}
 
+	// Metadata is immutable or server-owned
+	clearMetadata(patch)
+
 	err = config.MayUpdate(obj, patch, r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
