@@ -4,7 +4,7 @@ import "os"
 import "testing"
 
 func TestStore(t *testing.T) {
-  t.Parallel()
+	t.Parallel()
 
 	dir, err := os.MkdirTemp("", "")
 	if err != nil {

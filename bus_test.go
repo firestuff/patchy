@@ -3,7 +3,7 @@ package storebus
 import "testing"
 
 func TestBus(t *testing.T) {
-  t.Parallel()
+	t.Parallel()
 
 	bus := NewBus()
 
