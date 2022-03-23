@@ -147,7 +147,7 @@ func TestAPIStream(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if eventType != "testtype" {
+		if eventType != "update" {
 			t.Error(eventType)
 		}
 
@@ -177,7 +177,7 @@ func TestAPIStream(t *testing.T) {
 
 		eventType, err = readEvent(scan, updated)
 
-		if eventType != "testtype" {
+		if eventType != "update" {
 			t.Error(eventType)
 		}
 
@@ -253,7 +253,7 @@ func TestAPIStreamRace(t *testing.T) {
 						t.Fatal(err)
 					}
 
-					if eventType != "testtype" {
+					if eventType != "update" {
 						t.Fatal(eventType)
 					}
 
@@ -263,7 +263,7 @@ func TestAPIStreamRace(t *testing.T) {
 						t.Fatal(err)
 					}
 
-					if eventType != "testtype" {
+					if eventType != "update" {
 						t.Fatal(eventType)
 					}
 

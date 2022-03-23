@@ -228,7 +228,7 @@ func (api *API) stream(config *APIConfig, w http.ResponseWriter, r *http.Request
 			}
 
 		case <-ticker.C:
-			writeEvent(w, newHeartbeat())
+			writeHeartbeat(w)
 
 		}
 	}
@@ -276,34 +276,21 @@ func writeJson(w http.ResponseWriter, obj Object) error {
 	return enc.Encode(obj)
 }
 
-type heartbeat struct {
-}
-
-func newHeartbeat() *heartbeat {
-	return &heartbeat{}
-}
-
-func (h *heartbeat) GetType() string {
-	return "heartbeat"
-}
-
-func (h *heartbeat) GetId() string {
-	return ""
-}
-
-func (h *heartbeat) SetId(id string) {
-}
-
 func writeEvent(w http.ResponseWriter, obj Object) error {
 	data, err := json.Marshal(obj)
 	if err != nil {
 		return fmt.Errorf("Failed to encode JSON: %s", err)
 	}
 
-	fmt.Fprintf(w, "event: %s\ndata: %s\n\n", obj.GetType(), data)
+	fmt.Fprintf(w, "event: update\ndata: %s\n\n", data)
 	w.(http.Flusher).Flush()
 
 	return nil
+}
+
+func writeHeartbeat(w http.ResponseWriter) {
+	fmt.Fprintf(w, "event: heartbeat\ndata: {}\n\n")
+	w.(http.Flusher).Flush()
 }
 
 func (conf *APIConfig) validate() error {
