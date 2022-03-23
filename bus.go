@@ -13,8 +13,8 @@ func NewBus() *Bus {
 	}
 }
 
-func (b *Bus) Announce(obj Object) {
-	key := ObjectKey(obj)
+func (b *Bus) Announce(t string, obj Object) {
+	key := ObjectKey(t, obj)
 
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -36,8 +36,8 @@ func (b *Bus) Announce(obj Object) {
 	}
 }
 
-func (b *Bus) Delete(obj Object) {
-	key := ObjectKey(obj)
+func (b *Bus) Delete(t string, obj Object) {
+	key := ObjectKey(t, obj)
 
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -50,8 +50,8 @@ func (b *Bus) Delete(obj Object) {
 	delete(b.chans, key)
 }
 
-func (b *Bus) Subscribe(obj Object) chan Object {
-	key := ObjectKey(obj)
+func (b *Bus) Subscribe(t string, obj Object) chan Object {
+	key := ObjectKey(t, obj)
 
 	b.mu.Lock()
 	defer b.mu.Unlock()

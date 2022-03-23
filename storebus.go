@@ -12,32 +12,32 @@ func NewStoreBus(root string) *StoreBus {
 	}
 }
 
-func (sb *StoreBus) Write(obj Object) error {
-	err := sb.store.Write(obj)
+func (sb *StoreBus) Write(t string, obj Object) error {
+	err := sb.store.Write(t, obj)
 	if err != nil {
 		return err
 	}
 
-	sb.bus.Announce(obj)
+	sb.bus.Announce(t, obj)
 
 	return nil
 }
 
-func (sb *StoreBus) Delete(obj Object) error {
-	err := sb.store.Delete(obj)
+func (sb *StoreBus) Delete(t string, obj Object) error {
+	err := sb.store.Delete(t, obj)
 	if err != nil {
 		return err
 	}
 
-	sb.bus.Delete(obj)
+	sb.bus.Delete(t, obj)
 
 	return nil
 }
 
-func (sb *StoreBus) Read(obj Object) error {
-	return sb.store.Read(obj)
+func (sb *StoreBus) Read(t string, obj Object) error {
+	return sb.store.Read(t, obj)
 }
 
-func (sb *StoreBus) Subscribe(obj Object) chan Object {
-	return sb.bus.Subscribe(obj)
+func (sb *StoreBus) Subscribe(t string, obj Object) chan Object {
+	return sb.bus.Subscribe(t, obj)
 }

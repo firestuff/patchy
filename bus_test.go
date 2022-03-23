@@ -8,34 +8,34 @@ func TestBus(t *testing.T) {
 	bus := NewBus()
 
 	// Announce with no subscribers
-	bus.Announce(&busTest1{
+	bus.Announce("busTest1", &busTest{
 		Id: "id-nosub",
 	})
 
 	// Complex subscription layout
-	ch1a := bus.Subscribe(&busTest1{
+	ch1a := bus.Subscribe("busTest1", &busTest{
 		Id: "id-overlap",
 	})
 
-	ch2a := bus.Subscribe(&busTest2{
+	ch2a := bus.Subscribe("busTest2", &busTest{
 		Id: "id-overlap",
 	})
 
-	ch2b := bus.Subscribe(&busTest2{
+	ch2b := bus.Subscribe("busTest2", &busTest{
 		Id: "id-dupe",
 	})
 
-	ch2c := bus.Subscribe(&busTest2{
+	ch2c := bus.Subscribe("busTest2", &busTest{
 		Id: "id-dupe",
 	})
 
 	// Overlapping IDs but not types
-	bus.Announce(&busTest1{
+	bus.Announce("busTest1", &busTest{
 		Id: "id-overlap",
 	})
 
 	msg := <-ch1a
-	if msg.(*busTest1).Id != "id-overlap" {
+	if msg.(*busTest).Id != "id-overlap" {
 		t.Errorf("%+v", msg)
 	}
 
@@ -45,7 +45,7 @@ func TestBus(t *testing.T) {
 	default:
 	}
 
-	bus.Announce(&busTest2{
+	bus.Announce("busTest2", &busTest{
 		Id: "id-overlap",
 	})
 
@@ -56,21 +56,21 @@ func TestBus(t *testing.T) {
 	}
 
 	msg = <-ch2a
-	if msg.(*busTest2).Id != "id-overlap" {
+	if msg.(*busTest).Id != "id-overlap" {
 		t.Errorf("%+v", msg)
 	}
 
-	bus.Announce(&busTest2{
+	bus.Announce("busTest2", &busTest{
 		Id: "id-dupe",
 	})
 
 	msg = <-ch2b
-	if msg.(*busTest2).Id != "id-dupe" {
+	if msg.(*busTest).Id != "id-dupe" {
 		t.Errorf("%+v", msg)
 	}
 
 	msg = <-ch2c
-	if msg.(*busTest2).Id != "id-dupe" {
+	if msg.(*busTest).Id != "id-dupe" {
 		t.Errorf("%+v", msg)
 	}
 }
@@ -80,20 +80,20 @@ func TestBusDelete(t *testing.T) {
 
 	bus := NewBus()
 
-	ch := bus.Subscribe(&busTest1{
+	ch := bus.Subscribe("busTest", &busTest{
 		Id: "id1",
 	})
 
-	bus.Announce(&busTest1{
+	bus.Announce("busTest", &busTest{
 		Id: "id1",
 	})
 
 	msg := <-ch
-	if msg.(*busTest1).Id != "id1" {
+	if msg.(*busTest).Id != "id1" {
 		t.Errorf("%+v", msg)
 	}
 
-	bus.Delete(&busTest1{
+	bus.Delete("busTest", &busTest{
 		Id: "id1",
 	})
 
@@ -103,34 +103,14 @@ func TestBusDelete(t *testing.T) {
 	}
 }
 
-type busTest1 struct {
+type busTest struct {
 	Id string
 }
 
-func (bt *busTest1) GetType() string {
-	return "busTest1"
-}
-
-func (bt *busTest1) GetId() string {
+func (bt *busTest) GetId() string {
 	return bt.Id
 }
 
-func (bt *busTest1) SetId(id string) {
-	bt.Id = id
-}
-
-type busTest2 struct {
-	Id string
-}
-
-func (bt *busTest2) GetType() string {
-	return "busTest2"
-}
-
-func (bt *busTest2) GetId() string {
-	return bt.Id
-}
-
-func (bt *busTest2) SetId(id string) {
+func (bt *busTest) SetId(id string) {
 	bt.Id = id
 }

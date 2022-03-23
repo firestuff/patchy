@@ -14,7 +14,7 @@ func TestStoreBus(t *testing.T) {
 
 	sb := NewStoreBus(dir)
 
-	err = sb.Write(&storeBusTest{
+	err = sb.Write("storeBusTest", &storeBusTest{
 		Id:     "id1",
 		Opaque: "foo",
 	})
@@ -26,7 +26,7 @@ func TestStoreBus(t *testing.T) {
 		Id: "id1",
 	}
 
-	err = sb.Read(out1)
+	err = sb.Read("storeBusTest", out1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,11 +35,11 @@ func TestStoreBus(t *testing.T) {
 		t.Errorf("%+v", out1)
 	}
 
-	ch := sb.Subscribe(&storeBusTest{
+	ch := sb.Subscribe("storeBusTest", &storeBusTest{
 		Id: "id1",
 	})
 
-	sb.Write(&storeBusTest{
+	sb.Write("storeBusTest", &storeBusTest{
 		Id:     "id1",
 		Opaque: "bar",
 	})
@@ -61,11 +61,11 @@ func TestStoreBusDelete(t *testing.T) {
 
 	sb := NewStoreBus(dir)
 
-	ch := sb.Subscribe(&storeBusTest{
+	ch := sb.Subscribe("storeBusTest", &storeBusTest{
 		Id: "id1",
 	})
 
-	sb.Write(&storeBusTest{
+	sb.Write("storeBusTest", &storeBusTest{
 		Id:     "id1",
 		Opaque: "foo",
 	})
@@ -75,7 +75,7 @@ func TestStoreBusDelete(t *testing.T) {
 		t.Errorf("%+v", out)
 	}
 
-	sb.Delete(&storeBusTest{
+	sb.Delete("storeBusTest", &storeBusTest{
 		Id: "id1",
 	})
 
@@ -88,10 +88,6 @@ func TestStoreBusDelete(t *testing.T) {
 type storeBusTest struct {
 	Id     string
 	Opaque string
-}
-
-func (sbt *storeBusTest) GetType() string {
-	return "storeBusTest"
 }
 
 func (sbt *storeBusTest) GetId() string {
