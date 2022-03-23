@@ -363,7 +363,7 @@ func withAPI(t *testing.T, cb func(*testing.T, *API, string, *resty.Client)) {
 			Update:    update,
 			MayCreate: mayCreate,
 			MayUpdate: mayUpdate,
-      MayDelete: mayDelete,
+			MayDelete: mayDelete,
 			MayRead:   mayRead,
 		},
 	})
