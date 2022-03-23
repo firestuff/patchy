@@ -3,6 +3,7 @@ package storebus
 import "encoding/json"
 import "fmt"
 import "net/http"
+import "sync"
 import "time"
 
 import "github.com/google/uuid"
@@ -20,6 +21,8 @@ type APIConfig struct {
 	MayCreate func(Object, *http.Request) error
 	MayUpdate func(Object, Object, *http.Request) error
 	MayRead   func(Object, *http.Request) error
+
+	mu sync.RWMutex
 }
 
 func NewAPI(root string, configs map[string]*APIConfig) (*API, error) {
@@ -114,6 +117,9 @@ func (api *API) update(config *APIConfig, w http.ResponseWriter, r *http.Request
 
 	obj.SetId(vars["id"])
 
+	config.mu.Lock()
+	defer config.mu.Unlock()
+
 	err = api.sb.Read(obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -177,29 +183,35 @@ func (api *API) stream(config *APIConfig, w http.ResponseWriter, r *http.Request
 
 	obj.SetId(vars["id"])
 
+	config.mu.RLock()
+	// THIS LOCK REQUIRES MANUAL UNLOCKING IN ALL BRANCHES
+
 	err = api.sb.Read(obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
+		config.mu.RUnlock()
 		return
 	}
 
 	err = config.MayRead(obj, r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
+		config.mu.RUnlock()
 		return
 	}
 
 	err = writeEvent(w, obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		config.mu.RUnlock()
 		return
 	}
-
-	// TODO: Fix race if the object is written between Read() and Subscribe()
 
 	closeChan := w.(http.CloseNotifier).CloseNotify()
 	objChan := api.sb.Subscribe(obj)
 	ticker := time.NewTicker(5 * time.Second)
+
+	config.mu.RUnlock()
 
 	connected := true
 	for connected {
