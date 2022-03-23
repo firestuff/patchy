@@ -40,34 +40,34 @@ func NewAPI(root string, configs map[string]*APIConfig) (*API, error) {
 
 		api.router.HandleFunc(
 			fmt.Sprintf("/%s", t),
-			func(w http.ResponseWriter, r *http.Request) { api.create(config, w, r) },
+			func(w http.ResponseWriter, r *http.Request) { api.create(t, config, w, r) },
 		).
 			Methods("POST").
 			Headers("Content-Type", "application/json")
 
 		api.router.HandleFunc(
 			fmt.Sprintf("/%s/{id}", t),
-			func(w http.ResponseWriter, r *http.Request) { api.update(config, w, r) },
+			func(w http.ResponseWriter, r *http.Request) { api.update(t, config, w, r) },
 		).
 			Methods("PATCH").
 			Headers("Content-Type", "application/json")
 
 		api.router.HandleFunc(
 			fmt.Sprintf("/%s/{id}", t),
-			func(w http.ResponseWriter, r *http.Request) { api.del(config, w, r) },
+			func(w http.ResponseWriter, r *http.Request) { api.del(t, config, w, r) },
 		).
 			Methods("DELETE")
 
 		api.router.HandleFunc(
 			fmt.Sprintf("/%s/{id}", t),
-			func(w http.ResponseWriter, r *http.Request) { api.stream(config, w, r) },
+			func(w http.ResponseWriter, r *http.Request) { api.stream(t, config, w, r) },
 		).
 			Methods("GET").
 			Headers("Accept", "text/event-stream")
 
 		api.router.HandleFunc(
 			fmt.Sprintf("/%s/{id}", t),
-			func(w http.ResponseWriter, r *http.Request) { api.read(config, w, r) },
+			func(w http.ResponseWriter, r *http.Request) { api.read(t, config, w, r) },
 		).
 			Methods("GET")
 	}
@@ -79,7 +79,7 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	api.router.ServeHTTP(w, r)
 }
 
-func (api *API) create(config *APIConfig, w http.ResponseWriter, r *http.Request) {
+func (api *API) create(t string, config *APIConfig, w http.ResponseWriter, r *http.Request) {
 	obj, err := config.Factory()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -100,7 +100,7 @@ func (api *API) create(config *APIConfig, w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = api.sb.Write(obj)
+	err = api.sb.Write(t, obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -113,7 +113,7 @@ func (api *API) create(config *APIConfig, w http.ResponseWriter, r *http.Request
 	}
 }
 
-func (api *API) update(config *APIConfig, w http.ResponseWriter, r *http.Request) {
+func (api *API) update(t string, config *APIConfig, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	obj, err := config.Factory()
@@ -127,7 +127,7 @@ func (api *API) update(config *APIConfig, w http.ResponseWriter, r *http.Request
 	config.mu.Lock()
 	defer config.mu.Unlock()
 
-	err = api.sb.Read(obj)
+	err = api.sb.Read(t, obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -157,7 +157,7 @@ func (api *API) update(config *APIConfig, w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = api.sb.Write(obj)
+	err = api.sb.Write(t, obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -170,7 +170,7 @@ func (api *API) update(config *APIConfig, w http.ResponseWriter, r *http.Request
 	}
 }
 
-func (api *API) del(config *APIConfig, w http.ResponseWriter, r *http.Request) {
+func (api *API) del(t string, config *APIConfig, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	obj, err := config.Factory()
@@ -184,7 +184,7 @@ func (api *API) del(config *APIConfig, w http.ResponseWriter, r *http.Request) {
 	config.mu.Lock()
 	defer config.mu.Unlock()
 
-	err = api.sb.Read(obj)
+	err = api.sb.Read(t, obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -196,14 +196,14 @@ func (api *API) del(config *APIConfig, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = api.sb.Delete(obj)
+	err = api.sb.Delete(t, obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
 
-func (api *API) stream(config *APIConfig, w http.ResponseWriter, r *http.Request) {
+func (api *API) stream(t string, config *APIConfig, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	_, ok := w.(http.Flusher)
@@ -226,7 +226,7 @@ func (api *API) stream(config *APIConfig, w http.ResponseWriter, r *http.Request
 	config.mu.RLock()
 	// THIS LOCK REQUIRES MANUAL UNLOCKING IN ALL BRANCHES
 
-	err = api.sb.Read(obj)
+	err = api.sb.Read(t, obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		config.mu.RUnlock()
@@ -248,7 +248,7 @@ func (api *API) stream(config *APIConfig, w http.ResponseWriter, r *http.Request
 	}
 
 	closeChan := w.(http.CloseNotifier).CloseNotify()
-	objChan := api.sb.Subscribe(obj)
+	objChan := api.sb.Subscribe(t, obj)
 	ticker := time.NewTicker(5 * time.Second)
 
 	config.mu.RUnlock()
@@ -279,7 +279,7 @@ func (api *API) stream(config *APIConfig, w http.ResponseWriter, r *http.Request
 	}
 }
 
-func (api *API) read(config *APIConfig, w http.ResponseWriter, r *http.Request) {
+func (api *API) read(t string, config *APIConfig, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	obj, err := config.Factory()
@@ -290,7 +290,7 @@ func (api *API) read(config *APIConfig, w http.ResponseWriter, r *http.Request) 
 
 	obj.SetId(vars["id"])
 
-	err = api.sb.Read(obj)
+	err = api.sb.Read(t, obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return

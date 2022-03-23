@@ -15,8 +15,8 @@ func NewStore(root string) *Store {
 	}
 }
 
-func (s *Store) Write(obj Object) error {
-	dir := filepath.Join(s.root, obj.GetType())
+func (s *Store) Write(t string, obj Object) error {
+	dir := filepath.Join(s.root, t)
 	filename := ObjectSafeId(obj)
 
 	err := os.MkdirAll(dir, 0700)
@@ -51,14 +51,14 @@ func (s *Store) Write(obj Object) error {
 	return nil
 }
 
-func (s *Store) Delete(obj Object) error {
-	dir := filepath.Join(s.root, obj.GetType())
+func (s *Store) Delete(t string, obj Object) error {
+	dir := filepath.Join(s.root, t)
 	filename := ObjectSafeId(obj)
 	return os.Remove(filepath.Join(dir, filename))
 }
 
-func (s *Store) Read(obj Object) error {
-	dir := filepath.Join(s.root, obj.GetType())
+func (s *Store) Read(t string, obj Object) error {
+	dir := filepath.Join(s.root, t)
 	filename := ObjectSafeId(obj)
 
 	fh, err := os.Open(filepath.Join(dir, filename))

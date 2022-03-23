@@ -14,7 +14,7 @@ func TestStore(t *testing.T) {
 
 	store := NewStore(dir)
 
-	err = store.Write(&storeTest{
+	err = store.Write("storeTest", &storeTest{
 		Id:     "id1",
 		Opaque: "foo",
 	})
@@ -22,7 +22,7 @@ func TestStore(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = store.Write(&storeTest{
+	err = store.Write("storeTest", &storeTest{
 		Id:     "id2",
 		Opaque: "bar",
 	})
@@ -34,7 +34,7 @@ func TestStore(t *testing.T) {
 		Id: "id1",
 	}
 
-	err = store.Read(out1)
+	err = store.Read("storeTest", out1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,7 +47,7 @@ func TestStore(t *testing.T) {
 		Id: "id2",
 	}
 
-	err = store.Read(out2)
+	err = store.Read("storeTest", out2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,7 +68,7 @@ func TestStoreDelete(t *testing.T) {
 
 	store := NewStore(dir)
 
-	err = store.Write(&storeTest{
+	err = store.Write("storeTest", &storeTest{
 		Id:     "id1",
 		Opaque: "foo",
 	})
@@ -80,7 +80,7 @@ func TestStoreDelete(t *testing.T) {
 		Id: "id1",
 	}
 
-	err = store.Read(out1)
+	err = store.Read("storeTest", out1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,14 +89,14 @@ func TestStoreDelete(t *testing.T) {
 		t.Errorf("%+v", out1)
 	}
 
-	err = store.Delete(&storeTest{
+	err = store.Delete("storeTest", &storeTest{
 		Id: "id1",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = store.Read(&storeTest{
+	err = store.Read("storeTest", &storeTest{
 		Id: "id1",
 	})
 	if err == nil {
@@ -107,10 +107,6 @@ func TestStoreDelete(t *testing.T) {
 type storeTest struct {
 	Id     string
 	Opaque string
-}
-
-func (st *storeTest) GetType() string {
-	return "storeTest"
 }
 
 func (st *storeTest) GetId() string {

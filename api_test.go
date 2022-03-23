@@ -343,10 +343,11 @@ func TestAPIStreamRace(t *testing.T) {
 			}
 		}()
 
-		time.Sleep(5 * time.Second)
+		time.Sleep(3 * time.Second)
 		close(quitStream)
 		time.Sleep(1 * time.Second)
 		close(quitUpdate)
+		time.Sleep(1 * time.Second)
 	})
 }
 
@@ -433,10 +434,6 @@ type TestType struct {
 	Id   string `json:"id"`
 	Text string `json:"text"`
 	Num  int64  `json:"num"`
-}
-
-func (tt *TestType) GetType() string {
-	return "testtype"
 }
 
 func (tt *TestType) GetId() string {
