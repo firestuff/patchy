@@ -1,199 +1,191 @@
 package storebus
 
+import "bufio"
+import "bytes"
 import "context"
+import "encoding/json"
 import "fmt"
 import "io"
 import "net"
 import "net/http"
 import "os"
+import "strings"
 import "testing"
 
 import "github.com/go-resty/resty/v2"
 
 func TestAPICreate(t *testing.T) {
-  t.Parallel()
+	t.Parallel()
 
-  withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
-    created := &TestType{}
+	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
+		created := &TestType{}
 
-    _, err := c.R().
-    SetBody(&TestType{
-      Text: "foo",
-    }).
-    SetResult(created).
-    Post(fmt.Sprintf("%s/testtype", baseURL))
-    if err != nil {
-      t.Fatal(err)
-    }
+		_, err := c.R().
+			SetBody(&TestType{
+				Text: "foo",
+			}).
+			SetResult(created).
+			Post(fmt.Sprintf("%s/testtype", baseURL))
+		if err != nil {
+			t.Fatal(err)
+		}
 
-    if created.Text != "foo" {
-      t.Fatalf("%s", created.Text)
-    }
+		if created.Text != "foo" {
+			t.Fatalf("%s", created.Text)
+		}
 
-    if created.Id == "" {
-      t.Fatalf("empty Id")
-    }
+		if created.Id == "" {
+			t.Fatalf("empty Id")
+		}
 
-    read := &TestType{}
+		read := &TestType{}
 
-    _, err = c.R().
-    SetResult(read).
-    Get(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
-    if err != nil {
-      t.Fatal(err)
-    }
+		_, err = c.R().
+			SetResult(read).
+			Get(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+		if err != nil {
+			t.Fatal(err)
+		}
 
-    if read.Text != "foo" {
-      t.Fatalf("%s", read.Text)
-    }
+		if read.Text != "foo" {
+			t.Fatalf("%s", read.Text)
+		}
 
-    if read.Id != read.Id {
-      t.Fatalf("%s %s", read.Id, created.Id)
-    }
-  })
+		if read.Id != read.Id {
+			t.Fatalf("%s %s", read.Id, created.Id)
+		}
+	})
 }
 
 func TestAPIUpdate(t *testing.T) {
-  t.Parallel()
+	t.Parallel()
 
-  withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
-    created := &TestType{}
+	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
+		created := &TestType{}
 
-    _, err := c.R().
-    SetBody(&TestType{
-      Text: "foo",
-    }).
-    SetResult(created).
-    Post(fmt.Sprintf("%s/testtype", baseURL))
-    if err != nil {
-      t.Fatal(err)
-    }
+		_, err := c.R().
+			SetBody(&TestType{
+				Text: "foo",
+			}).
+			SetResult(created).
+			Post(fmt.Sprintf("%s/testtype", baseURL))
+		if err != nil {
+			t.Fatal(err)
+		}
 
-    if created.Text != "foo" {
-      t.Fatalf("%s", created.Text)
-    }
+		updated := &TestType{}
 
-    if created.Id == "" {
-      t.Fatalf("empty Id")
-    }
+		_, err = c.R().
+			SetBody(&TestType{
+				Text: "bar",
+			}).
+			SetResult(updated).
+			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+		if err != nil {
+			t.Fatal(err)
+		}
 
-    updated := &TestType{}
+		if updated.Text != "bar" {
+			t.Fatalf("%s", updated.Text)
+		}
 
-    _, err = c.R().
-    SetBody(&TestType{
-      Text: "bar",
-    }).
-    SetResult(updated).
-    Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
-    if err != nil {
-      t.Fatal(err)
-    }
+		if updated.Id != created.Id {
+			t.Fatalf("%s %s", updated.Id, created.Id)
+		}
 
-    if updated.Text != "bar" {
-      t.Fatalf("%s", updated.Text)
-    }
+		read := &TestType{}
 
-    if updated.Id != created.Id {
-      t.Fatalf("%s %s", updated.Id, created.Id)
-    }
+		_, err = c.R().
+			SetResult(read).
+			Get(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+		if err != nil {
+			t.Fatal(err)
+		}
 
-    read := &TestType{}
+		if read.Text != "bar" {
+			t.Fatalf("%s", read.Text)
+		}
 
-    _, err = c.R().
-    SetResult(read).
-    Get(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
-    if err != nil {
-      t.Fatal(err)
-    }
-
-    if read.Text != "bar" {
-      t.Fatalf("%s", read.Text)
-    }
-
-    if read.Id != read.Id {
-      t.Fatalf("%s %s", read.Id, created.Id)
-    }
-  })
+		if read.Id != read.Id {
+			t.Fatalf("%s %s", read.Id, created.Id)
+		}
+	})
 }
 
 func TestAPIStream(t *testing.T) {
-  t.Parallel()
+	t.Parallel()
 
-  withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
-    created := &TestType{}
+	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
+		created := &TestType{}
 
-    _, err := c.R().
-    SetBody(&TestType{
-      Text: "foo",
-    }).
-    SetResult(created).
-    Post(fmt.Sprintf("%s/testtype", baseURL))
-    if err != nil {
-      t.Fatal(err)
-    }
+		_, err := c.R().
+			SetBody(&TestType{
+				Text: "foo",
+			}).
+			SetResult(created).
+			Post(fmt.Sprintf("%s/testtype", baseURL))
+		if err != nil {
+			t.Fatal(err)
+		}
 
-    if created.Text != "foo" {
-      t.Fatalf("%s", created.Text)
-    }
+		resp, err := c.R().
+			SetDoNotParseResponse(true).
+			SetHeader("Accept", "text/event-stream").
+			Get(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+		if err != nil {
+			t.Fatal(err)
+		}
+		body := resp.RawBody()
+		defer body.Close()
 
-    if created.Id == "" {
-      t.Fatalf("empty Id")
-    }
+		scan := bufio.NewScanner(body)
 
-    resp, err := c.R().
-    SetDoNotParseResponse(true).
-    SetHeader("Accept", "text/event-stream").
-    Get(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
-    if err != nil {
-      t.Fatal(err)
-    }
-    body := resp.RawBody()
-    defer body.Close()
+		initial := &TestType{}
+		eventType, err := readEvent(scan, initial)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-    // Initial event (saved object)
-    buf, err := readString(body)
+		if eventType != "testtype" {
+			t.Error(eventType)
+		}
 
-    if buf != fmt.Sprintf(`event: testtype
-data: {"id":"%s","text":"foo"}
+		if initial.Text != "foo" {
+			t.Error(initial)
+		}
 
-`, created.Id) {
-      t.Fatalf("%s", buf)
-    }
+		// Heartbeat (after 5 seconds)
+		eventType, err = readEvent(scan, nil)
 
-    // Heartbeat (after 5 seconds)
-    buf, err = readString(body)
+		if eventType != "heartbeat" {
+			t.Error(eventType)
+		}
 
-    if buf != `event: heartbeat
-data: {}
+		updated := &TestType{}
 
-` {
-      t.Fatalf("%s", buf)
-    }
+		// Round trip PATCH -> SSE
+		_, err = c.R().
+			SetBody(&TestType{
+				Text: "bar",
+			}).
+			SetResult(updated).
+			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+		if err != nil {
+			t.Fatal(err)
+		}
 
-    updated := &TestType{}
+		eventType, err = readEvent(scan, updated)
 
-    // Round trip PATCH -> SSE
-    _, err = c.R().
-    SetBody(&TestType{
-      Text: "bar",
-    }).
-    SetResult(updated).
-    Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
-    if err != nil {
-      t.Fatal(err)
-    }
+		if eventType != "testtype" {
+			t.Error(eventType)
+		}
 
-    buf, err = readString(body)
+		if updated.Text != "bar" {
+			t.Error(eventType)
+		}
 
-    if buf != fmt.Sprintf(`event: testtype
-data: {"id":"%s","text":"bar"}
-
-`, created.Id) {
-      t.Fatalf("%s", buf)
-    }
-
-    body.Close()
-  })
+		body.Close()
+	})
 }
 
 func withAPI(t *testing.T, cb func(*testing.T, *API, string, *resty.Client)) {
@@ -234,9 +226,42 @@ func withAPI(t *testing.T, cb func(*testing.T, *API, string, *resty.Client)) {
 	c := resty.New().
 		SetHeader("Content-Type", "application/json")
 
-  cb(t, api, baseURL, c)
+	cb(t, api, baseURL, c)
 
 	srv.Shutdown(context.Background())
+}
+
+func readEvent(scan *bufio.Scanner, out interface{}) (string, error) {
+	eventType := ""
+	data := [][]byte{}
+
+	for scan.Scan() {
+		line := scan.Text()
+
+		switch {
+
+		case strings.HasPrefix(line, ":"):
+			continue
+
+		case strings.HasPrefix(line, "event: "):
+			eventType = strings.TrimPrefix(line, "event: ")
+
+		case strings.HasPrefix(line, "data: "):
+			data = append(data, bytes.TrimPrefix(scan.Bytes(), []byte("data: ")))
+
+		case line == "":
+			var err error
+
+			if out != nil {
+				err = json.Unmarshal(bytes.Join(data, []byte("\n")), out)
+			}
+
+			return eventType, err
+
+		}
+	}
+
+	return "", io.EOF
 }
 
 func readString(r io.Reader) (string, error) {

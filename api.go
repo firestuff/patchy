@@ -175,6 +175,8 @@ func (api *API) stream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO: Fix race if the object is written between Read() and Subscribe()
+
 	closeChan := w.(http.CloseNotifier).CloseNotify()
 	objChan := api.sb.Subscribe(obj)
 	ticker := time.NewTicker(5 * time.Second)
