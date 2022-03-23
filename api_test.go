@@ -11,6 +11,7 @@ import "net/http"
 import "os"
 import "strings"
 import "testing"
+import "time"
 
 import "github.com/go-resty/resty/v2"
 
@@ -188,6 +189,100 @@ func TestAPIStream(t *testing.T) {
 	})
 }
 
+func TestAPIStreamRace(t *testing.T) {
+	t.Parallel()
+
+	// Check that Subscribe always gets its first and second events in order
+	// and without gaps
+
+	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
+		created := &TestType{}
+
+		_, err := c.R().
+			SetBody(&TestType{
+				Num: 1,
+			}).
+			SetResult(created).
+			Post(fmt.Sprintf("%s/testtype", baseURL))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		quitUpdate := make(chan bool)
+		quitStream := make(chan bool)
+
+		go func() {
+			for {
+				select {
+				case <-quitUpdate:
+					break
+				default:
+					created.Num++
+
+					_, err = c.R().
+						SetBody(created).
+						Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+					if err != nil {
+						t.Fatal(err)
+					}
+				}
+			}
+		}()
+
+		go func() {
+			for {
+				select {
+				case <-quitStream:
+					break
+				default:
+					resp, err := c.R().
+						SetDoNotParseResponse(true).
+						SetHeader("Accept", "text/event-stream").
+						Get(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+					if err != nil {
+						t.Fatal(err)
+					}
+					body := resp.RawBody()
+					defer body.Close()
+
+					scan := bufio.NewScanner(body)
+
+					first := &TestType{}
+					eventType, err := readEvent(scan, first)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if eventType != "testtype" {
+						t.Fatal(eventType)
+					}
+
+					second := &TestType{}
+					eventType, err = readEvent(scan, second)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if eventType != "testtype" {
+						t.Fatal(eventType)
+					}
+
+					if second.Num != first.Num+1 {
+						t.Fatalf("%+v %+v", first, second)
+					}
+
+					body.Close()
+				}
+			}
+		}()
+
+		time.Sleep(5 * time.Second)
+		close(quitStream)
+		time.Sleep(1 * time.Second)
+		close(quitUpdate)
+	})
+}
+
 func withAPI(t *testing.T, cb func(*testing.T, *API, string, *resty.Client)) {
 	dir, err := os.MkdirTemp("", "")
 	if err != nil {
@@ -269,6 +364,7 @@ func readEvent(scan *bufio.Scanner, out interface{}) (string, error) {
 type TestType struct {
 	Id   string `json:"id"`
 	Text string `json:"text"`
+	Num  int64  `json:"num"`
 }
 
 func (tt *TestType) GetType() string {
@@ -293,6 +389,10 @@ func update(obj Object, patch Object) error {
 
 	if p.Text != "" {
 		o.Text = p.Text
+	}
+
+	if p.Num != 0 {
+		o.Num = p.Num
 	}
 
 	return nil
