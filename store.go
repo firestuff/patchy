@@ -51,6 +51,12 @@ func (s *Store) Write(obj Object) error {
 	return nil
 }
 
+func (s *Store) Delete(obj Object) error {
+	dir := filepath.Join(s.root, obj.GetType())
+	filename := ObjectSafeId(obj)
+	return os.Remove(filepath.Join(dir, filename))
+}
+
 func (s *Store) Read(obj Object) error {
 	dir := filepath.Join(s.root, obj.GetType())
 	filename := ObjectSafeId(obj)
