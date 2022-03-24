@@ -1,4 +1,4 @@
-package patchy
+package storebus
 
 import "github.com/firestuff/patchy/bus"
 import "github.com/firestuff/patchy/store"
