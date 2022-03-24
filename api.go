@@ -10,10 +10,11 @@ import "github.com/google/uuid"
 import "github.com/gorilla/mux"
 
 import "github.com/firestuff/patchy/metadata"
+import "github.com/firestuff/patchy/storebus"
 
 type API struct {
 	router *mux.Router
-	sb     *StoreBus
+	sb     *storebus.StoreBus
 }
 
 type APIConfig struct {
@@ -31,7 +32,7 @@ type APIConfig struct {
 func NewAPI(root string, configs map[string]*APIConfig) (*API, error) {
 	api := &API{
 		router: mux.NewRouter(),
-		sb:     NewStoreBus(root),
+		sb:     storebus.NewStoreBus(root),
 	}
 
 	for t, config := range configs {

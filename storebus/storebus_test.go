@@ -1,4 +1,4 @@
-package patchy
+package storebus
 
 import "os"
 import "testing"
