@@ -3,6 +3,8 @@ package patchy
 import "os"
 import "testing"
 
+import "github.com/firestuff/patchy/metadata"
+
 func TestStoreBus(t *testing.T) {
 	t.Parallel()
 
@@ -15,7 +17,7 @@ func TestStoreBus(t *testing.T) {
 	sb := NewStoreBus(dir)
 
 	err = sb.Write("storeBusTest", &storeBusTest{
-		Metadata: Metadata{
+		Metadata: metadata.Metadata{
 			Id: "id1",
 		},
 		Opaque: "foo",
@@ -25,7 +27,7 @@ func TestStoreBus(t *testing.T) {
 	}
 
 	out1 := &storeBusTest{
-		Metadata: Metadata{
+		Metadata: metadata.Metadata{
 			Id: "id1",
 		},
 	}
@@ -40,13 +42,13 @@ func TestStoreBus(t *testing.T) {
 	}
 
 	ch := sb.Subscribe("storeBusTest", &storeBusTest{
-		Metadata: Metadata{
+		Metadata: metadata.Metadata{
 			Id: "id1",
 		},
 	})
 
 	sb.Write("storeBusTest", &storeBusTest{
-		Metadata: Metadata{
+		Metadata: metadata.Metadata{
 			Id: "id1",
 		},
 		Opaque: "bar",
@@ -70,13 +72,13 @@ func TestStoreBusDelete(t *testing.T) {
 	sb := NewStoreBus(dir)
 
 	ch := sb.Subscribe("storeBusTest", &storeBusTest{
-		Metadata: Metadata{
+		Metadata: metadata.Metadata{
 			Id: "id1",
 		},
 	})
 
 	sb.Write("storeBusTest", &storeBusTest{
-		Metadata: Metadata{
+		Metadata: metadata.Metadata{
 			Id: "id1",
 		},
 		Opaque: "foo",
@@ -88,7 +90,7 @@ func TestStoreBusDelete(t *testing.T) {
 	}
 
 	sb.Delete("storeBusTest", &storeBusTest{
-		Metadata: Metadata{
+		Metadata: metadata.Metadata{
 			Id: "id1",
 		},
 	})
@@ -100,6 +102,6 @@ func TestStoreBusDelete(t *testing.T) {
 }
 
 type storeBusTest struct {
-	Metadata
+	metadata.Metadata
 	Opaque string
 }

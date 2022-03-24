@@ -9,6 +9,8 @@ import "time"
 import "github.com/google/uuid"
 import "github.com/gorilla/mux"
 
+import "github.com/firestuff/patchy/metadata"
+
 type API struct {
 	router *mux.Router
 	sb     *StoreBus
@@ -92,7 +94,7 @@ func (api *API) create(t string, config *APIConfig, w http.ResponseWriter, r *ht
 		return
 	}
 
-	getMetadata(obj).Id = uuid.NewString()
+	metadata.GetMetadata(obj).Id = uuid.NewString()
 
 	err = config.MayCreate(obj, r)
 	if err != nil {
@@ -122,7 +124,7 @@ func (api *API) update(t string, config *APIConfig, w http.ResponseWriter, r *ht
 		return
 	}
 
-	getMetadata(obj).Id = vars["id"]
+	metadata.GetMetadata(obj).Id = vars["id"]
 
 	config.mu.Lock()
 	defer config.mu.Unlock()
@@ -146,7 +148,7 @@ func (api *API) update(t string, config *APIConfig, w http.ResponseWriter, r *ht
 	}
 
 	// Metadata is immutable or server-owned
-	clearMetadata(patch)
+	metadata.ClearMetadata(patch)
 
 	err = config.MayUpdate(obj, patch, r)
 	if err != nil {
@@ -182,7 +184,7 @@ func (api *API) del(t string, config *APIConfig, w http.ResponseWriter, r *http.
 		return
 	}
 
-	getMetadata(obj).Id = vars["id"]
+	metadata.GetMetadata(obj).Id = vars["id"]
 
 	config.mu.Lock()
 	defer config.mu.Unlock()
@@ -224,7 +226,7 @@ func (api *API) stream(t string, config *APIConfig, w http.ResponseWriter, r *ht
 		return
 	}
 
-	getMetadata(obj).Id = vars["id"]
+	metadata.GetMetadata(obj).Id = vars["id"]
 
 	config.mu.RLock()
 	// THIS LOCK REQUIRES MANUAL UNLOCKING IN ALL BRANCHES
@@ -291,7 +293,7 @@ func (api *API) read(t string, config *APIConfig, w http.ResponseWriter, r *http
 		return
 	}
 
-	getMetadata(obj).Id = vars["id"]
+	metadata.GetMetadata(obj).Id = vars["id"]
 
 	err = api.sb.Read(t, obj)
 	if err != nil {

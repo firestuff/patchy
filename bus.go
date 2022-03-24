@@ -2,6 +2,8 @@ package patchy
 
 import "sync"
 
+import "github.com/firestuff/patchy/metadata"
+
 type Bus struct {
 	mu    sync.Mutex
 	chans map[string][]chan interface{}
@@ -14,7 +16,7 @@ func NewBus() *Bus {
 }
 
 func (b *Bus) Announce(t string, obj interface{}) {
-	key := getMetadata(obj).getKey(t)
+	key := metadata.GetMetadata(obj).GetKey(t)
 
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -37,7 +39,7 @@ func (b *Bus) Announce(t string, obj interface{}) {
 }
 
 func (b *Bus) Delete(t string, obj interface{}) {
-	key := getMetadata(obj).getKey(t)
+	key := metadata.GetMetadata(obj).GetKey(t)
 
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -51,7 +53,7 @@ func (b *Bus) Delete(t string, obj interface{}) {
 }
 
 func (b *Bus) Subscribe(t string, obj interface{}) chan interface{} {
-	key := getMetadata(obj).getKey(t)
+	key := metadata.GetMetadata(obj).GetKey(t)
 
 	b.mu.Lock()
 	defer b.mu.Unlock()
