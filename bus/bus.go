@@ -1,4 +1,4 @@
-package patchy
+package bus
 
 import "sync"
 
