@@ -1,0 +1,3 @@
+#!/bin/bash -ex
+
+go test -timeout=7s -parallel=10 ./...
