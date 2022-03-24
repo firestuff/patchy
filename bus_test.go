@@ -1,4 +1,4 @@
-package storebus
+package patchy
 
 import "testing"
 
