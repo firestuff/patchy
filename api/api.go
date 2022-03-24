@@ -1,9 +1,7 @@
 package api
 
-import "encoding/json"
 import "fmt"
 import "net/http"
-import "sync"
 import "time"
 
 import "github.com/google/uuid"
@@ -15,18 +13,6 @@ import "github.com/firestuff/patchy/storebus"
 type API struct {
 	router *mux.Router
 	sb     *storebus.StoreBus
-}
-
-type APIConfig struct {
-	Factory func() (interface{}, error)
-	Update  func(interface{}, interface{}) error
-
-	MayCreate func(interface{}, *http.Request) error
-	MayUpdate func(interface{}, interface{}, *http.Request) error
-	MayDelete func(interface{}, *http.Request) error
-	MayRead   func(interface{}, *http.Request) error
-
-	mu sync.RWMutex
 }
 
 func NewAPI(root string, configs map[string]*APIConfig) (*API, error) {
@@ -313,66 +299,4 @@ func (api *API) read(t string, config *APIConfig, w http.ResponseWriter, r *http
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-}
-
-func readJson(r *http.Request, obj interface{}) error {
-	dec := json.NewDecoder(r.Body)
-	dec.DisallowUnknownFields()
-	return dec.Decode(obj)
-}
-
-func writeJson(w http.ResponseWriter, obj interface{}) error {
-	w.Header().Set("Content-Type", "application/json")
-	enc := json.NewEncoder(w)
-	return enc.Encode(obj)
-}
-
-func writeUpdate(w http.ResponseWriter, obj interface{}) error {
-	data, err := json.Marshal(obj)
-	if err != nil {
-		return fmt.Errorf("Failed to encode JSON: %s", err)
-	}
-
-	fmt.Fprintf(w, "event: update\ndata: %s\n\n", data)
-	w.(http.Flusher).Flush()
-
-	return nil
-}
-
-func writeDelete(w http.ResponseWriter) {
-	fmt.Fprintf(w, "event: delete\ndata: {}\n\n")
-	w.(http.Flusher).Flush()
-}
-
-func writeHeartbeat(w http.ResponseWriter) {
-	fmt.Fprintf(w, "event: heartbeat\ndata: {}\n\n")
-	w.(http.Flusher).Flush()
-}
-
-func (conf *APIConfig) validate() error {
-	if conf.Factory == nil {
-		return fmt.Errorf("APIConfig.Factory must be set")
-	}
-
-	if conf.Update == nil {
-		return fmt.Errorf("APIConfig.Update must be set")
-	}
-
-	if conf.MayCreate == nil {
-		return fmt.Errorf("APIConfig.MayCreate must be set")
-	}
-
-	if conf.MayUpdate == nil {
-		return fmt.Errorf("APIConfig.MayUpdate must be set")
-	}
-
-	if conf.MayDelete == nil {
-		return fmt.Errorf("APIConfig.MayDelete must be set")
-	}
-
-	if conf.MayRead == nil {
-		return fmt.Errorf("APIConfig.MayRead must be set")
-	}
-
-	return nil
 }
