@@ -1,4 +1,4 @@
-package patchy
+package store
 
 import "encoding/json"
 import "fmt"

@@ -1,13 +1,15 @@
 package patchy
 
+import "github.com/firestuff/patchy/store"
+
 type StoreBus struct {
-	store *Store
+	store *store.Store
 	bus   *Bus
 }
 
 func NewStoreBus(root string) *StoreBus {
 	return &StoreBus{
-		store: NewStore(root),
+		store: store.NewStore(root),
 		bus:   NewBus(),
 	}
 }
