@@ -3,6 +3,8 @@ package patchy
 import "os"
 import "testing"
 
+import "github.com/firestuff/patchy/metadata"
+
 func TestStore(t *testing.T) {
 	t.Parallel()
 
@@ -15,7 +17,7 @@ func TestStore(t *testing.T) {
 	store := NewStore(dir)
 
 	err = store.Write("storeTest", &storeTest{
-		Metadata: Metadata{
+		Metadata: metadata.Metadata{
 			Id: "id1",
 		},
 		Opaque: "foo",
@@ -25,7 +27,7 @@ func TestStore(t *testing.T) {
 	}
 
 	err = store.Write("storeTest", &storeTest{
-		Metadata: Metadata{
+		Metadata: metadata.Metadata{
 			Id: "id2",
 		},
 		Opaque: "bar",
@@ -35,7 +37,7 @@ func TestStore(t *testing.T) {
 	}
 
 	out1 := &storeTest{
-		Metadata: Metadata{
+		Metadata: metadata.Metadata{
 			Id: "id1",
 		},
 	}
@@ -50,7 +52,7 @@ func TestStore(t *testing.T) {
 	}
 
 	out2 := &storeTest{
-		Metadata: Metadata{
+		Metadata: metadata.Metadata{
 			Id: "id2",
 		},
 	}
@@ -77,7 +79,7 @@ func TestStoreDelete(t *testing.T) {
 	store := NewStore(dir)
 
 	err = store.Write("storeTest", &storeTest{
-		Metadata: Metadata{
+		Metadata: metadata.Metadata{
 			Id: "id1",
 		},
 		Opaque: "foo",
@@ -87,7 +89,7 @@ func TestStoreDelete(t *testing.T) {
 	}
 
 	out1 := &storeTest{
-		Metadata: Metadata{
+		Metadata: metadata.Metadata{
 			Id: "id1",
 		},
 	}
@@ -102,7 +104,7 @@ func TestStoreDelete(t *testing.T) {
 	}
 
 	err = store.Delete("storeTest", &storeTest{
-		Metadata: Metadata{
+		Metadata: metadata.Metadata{
 			Id: "id1",
 		},
 	})
@@ -111,7 +113,7 @@ func TestStoreDelete(t *testing.T) {
 	}
 
 	err = store.Read("storeTest", &storeTest{
-		Metadata: Metadata{
+		Metadata: metadata.Metadata{
 			Id: "id1",
 		},
 	})
@@ -121,6 +123,6 @@ func TestStoreDelete(t *testing.T) {
 }
 
 type storeTest struct {
-	Metadata
+	metadata.Metadata
 	Opaque string
 }

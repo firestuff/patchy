@@ -15,6 +15,8 @@ import "time"
 
 import "github.com/go-resty/resty/v2"
 
+import "github.com/firestuff/patchy/metadata"
+
 func TestAPICreate(t *testing.T) {
 	t.Parallel()
 
@@ -435,7 +437,7 @@ func readEvent(scan *bufio.Scanner, out interface{}) (string, error) {
 }
 
 type TestType struct {
-	Metadata
+	metadata.Metadata
 	Text string `json:"text"`
 	Num  int64  `json:"num"`
 }

@@ -2,6 +2,8 @@ package patchy
 
 import "testing"
 
+import "github.com/firestuff/patchy/metadata"
+
 func TestBus(t *testing.T) {
 	t.Parallel()
 
@@ -9,39 +11,39 @@ func TestBus(t *testing.T) {
 
 	// Announce with no subscribers
 	bus.Announce("busTest1", &busTest{
-		Metadata: Metadata{
+		Metadata: metadata.Metadata{
 			Id: "id-nosub",
 		},
 	})
 
 	// Complex subscription layout
 	ch1a := bus.Subscribe("busTest1", &busTest{
-		Metadata: Metadata{
+		Metadata: metadata.Metadata{
 			Id: "id-overlap",
 		},
 	})
 
 	ch2a := bus.Subscribe("busTest2", &busTest{
-		Metadata: Metadata{
+		Metadata: metadata.Metadata{
 			Id: "id-overlap",
 		},
 	})
 
 	ch2b := bus.Subscribe("busTest2", &busTest{
-		Metadata: Metadata{
+		Metadata: metadata.Metadata{
 			Id: "id-dupe",
 		},
 	})
 
 	ch2c := bus.Subscribe("busTest2", &busTest{
-		Metadata: Metadata{
+		Metadata: metadata.Metadata{
 			Id: "id-dupe",
 		},
 	})
 
 	// Overlapping IDs but not types
 	bus.Announce("busTest1", &busTest{
-		Metadata: Metadata{
+		Metadata: metadata.Metadata{
 			Id: "id-overlap",
 		},
 	})
@@ -58,7 +60,7 @@ func TestBus(t *testing.T) {
 	}
 
 	bus.Announce("busTest2", &busTest{
-		Metadata: Metadata{
+		Metadata: metadata.Metadata{
 			Id: "id-overlap",
 		},
 	})
@@ -75,7 +77,7 @@ func TestBus(t *testing.T) {
 	}
 
 	bus.Announce("busTest2", &busTest{
-		Metadata: Metadata{
+		Metadata: metadata.Metadata{
 			Id: "id-dupe",
 		},
 	})
@@ -97,13 +99,13 @@ func TestBusDelete(t *testing.T) {
 	bus := NewBus()
 
 	ch := bus.Subscribe("busTest", &busTest{
-		Metadata: Metadata{
+		Metadata: metadata.Metadata{
 			Id: "id1",
 		},
 	})
 
 	bus.Announce("busTest", &busTest{
-		Metadata: Metadata{
+		Metadata: metadata.Metadata{
 			Id: "id1",
 		},
 	})
@@ -114,7 +116,7 @@ func TestBusDelete(t *testing.T) {
 	}
 
 	bus.Delete("busTest", &busTest{
-		Metadata: Metadata{
+		Metadata: metadata.Metadata{
 			Id: "id1",
 		},
 	})
@@ -126,5 +128,5 @@ func TestBusDelete(t *testing.T) {
 }
 
 type busTest struct {
-	Metadata
+	metadata.Metadata
 }

@@ -5,6 +5,8 @@ import "fmt"
 import "os"
 import "path/filepath"
 
+import "github.com/firestuff/patchy/metadata"
+
 type Store struct {
 	root string
 }
@@ -17,7 +19,7 @@ func NewStore(root string) *Store {
 
 func (s *Store) Write(t string, obj interface{}) error {
 	dir := filepath.Join(s.root, t)
-	filename := getMetadata(obj).getSafeId()
+	filename := metadata.GetMetadata(obj).GetSafeId()
 
 	err := os.MkdirAll(dir, 0700)
 	if err != nil {
@@ -53,13 +55,13 @@ func (s *Store) Write(t string, obj interface{}) error {
 
 func (s *Store) Delete(t string, obj interface{}) error {
 	dir := filepath.Join(s.root, t)
-	filename := getMetadata(obj).getSafeId()
+	filename := metadata.GetMetadata(obj).GetSafeId()
 	return os.Remove(filepath.Join(dir, filename))
 }
 
 func (s *Store) Read(t string, obj interface{}) error {
 	dir := filepath.Join(s.root, t)
-	filename := getMetadata(obj).getSafeId()
+	filename := metadata.GetMetadata(obj).GetSafeId()
 
 	fh, err := os.Open(filepath.Join(dir, filename))
 	if err != nil {
