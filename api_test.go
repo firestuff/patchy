@@ -1,4 +1,4 @@
-package storebus
+package patchy
 
 import "bufio"
 import "bytes"

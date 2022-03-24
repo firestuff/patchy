@@ -1,4 +1,4 @@
-module github.com/firestuff/storebus
+module github.com/firestuff/patchy
 
 go 1.16
 

@@ -1,4 +1,4 @@
-package storebus
+package patchy
 
 type StoreBus struct {
 	store *Store
