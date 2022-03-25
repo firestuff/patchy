@@ -278,9 +278,9 @@ func TestAPIStreamRace(t *testing.T) {
 		}
 
 		quitUpdate := make(chan bool)
-		doneUpdate := make(chan bool)
+		doneUpdate := make(chan error)
 		quitStream := make(chan bool)
-		doneStream := make(chan bool)
+		doneStream := make(chan error)
 
 		go func() {
 			for {
@@ -291,11 +291,12 @@ func TestAPIStreamRace(t *testing.T) {
 				default:
 					created.Num++
 
-					_, err = c.R().
+					_, err := c.R().
 						SetBody(created).
 						Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
 					if err != nil {
-						t.Fatal(err)
+						doneUpdate <- err
+						return
 					}
 				}
 			}
@@ -313,7 +314,8 @@ func TestAPIStreamRace(t *testing.T) {
 						SetHeader("Accept", "text/event-stream").
 						Get(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
 					if err != nil {
-						t.Fatal(err)
+						doneStream <- err
+						return
 					}
 					body := resp.RawBody()
 					defer body.Close()
@@ -323,25 +325,30 @@ func TestAPIStreamRace(t *testing.T) {
 					first := &TestType{}
 					eventType, err := readEvent(scan, first)
 					if err != nil {
-						t.Fatal(err)
+						doneStream <- err
+						return
 					}
 
 					if eventType != "update" {
-						t.Fatal(eventType)
+						doneStream <- fmt.Errorf("update(1) != %s", eventType)
+						return
 					}
 
 					second := &TestType{}
 					eventType, err = readEvent(scan, second)
 					if err != nil {
-						t.Fatal(err)
+						doneStream <- err
+						return
 					}
 
 					if eventType != "update" {
-						t.Fatal(eventType)
+						doneStream <- fmt.Errorf("update(2) != %s", eventType)
+						return
 					}
 
 					if second.Num != first.Num+1 {
-						t.Fatalf("%+v %+v", first, second)
+						doneStream <- fmt.Errorf("%+v %+v", first, second)
+						return
 					}
 
 					body.Close()
@@ -350,10 +357,20 @@ func TestAPIStreamRace(t *testing.T) {
 		}()
 
 		time.Sleep(3 * time.Second)
+
 		close(quitStream)
-		<-doneStream
+
+		err = <-doneStream
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		close(quitUpdate)
-		<-doneUpdate
+
+		err = <-doneUpdate
+		if err != nil {
+			t.Fatal(err)
+		}
 	})
 }
 
