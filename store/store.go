@@ -17,7 +17,7 @@ func NewStore(root string) *Store {
 	}
 }
 
-func (s *Store) Write(t string, obj interface{}) error {
+func (s *Store) Write(t string, obj any) error {
 	dir := filepath.Join(s.root, t)
 	filename := metadata.GetMetadata(obj).GetSafeId()
 
@@ -53,13 +53,13 @@ func (s *Store) Write(t string, obj interface{}) error {
 	return nil
 }
 
-func (s *Store) Delete(t string, obj interface{}) error {
+func (s *Store) Delete(t string, obj any) error {
 	dir := filepath.Join(s.root, t)
 	filename := metadata.GetMetadata(obj).GetSafeId()
 	return os.Remove(filepath.Join(dir, filename))
 }
 
-func (s *Store) Read(t string, obj interface{}) error {
+func (s *Store) Read(t string, obj any) error {
 	dir := filepath.Join(s.root, t)
 	filename := metadata.GetMetadata(obj).GetSafeId()
 
