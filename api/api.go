@@ -15,53 +15,53 @@ type API struct {
 	sb     *storebus.StoreBus
 }
 
-func NewAPI(root string, configs map[string]*APIConfig) (*API, error) {
-	api := &API{
+func NewAPI(root string) (*API, error) {
+	return &API{
 		router: mux.NewRouter(),
 		sb:     storebus.NewStoreBus(root),
+	}, nil
+}
+
+func (api *API) Register(t string, config *APIConfig) error {
+	err := config.validate()
+	if err != nil {
+		return err
 	}
 
-	for t, config := range configs {
-		err := config.validate()
-		if err != nil {
-			return nil, err
-		}
+	api.router.HandleFunc(
+		fmt.Sprintf("/%s", t),
+		func(w http.ResponseWriter, r *http.Request) { api.create(t, config, w, r) },
+	).
+		Methods("POST").
+		Headers("Content-Type", "application/json")
 
-		api.router.HandleFunc(
-			fmt.Sprintf("/%s", t),
-			func(w http.ResponseWriter, r *http.Request) { api.create(t, config, w, r) },
-		).
-			Methods("POST").
-			Headers("Content-Type", "application/json")
+	api.router.HandleFunc(
+		fmt.Sprintf("/%s/{id}", t),
+		func(w http.ResponseWriter, r *http.Request) { api.update(t, config, w, r) },
+	).
+		Methods("PATCH").
+		Headers("Content-Type", "application/json")
 
-		api.router.HandleFunc(
-			fmt.Sprintf("/%s/{id}", t),
-			func(w http.ResponseWriter, r *http.Request) { api.update(t, config, w, r) },
-		).
-			Methods("PATCH").
-			Headers("Content-Type", "application/json")
+	api.router.HandleFunc(
+		fmt.Sprintf("/%s/{id}", t),
+		func(w http.ResponseWriter, r *http.Request) { api.del(t, config, w, r) },
+	).
+		Methods("DELETE")
 
-		api.router.HandleFunc(
-			fmt.Sprintf("/%s/{id}", t),
-			func(w http.ResponseWriter, r *http.Request) { api.del(t, config, w, r) },
-		).
-			Methods("DELETE")
+	api.router.HandleFunc(
+		fmt.Sprintf("/%s/{id}", t),
+		func(w http.ResponseWriter, r *http.Request) { api.stream(t, config, w, r) },
+	).
+		Methods("GET").
+		Headers("Accept", "text/event-stream")
 
-		api.router.HandleFunc(
-			fmt.Sprintf("/%s/{id}", t),
-			func(w http.ResponseWriter, r *http.Request) { api.stream(t, config, w, r) },
-		).
-			Methods("GET").
-			Headers("Accept", "text/event-stream")
+	api.router.HandleFunc(
+		fmt.Sprintf("/%s/{id}", t),
+		func(w http.ResponseWriter, r *http.Request) { api.read(t, config, w, r) },
+	).
+		Methods("GET")
 
-		api.router.HandleFunc(
-			fmt.Sprintf("/%s/{id}", t),
-			func(w http.ResponseWriter, r *http.Request) { api.read(t, config, w, r) },
-		).
-			Methods("GET")
-	}
-
-	return api, nil
+	return nil
 }
 
 func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
