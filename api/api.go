@@ -22,7 +22,9 @@ func NewAPI(root string) (*API, error) {
 	}, nil
 }
 
-func (api *API) Register(t string, config *APIConfig) error {
+func (api *API) Register(t string, getter ConfigGetter) error {
+	config := getter.Get()
+
 	err := config.validate()
 	if err != nil {
 		return err
@@ -68,7 +70,7 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	api.router.ServeHTTP(w, r)
 }
 
-func (api *API) create(t string, config *APIConfig, w http.ResponseWriter, r *http.Request) {
+func (api *API) create(t string, config *config, w http.ResponseWriter, r *http.Request) {
 	obj, err := config.Factory()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -102,7 +104,7 @@ func (api *API) create(t string, config *APIConfig, w http.ResponseWriter, r *ht
 	}
 }
 
-func (api *API) update(t string, config *APIConfig, w http.ResponseWriter, r *http.Request) {
+func (api *API) update(t string, config *config, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	obj, err := config.Factory()
@@ -162,7 +164,7 @@ func (api *API) update(t string, config *APIConfig, w http.ResponseWriter, r *ht
 	}
 }
 
-func (api *API) del(t string, config *APIConfig, w http.ResponseWriter, r *http.Request) {
+func (api *API) del(t string, config *config, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	obj, err := config.Factory()
@@ -195,7 +197,7 @@ func (api *API) del(t string, config *APIConfig, w http.ResponseWriter, r *http.
 	}
 }
 
-func (api *API) stream(t string, config *APIConfig, w http.ResponseWriter, r *http.Request) {
+func (api *API) stream(t string, config *config, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	_, ok := w.(http.Flusher)
@@ -271,7 +273,7 @@ func (api *API) stream(t string, config *APIConfig, w http.ResponseWriter, r *ht
 	}
 }
 
-func (api *API) read(t string, config *APIConfig, w http.ResponseWriter, r *http.Request) {
+func (api *API) read(t string, config *config, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	obj, err := config.Factory()
