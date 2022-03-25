@@ -25,15 +25,6 @@ func (m *Metadata) GetKey(t string) string {
 }
 
 func GetMetadataField(obj any) reflect.Value {
-	return maybeIndirect(obj).FieldByName("Metadata")
-}
-
-func maybeIndirect(obj any) reflect.Value {
 	v := reflect.ValueOf(obj)
-
-	if v.Kind() == reflect.Ptr {
-		v = reflect.Indirect(v)
-	}
-
-	return v
+	return reflect.Indirect(v).FieldByName("Metadata")
 }
