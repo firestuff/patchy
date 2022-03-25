@@ -386,7 +386,7 @@ func withAPI(t *testing.T, cb func(*testing.T, *API, string, *resty.Client)) {
 		t.Fatal(err)
 	}
 
-	err = api.Register("testtype", &APIConfig{
+	err = api.Register("testtype", Config[TestType]{
 		Factory:   factory,
 		MayCreate: mayCreate,
 		MayUpdate: mayUpdate,
@@ -461,22 +461,22 @@ type TestType struct {
 	Num  int64  `json:"num"`
 }
 
-func factory() (any, error) {
+func factory() (*TestType, error) {
 	return &TestType{}, nil
 }
 
-func mayCreate(obj any, r *http.Request) error {
+func mayCreate(obj *TestType, r *http.Request) error {
 	return nil
 }
 
-func mayUpdate(obj any, patch any, r *http.Request) error {
+func mayUpdate(obj *TestType, patch *TestType, r *http.Request) error {
 	return nil
 }
 
-func mayDelete(obj any, r *http.Request) error {
+func mayDelete(obj *TestType, r *http.Request) error {
 	return nil
 }
 
-func mayRead(obj any, r *http.Request) error {
+func mayRead(obj *TestType, r *http.Request) error {
 	return nil
 }
