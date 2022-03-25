@@ -4,6 +4,8 @@ import "fmt"
 import "net/http"
 import "sync"
 
+import "github.com/firestuff/patchy/metadata"
+
 type ConfigGetter interface {
 	Get() *config
 }
@@ -57,6 +59,15 @@ func (cfg *config) validate() error {
 
 	if cfg.MayRead == nil {
 		return fmt.Errorf("APIConfig.MayRead must be set")
+	}
+
+	obj, err := cfg.Factory()
+	if err != nil {
+		return err
+	}
+
+	if !metadata.GetMetadataField(obj).IsValid() {
+		return fmt.Errorf("Missing Metadata field")
 	}
 
 	return nil
