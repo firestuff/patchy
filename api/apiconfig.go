@@ -5,13 +5,13 @@ import "net/http"
 import "sync"
 
 type APIConfig struct {
-	Factory func() (interface{}, error)
-	Update  func(interface{}, interface{}) error
+	Factory func() (any, error)
+	Update  func(any, any) error
 
-	MayCreate func(interface{}, *http.Request) error
-	MayUpdate func(interface{}, interface{}, *http.Request) error
-	MayDelete func(interface{}, *http.Request) error
-	MayRead   func(interface{}, *http.Request) error
+	MayCreate func(any, *http.Request) error
+	MayUpdate func(any, any, *http.Request) error
+	MayDelete func(any, *http.Request) error
+	MayRead   func(any, *http.Request) error
 
 	mu sync.RWMutex
 }

@@ -4,7 +4,7 @@ import "encoding/json"
 import "fmt"
 import "net/http"
 
-func writeUpdate(w http.ResponseWriter, obj interface{}) error {
+func writeUpdate(w http.ResponseWriter, obj any) error {
 	data, err := json.Marshal(obj)
 	if err != nil {
 		return fmt.Errorf("Failed to encode JSON: %s", err)

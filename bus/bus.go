@@ -6,23 +6,23 @@ import "github.com/firestuff/patchy/metadata"
 
 type Bus struct {
 	mu    sync.Mutex
-	chans map[string][]chan interface{}
+	chans map[string][]chan any
 }
 
 func NewBus() *Bus {
 	return &Bus{
-		chans: map[string][]chan interface{}{},
+		chans: map[string][]chan any{},
 	}
 }
 
-func (b *Bus) Announce(t string, obj interface{}) {
+func (b *Bus) Announce(t string, obj any) {
 	key := metadata.GetMetadata(obj).GetKey(t)
 
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
 	chans := b.chans[key]
-	newChans := []chan interface{}{}
+	newChans := []chan any{}
 
 	for _, ch := range chans {
 		select {
@@ -38,7 +38,7 @@ func (b *Bus) Announce(t string, obj interface{}) {
 	}
 }
 
-func (b *Bus) Delete(t string, obj interface{}) {
+func (b *Bus) Delete(t string, obj any) {
 	key := metadata.GetMetadata(obj).GetKey(t)
 
 	b.mu.Lock()
@@ -52,13 +52,13 @@ func (b *Bus) Delete(t string, obj interface{}) {
 	delete(b.chans, key)
 }
 
-func (b *Bus) Subscribe(t string, obj interface{}) chan interface{} {
+func (b *Bus) Subscribe(t string, obj any) chan any {
 	key := metadata.GetMetadata(obj).GetKey(t)
 
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	ch := make(chan interface{}, 100)
+	ch := make(chan any, 100)
 
 	b.chans[key] = append(b.chans[key], ch)
 

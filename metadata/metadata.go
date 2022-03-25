@@ -8,11 +8,11 @@ type Metadata struct {
 	Id string `json:"id"`
 }
 
-func GetMetadata(obj interface{}) *Metadata {
+func GetMetadata(obj any) *Metadata {
 	return getMetadataField(obj).Addr().Interface().(*Metadata)
 }
 
-func ClearMetadata(obj interface{}) {
+func ClearMetadata(obj any) {
 	getMetadataField(obj).Set(reflect.ValueOf(Metadata{}))
 }
 
@@ -24,7 +24,7 @@ func (m *Metadata) GetKey(t string) string {
 	return fmt.Sprintf("%s:%s", t, m.GetSafeId())
 }
 
-func getMetadataField(obj interface{}) reflect.Value {
+func getMetadataField(obj any) reflect.Value {
 	v := maybeIndirect(obj)
 
 	m := v.FieldByName("Metadata")
@@ -35,7 +35,7 @@ func getMetadataField(obj interface{}) reflect.Value {
 	return m
 }
 
-func maybeIndirect(obj interface{}) reflect.Value {
+func maybeIndirect(obj any) reflect.Value {
 	v := reflect.ValueOf(obj)
 
 	if v.Kind() == reflect.Ptr {

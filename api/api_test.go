@@ -403,7 +403,7 @@ func withAPI(t *testing.T, cb func(*testing.T, *API, string, *resty.Client)) {
 	srv.Shutdown(context.Background())
 }
 
-func readEvent(scan *bufio.Scanner, out interface{}) (string, error) {
+func readEvent(scan *bufio.Scanner, out any) (string, error) {
 	eventType := ""
 	data := [][]byte{}
 
@@ -442,11 +442,11 @@ type TestType struct {
 	Num  int64  `json:"num"`
 }
 
-func factory() (interface{}, error) {
+func factory() (any, error) {
 	return &TestType{}, nil
 }
 
-func update(obj interface{}, patch interface{}) error {
+func update(obj any, patch any) error {
 	o := obj.(*TestType)
 	p := patch.(*TestType)
 
@@ -461,18 +461,18 @@ func update(obj interface{}, patch interface{}) error {
 	return nil
 }
 
-func mayCreate(obj interface{}, r *http.Request) error {
+func mayCreate(obj any, r *http.Request) error {
 	return nil
 }
 
-func mayUpdate(obj interface{}, patch interface{}, r *http.Request) error {
+func mayUpdate(obj any, patch any, r *http.Request) error {
 	return nil
 }
 
-func mayDelete(obj interface{}, r *http.Request) error {
+func mayDelete(obj any, r *http.Request) error {
 	return nil
 }
 
-func mayRead(obj interface{}, r *http.Request) error {
+func mayRead(obj any, r *http.Request) error {
 	return nil
 }
