@@ -6,7 +6,6 @@ import "sync"
 
 type APIConfig struct {
 	Factory func() (any, error)
-	Update  func(any, any) error
 
 	MayCreate func(any, *http.Request) error
 	MayUpdate func(any, any, *http.Request) error
@@ -19,10 +18,6 @@ type APIConfig struct {
 func (conf *APIConfig) validate() error {
 	if conf.Factory == nil {
 		return fmt.Errorf("APIConfig.Factory must be set")
-	}
-
-	if conf.Update == nil {
-		return fmt.Errorf("APIConfig.Update must be set")
 	}
 
 	if conf.MayCreate == nil {

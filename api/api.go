@@ -143,7 +143,7 @@ func (api *API) update(t string, config *APIConfig, w http.ResponseWriter, r *ht
 		return
 	}
 
-	err = config.Update(obj, patch)
+	err = merge(obj, patch)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
