@@ -381,14 +381,17 @@ func withAPI(t *testing.T, cb func(*testing.T, *API, string, *resty.Client)) {
 	}
 	defer os.RemoveAll(dir)
 
-	api, err := NewAPI(dir, map[string]*APIConfig{
-		"testtype": &APIConfig{
-			Factory:   factory,
-			MayCreate: mayCreate,
-			MayUpdate: mayUpdate,
-			MayDelete: mayDelete,
-			MayRead:   mayRead,
-		},
+	api, err := NewAPI(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = api.Register("testtype", &APIConfig{
+		Factory:   factory,
+		MayCreate: mayCreate,
+		MayUpdate: mayUpdate,
+		MayDelete: mayDelete,
+		MayRead:   mayRead,
 	})
 	if err != nil {
 		t.Fatal(err)
