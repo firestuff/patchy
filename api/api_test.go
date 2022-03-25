@@ -384,7 +384,6 @@ func withAPI(t *testing.T, cb func(*testing.T, *API, string, *resty.Client)) {
 	api, err := NewAPI(dir, map[string]*APIConfig{
 		"testtype": &APIConfig{
 			Factory:   factory,
-			Update:    update,
 			MayCreate: mayCreate,
 			MayUpdate: mayUpdate,
 			MayDelete: mayDelete,
@@ -461,21 +460,6 @@ type TestType struct {
 
 func factory() (any, error) {
 	return &TestType{}, nil
-}
-
-func update(obj any, patch any) error {
-	o := obj.(*TestType)
-	p := patch.(*TestType)
-
-	if p.Text != "" {
-		o.Text = p.Text
-	}
-
-	if p.Num != 0 {
-		o.Num = p.Num
-	}
-
-	return nil
 }
 
 func mayCreate(obj any, r *http.Request) error {

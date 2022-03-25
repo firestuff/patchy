@@ -1,4 +1,6 @@
 #!/bin/bash -ex
 
+cd $(dirname $0)
+
 go vet ./...
 go test -race -cover -timeout=7s -parallel=10 ./...
