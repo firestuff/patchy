@@ -9,11 +9,11 @@ type Metadata struct {
 }
 
 func GetMetadata(obj any) *Metadata {
-	return GetMetadataField(obj).Addr().Interface().(*Metadata)
+	return getMetadataField(obj).Addr().Interface().(*Metadata)
 }
 
 func ClearMetadata(obj any) {
-	GetMetadataField(obj).Set(reflect.ValueOf(Metadata{}))
+	getMetadataField(obj).Set(reflect.ValueOf(Metadata{}))
 }
 
 func (m *Metadata) GetSafeId() string {
@@ -24,7 +24,7 @@ func (m *Metadata) GetKey(t string) string {
 	return fmt.Sprintf("%s:%s", t, m.GetSafeId())
 }
 
-func GetMetadataField(obj any) reflect.Value {
+func getMetadataField(obj any) reflect.Value {
 	v := reflect.ValueOf(obj)
 	return reflect.Indirect(v).FieldByName("Metadata")
 }
