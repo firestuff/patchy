@@ -155,6 +155,14 @@ func (api *API) update(t string, cfg *config, w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	ifMatch := r.Header.Get("If-Match")
+	if ifMatch != "" {
+		if ifMatch != fmt.Sprintf(`"%s"`, metadata.GetMetadata(obj).Sha256) {
+			http.Error(w, fmt.Sprintf("If-Match mismatch"), http.StatusPreconditionFailed)
+			return
+		}
+	}
+
 	patch := cfg.Factory()
 
 	err = readJson(r, patch)

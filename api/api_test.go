@@ -376,8 +376,6 @@ func TestAPIStreamRace(t *testing.T) {
 }
 
 func TestAPIMayCreate(t *testing.T) {
-	t.Parallel()
-
 	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
 		Register[FlagType](api, "flagtype", func() *FlagType { return &FlagType{} })
 
@@ -420,8 +418,6 @@ func TestAPIMayCreate(t *testing.T) {
 }
 
 func TestAPIMayUpdate(t *testing.T) {
-	t.Parallel()
-
 	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
 		Register[FlagType](api, "flagtype", func() *FlagType { return &FlagType{} })
 
@@ -453,7 +449,7 @@ func TestAPIMayUpdate(t *testing.T) {
 			t.Fatal(err)
 		}
 		if resp.IsError() {
-			t.Fatal(resp.Error())
+			t.Fatal(resp)
 		}
 
 		flagMu.Lock()
@@ -474,8 +470,6 @@ func TestAPIMayUpdate(t *testing.T) {
 }
 
 func TestAPIMayDelete(t *testing.T) {
-	t.Parallel()
-
 	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
 		Register[FlagType](api, "flagtype", func() *FlagType { return &FlagType{} })
 
@@ -516,14 +510,12 @@ func TestAPIMayDelete(t *testing.T) {
 			t.Fatal(err)
 		}
 		if resp.IsError() {
-			t.Fatal(resp.Error())
+			t.Fatal(resp)
 		}
 	})
 }
 
 func TestAPIMayRead(t *testing.T) {
-	t.Parallel()
-
 	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
 		Register[FlagType](api, "flagtype", func() *FlagType { return &FlagType{} })
 
@@ -554,7 +546,7 @@ func TestAPIMayRead(t *testing.T) {
 			t.Fatal(err)
 		}
 		if resp.IsError() {
-			t.Fatal(resp.Error())
+			t.Fatal(resp)
 		}
 
 		resp, err = c.R().
@@ -565,7 +557,7 @@ func TestAPIMayRead(t *testing.T) {
 			t.Fatal(err)
 		}
 		if resp.IsError() {
-			t.Fatal(resp.Error())
+			t.Fatal(resp)
 		}
 		resp.RawBody().Close()
 
@@ -592,6 +584,67 @@ func TestAPIMayRead(t *testing.T) {
 		}
 		if !resp.IsError() {
 			t.Fatal("improper success")
+		}
+	})
+}
+
+func TestAPIETag(t *testing.T) {
+	t.Parallel()
+
+	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
+		created := &TestType{}
+
+		resp, err := c.R().
+			SetBody(&TestType{
+				Text: "foo",
+			}).
+			SetResult(created).
+			Post(fmt.Sprintf("%s/testtype", baseURL))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		etag := resp.Header().Get("ETag")
+		if etag != fmt.Sprintf(`"%s"`, created.Sha256) {
+			t.Fatalf("%s vs %+v", etag, created)
+		}
+
+		updated := &TestType{}
+
+		resp, err = c.R().
+			SetBody(&TestType{
+				Text: "bar",
+			}).
+			SetResult(updated).
+			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		etag = resp.Header().Get("ETag")
+		if etag != fmt.Sprintf(`"%s"`, updated.Sha256) {
+			t.Fatalf("%s vs %+v", etag, updated)
+		}
+
+		if updated.Sha256 == created.Sha256 {
+			t.Fatalf("sha256 unchanged")
+		}
+
+		resp, err = c.R().
+			SetHeader("If-Match", `"foobar"`).
+			SetBody(&TestType{
+				Text: "zig",
+			}).
+			SetResult(updated).
+			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !resp.IsError() {
+			t.Fatal("improper success")
+		}
+		if resp.StatusCode() != 412 {
+			t.Fatal(resp.StatusCode())
 		}
 	})
 }

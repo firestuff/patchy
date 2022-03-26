@@ -1,7 +1,10 @@
 package api
 
 import "encoding/json"
+import "fmt"
 import "net/http"
+
+import "github.com/firestuff/patchy/metadata"
 
 func readJson(r *http.Request, obj any) error {
 	dec := json.NewDecoder(r.Body)
@@ -10,7 +13,11 @@ func readJson(r *http.Request, obj any) error {
 }
 
 func writeJson(w http.ResponseWriter, obj any) error {
+	m := metadata.GetMetadata(obj)
+
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("ETag", fmt.Sprintf(`"%s"`, m.Sha256))
+
 	enc := json.NewEncoder(w)
 	return enc.Encode(obj)
 }
