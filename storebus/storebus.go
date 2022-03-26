@@ -1,6 +1,11 @@
 package storebus
 
+import "crypto/sha256"
+import "encoding/hex"
+import "encoding/json"
+
 import "github.com/firestuff/patchy/bus"
+import "github.com/firestuff/patchy/metadata"
 import "github.com/firestuff/patchy/store"
 
 type StoreBus struct {
@@ -16,7 +21,12 @@ func NewStoreBus(root string) *StoreBus {
 }
 
 func (sb *StoreBus) Write(t string, obj interface{}) error {
-	err := sb.store.Write(t, obj)
+	err := updateHash(obj)
+	if err != nil {
+		return err
+	}
+
+	err = sb.store.Write(t, obj)
 	if err != nil {
 		return err
 	}
@@ -43,4 +53,21 @@ func (sb *StoreBus) Read(t string, obj interface{}) error {
 
 func (sb *StoreBus) Subscribe(t string, obj interface{}) chan interface{} {
 	return sb.bus.Subscribe(t, obj)
+}
+
+func updateHash(obj interface{}) error {
+	m := metadata.GetMetadata(obj)
+	m.Sha256 = ""
+
+	hash := sha256.New()
+	enc := json.NewEncoder(hash)
+
+	err := enc.Encode(obj)
+	if err != nil {
+		return err
+	}
+
+	m.Sha256 = hex.EncodeToString(hash.Sum(nil))
+
+	return nil
 }

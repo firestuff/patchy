@@ -41,6 +41,10 @@ func TestStoreBus(t *testing.T) {
 		t.Errorf("%+v", out1)
 	}
 
+	if out1.Sha256 != "5d6f98d2ff3b70bcd32c4ac16625c20456c97d8f16c7cbb21c36514268933ec5" {
+		t.Errorf("%+v", out1)
+	}
+
 	ch := sb.Subscribe("storeBusTest", &storeBusTest{
 		Metadata: metadata.Metadata{
 			Id: "id1",
@@ -55,7 +59,12 @@ func TestStoreBus(t *testing.T) {
 	})
 
 	out3 := (<-ch).(*storeBusTest)
+
 	if out3.Opaque != "bar" {
+		t.Errorf("%+v", out3)
+	}
+
+	if out3.Sha256 != "e17f86cb37e9af977b4345fa542096d8974237bdad2c59e0be5d3975dffdc42e" {
 		t.Errorf("%+v", out3)
 	}
 }
