@@ -5,7 +5,8 @@ import "fmt"
 import "reflect"
 
 type Metadata struct {
-	Id string `json:"id"`
+	Id     string `json:"id"`
+	Sha256 string `json:"sha256"`
 }
 
 func GetMetadata(obj any) *Metadata {
