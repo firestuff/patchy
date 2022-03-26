@@ -22,44 +22,88 @@ func NewAPI(root string) (*API, error) {
 	}, nil
 }
 
-func (api *API) Register(t string, getter ConfigGetter) error {
-	config := getter.Get()
+type mayCreate interface {
+	MayCreate(*http.Request) error
+}
 
-	err := config.validate()
+type mayUpdate[T any] interface {
+	MayUpdate(*T, *http.Request) error
+}
+
+type mayDelete interface {
+	MayDelete(*http.Request) error
+}
+
+type mayRead interface {
+	MayRead(*http.Request) error
+}
+
+func Register[T any](api *API, t string, factory func() *T) error {
+	cfg := &config{
+		Factory: func() any { return factory() },
+	}
+
+	obj := factory()
+
+	if _, has := any(obj).(mayCreate); has {
+		cfg.MayCreate = func(obj any, r *http.Request) error {
+			return obj.(mayCreate).MayCreate(r)
+		}
+	}
+
+	if _, found := any(obj).(mayUpdate[T]); found {
+		cfg.MayUpdate = func(obj any, patch any, r *http.Request) error {
+			return obj.(mayUpdate[T]).MayUpdate(patch.(*T), r)
+		}
+	}
+
+	if _, has := any(obj).(mayDelete); has {
+		cfg.MayDelete = func(obj any, r *http.Request) error {
+			return obj.(mayDelete).MayDelete(r)
+		}
+	}
+
+	if _, has := any(obj).(mayRead); has {
+		cfg.MayRead = func(obj any, r *http.Request) error {
+			return obj.(mayRead).MayRead(r)
+		}
+	}
+
+	err := cfg.validate()
 	if err != nil {
 		return err
 	}
 
 	api.router.HandleFunc(
 		fmt.Sprintf("/%s", t),
-		func(w http.ResponseWriter, r *http.Request) { api.create(t, config, w, r) },
+		func(w http.ResponseWriter, r *http.Request) { api.create(t, cfg, w, r) },
 	).
 		Methods("POST").
 		Headers("Content-Type", "application/json")
 
 	api.router.HandleFunc(
 		fmt.Sprintf("/%s/{id}", t),
-		func(w http.ResponseWriter, r *http.Request) { api.update(t, config, w, r) },
+		func(w http.ResponseWriter, r *http.Request) { api.update(t, cfg, w, r) },
 	).
 		Methods("PATCH").
 		Headers("Content-Type", "application/json")
 
 	api.router.HandleFunc(
 		fmt.Sprintf("/%s/{id}", t),
-		func(w http.ResponseWriter, r *http.Request) { api.del(t, config, w, r) },
+		func(w http.ResponseWriter, r *http.Request) { api.del(t, cfg, w, r) },
 	).
 		Methods("DELETE")
 
 	api.router.HandleFunc(
 		fmt.Sprintf("/%s/{id}", t),
-		func(w http.ResponseWriter, r *http.Request) { api.stream(t, config, w, r) },
+		func(w http.ResponseWriter, r *http.Request) { api.stream(t, cfg, w, r) },
 	).
 		Methods("GET").
 		Headers("Accept", "text/event-stream")
 
 	api.router.HandleFunc(
 		fmt.Sprintf("/%s/{id}", t),
-		func(w http.ResponseWriter, r *http.Request) { api.read(t, config, w, r) },
+		func(w http.ResponseWriter, r *http.Request) { api.read(t, cfg, w, r) },
 	).
 		Methods("GET")
 
@@ -70,14 +114,10 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	api.router.ServeHTTP(w, r)
 }
 
-func (api *API) create(t string, config *config, w http.ResponseWriter, r *http.Request) {
-	obj, err := config.Factory()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+func (api *API) create(t string, cfg *config, w http.ResponseWriter, r *http.Request) {
+	obj := cfg.Factory()
 
-	err = readJson(r, obj)
+	err := readJson(r, obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -85,7 +125,7 @@ func (api *API) create(t string, config *config, w http.ResponseWriter, r *http.
 
 	metadata.GetMetadata(obj).Id = uuid.NewString()
 
-	err = config.MayCreate(obj, r)
+	err = cfg.MayCreate(obj, r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
@@ -104,31 +144,23 @@ func (api *API) create(t string, config *config, w http.ResponseWriter, r *http.
 	}
 }
 
-func (api *API) update(t string, config *config, w http.ResponseWriter, r *http.Request) {
+func (api *API) update(t string, cfg *config, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	obj, err := config.Factory()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	obj := cfg.Factory()
 
 	metadata.GetMetadata(obj).Id = vars["id"]
 
-	config.mu.Lock()
-	defer config.mu.Unlock()
+	cfg.mu.Lock()
+	defer cfg.mu.Unlock()
 
-	err = api.sb.Read(t, obj)
+	err := api.sb.Read(t, obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
-	patch, err := config.Factory()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	patch := cfg.Factory()
 
 	err = readJson(r, patch)
 	if err != nil {
@@ -139,7 +171,7 @@ func (api *API) update(t string, config *config, w http.ResponseWriter, r *http.
 	// Metadata is immutable or server-owned
 	metadata.ClearMetadata(patch)
 
-	err = config.MayUpdate(obj, patch, r)
+	err = cfg.MayUpdate(obj, patch, r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
@@ -164,27 +196,23 @@ func (api *API) update(t string, config *config, w http.ResponseWriter, r *http.
 	}
 }
 
-func (api *API) del(t string, config *config, w http.ResponseWriter, r *http.Request) {
+func (api *API) del(t string, cfg *config, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	obj, err := config.Factory()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	obj := cfg.Factory()
 
 	metadata.GetMetadata(obj).Id = vars["id"]
 
-	config.mu.Lock()
-	defer config.mu.Unlock()
+	cfg.mu.Lock()
+	defer cfg.mu.Unlock()
 
-	err = api.sb.Read(t, obj)
+	err := api.sb.Read(t, obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
-	err = config.MayDelete(obj, r)
+	err = cfg.MayDelete(obj, r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
@@ -197,7 +225,7 @@ func (api *API) del(t string, config *config, w http.ResponseWriter, r *http.Req
 	}
 }
 
-func (api *API) stream(t string, config *config, w http.ResponseWriter, r *http.Request) {
+func (api *API) stream(t string, cfg *config, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	_, ok := w.(http.Flusher)
@@ -209,35 +237,31 @@ func (api *API) stream(t string, config *config, w http.ResponseWriter, r *http.
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 
-	obj, err := config.Factory()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	obj := cfg.Factory()
 
 	metadata.GetMetadata(obj).Id = vars["id"]
 
-	config.mu.RLock()
+	cfg.mu.RLock()
 	// THIS LOCK REQUIRES MANUAL UNLOCKING IN ALL BRANCHES
 
-	err = api.sb.Read(t, obj)
+	err := api.sb.Read(t, obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
-		config.mu.RUnlock()
+		cfg.mu.RUnlock()
 		return
 	}
 
-	err = config.MayRead(obj, r)
+	err = cfg.MayRead(obj, r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
-		config.mu.RUnlock()
+		cfg.mu.RUnlock()
 		return
 	}
 
 	err = writeUpdate(w, obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		config.mu.RUnlock()
+		cfg.mu.RUnlock()
 		return
 	}
 
@@ -245,7 +269,7 @@ func (api *API) stream(t string, config *config, w http.ResponseWriter, r *http.
 	objChan := api.sb.Subscribe(t, obj)
 	ticker := time.NewTicker(5 * time.Second)
 
-	config.mu.RUnlock()
+	cfg.mu.RUnlock()
 
 	connected := true
 	for connected {
@@ -273,24 +297,20 @@ func (api *API) stream(t string, config *config, w http.ResponseWriter, r *http.
 	}
 }
 
-func (api *API) read(t string, config *config, w http.ResponseWriter, r *http.Request) {
+func (api *API) read(t string, cfg *config, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	obj, err := config.Factory()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	obj := cfg.Factory()
 
 	metadata.GetMetadata(obj).Id = vars["id"]
 
-	err = api.sb.Read(t, obj)
+	err := api.sb.Read(t, obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
-	err = config.MayRead(obj, r)
+	err = cfg.MayRead(obj, r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return

@@ -6,31 +6,8 @@ import "sync"
 
 import "github.com/firestuff/patchy/metadata"
 
-type ConfigGetter interface {
-	Get() *config
-}
-
-type Config[T any] struct {
-	Factory func() (*T, error)
-
-	MayCreate func(*T, *http.Request) error
-	MayUpdate func(*T, *T, *http.Request) error
-	MayDelete func(*T, *http.Request) error
-	MayRead   func(*T, *http.Request) error
-}
-
-func (cfg Config[T]) Get() *config {
-	return &config{
-		Factory:   func() (any, error) { return cfg.Factory() },
-		MayCreate: func(obj any, r *http.Request) error { return cfg.MayCreate(obj.(*T), r) },
-		MayUpdate: func(obj any, patch any, r *http.Request) error { return cfg.MayUpdate(obj.(*T), patch.(*T), r) },
-		MayDelete: func(obj any, r *http.Request) error { return cfg.MayDelete(obj.(*T), r) },
-		MayRead:   func(obj any, r *http.Request) error { return cfg.MayRead(obj.(*T), r) },
-	}
-}
-
 type config struct {
-	Factory func() (any, error)
+	Factory func() any
 
 	MayCreate func(any, *http.Request) error
 	MayUpdate func(any, any, *http.Request) error
@@ -61,10 +38,7 @@ func (cfg *config) validate() error {
 		return fmt.Errorf("APIConfig.MayRead must be set")
 	}
 
-	obj, err := cfg.Factory()
-	if err != nil {
-		return err
-	}
+	obj := cfg.Factory()
 
 	if !metadata.GetMetadataField(obj).IsValid() {
 		return fmt.Errorf("Missing Metadata field")
