@@ -38,7 +38,7 @@ type mayRead interface {
 	MayRead(*http.Request) error
 }
 
-func Register[T any](api *API, t string, factory func() *T) error {
+func Register[T any](api *API, t string, factory func() *T) {
 	cfg := &config{
 		Factory: func() any { return factory() },
 	}
@@ -67,11 +67,6 @@ func Register[T any](api *API, t string, factory func() *T) error {
 		cfg.MayRead = func(obj any, r *http.Request) error {
 			return obj.(mayRead).MayRead(r)
 		}
-	}
-
-	err := cfg.validate()
-	if err != nil {
-		return err
 	}
 
 	api.router.HandleFunc(
@@ -106,8 +101,6 @@ func Register[T any](api *API, t string, factory func() *T) error {
 		func(w http.ResponseWriter, r *http.Request) { api.read(t, cfg, w, r) },
 	).
 		Methods("GET")
-
-	return nil
 }
 
 func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
