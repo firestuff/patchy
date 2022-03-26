@@ -118,10 +118,12 @@ func (api *API) create(t string, cfg *config, w http.ResponseWriter, r *http.Req
 
 	metadata.GetMetadata(obj).Id = uuid.NewString()
 
-	err = cfg.MayCreate(obj, r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
+	if cfg.MayCreate != nil {
+		err = cfg.MayCreate(obj, r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 	}
 
 	err = api.sb.Write(t, obj)
@@ -164,10 +166,12 @@ func (api *API) update(t string, cfg *config, w http.ResponseWriter, r *http.Req
 	// Metadata is immutable or server-owned
 	metadata.ClearMetadata(patch)
 
-	err = cfg.MayUpdate(obj, patch, r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
+	if cfg.MayUpdate != nil {
+		err = cfg.MayUpdate(obj, patch, r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 	}
 
 	err = merge(obj, patch)
@@ -205,10 +209,12 @@ func (api *API) del(t string, cfg *config, w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err = cfg.MayDelete(obj, r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
+	if cfg.MayDelete != nil {
+		err = cfg.MayDelete(obj, r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 	}
 
 	err = api.sb.Delete(t, obj)
@@ -244,11 +250,13 @@ func (api *API) stream(t string, cfg *config, w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	err = cfg.MayRead(obj, r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		cfg.mu.RUnlock()
-		return
+	if cfg.MayRead != nil {
+		err = cfg.MayRead(obj, r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			cfg.mu.RUnlock()
+			return
+		}
 	}
 
 	err = writeUpdate(w, obj)
@@ -303,10 +311,12 @@ func (api *API) read(t string, cfg *config, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = cfg.MayRead(obj, r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
+	if cfg.MayRead != nil {
+		err = cfg.MayRead(obj, r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 	}
 
 	err = writeJson(w, obj)
