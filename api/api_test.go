@@ -10,6 +10,7 @@ import "net"
 import "net/http"
 import "os"
 import "strings"
+import "sync"
 import "testing"
 import "time"
 
@@ -374,6 +375,227 @@ func TestAPIStreamRace(t *testing.T) {
 	})
 }
 
+func TestAPIMayCreate(t *testing.T) {
+	t.Parallel()
+
+	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
+		Register[FlagType](api, "flagtype", func() *FlagType { return &FlagType{} })
+
+		created := &FlagType{}
+
+		flagMu.Lock()
+		mayCreateFlag = true
+		flagMu.Unlock()
+
+		resp, err := c.R().
+			SetBody(&FlagType{}).
+			SetResult(created).
+			Post(fmt.Sprintf("%s/flagtype", baseURL))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if resp.IsError() {
+			t.Fatal(resp.Error())
+		}
+
+		if created.Id == "" {
+			t.Fatal("missing ID")
+		}
+
+		flagMu.Lock()
+		mayCreateFlag = false
+		flagMu.Unlock()
+
+		resp, err = c.R().
+			SetBody(&FlagType{}).
+			SetResult(created).
+			Post(fmt.Sprintf("%s/flagtype", baseURL))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !resp.IsError() {
+			t.Fatal("improper success")
+		}
+	})
+}
+
+func TestAPIMayUpdate(t *testing.T) {
+	t.Parallel()
+
+	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
+		Register[FlagType](api, "flagtype", func() *FlagType { return &FlagType{} })
+
+		created := &FlagType{}
+
+		flagMu.Lock()
+		mayCreateFlag = true
+		flagMu.Unlock()
+
+		_, err := c.R().
+			SetBody(&FlagType{}).
+			SetResult(created).
+			Post(fmt.Sprintf("%s/flagtype", baseURL))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		flagMu.Lock()
+		mayUpdateFlag = true
+		flagMu.Unlock()
+
+		updated := &FlagType{}
+
+		resp, err := c.R().
+			SetBody(&FlagType{}).
+			SetResult(updated).
+			Patch(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if resp.IsError() {
+			t.Fatal(resp.Error())
+		}
+
+		flagMu.Lock()
+		mayUpdateFlag = false
+		flagMu.Unlock()
+
+		resp, err = c.R().
+			SetBody(&FlagType{}).
+			SetResult(updated).
+			Patch(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !resp.IsError() {
+			t.Fatal("improper success")
+		}
+	})
+}
+
+func TestAPIMayDelete(t *testing.T) {
+	t.Parallel()
+
+	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
+		Register[FlagType](api, "flagtype", func() *FlagType { return &FlagType{} })
+
+		created := &FlagType{}
+
+		flagMu.Lock()
+		mayCreateFlag = true
+		flagMu.Unlock()
+
+		_, err := c.R().
+			SetBody(&FlagType{}).
+			SetResult(created).
+			Post(fmt.Sprintf("%s/flagtype", baseURL))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		flagMu.Lock()
+		mayDeleteFlag = false
+		flagMu.Unlock()
+
+		resp, err := c.R().
+			Delete(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !resp.IsError() {
+			t.Fatal("improper success")
+		}
+
+		flagMu.Lock()
+		mayDeleteFlag = true
+		flagMu.Unlock()
+
+		resp, err = c.R().
+			Delete(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if resp.IsError() {
+			t.Fatal(resp.Error())
+		}
+	})
+}
+
+func TestAPIMayRead(t *testing.T) {
+	t.Parallel()
+
+	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
+		Register[FlagType](api, "flagtype", func() *FlagType { return &FlagType{} })
+
+		created := &FlagType{}
+
+		flagMu.Lock()
+		mayCreateFlag = true
+		flagMu.Unlock()
+
+		_, err := c.R().
+			SetBody(&FlagType{}).
+			SetResult(created).
+			Post(fmt.Sprintf("%s/flagtype", baseURL))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		read := &TestType{}
+
+		flagMu.Lock()
+		mayReadFlag = true
+		flagMu.Unlock()
+
+		resp, err := c.R().
+			SetResult(read).
+			Get(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if resp.IsError() {
+			t.Fatal(resp.Error())
+		}
+
+		resp, err = c.R().
+			SetDoNotParseResponse(true).
+			SetHeader("Accept", "text/event-stream").
+			Get(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if resp.IsError() {
+			t.Fatal(resp.Error())
+		}
+		resp.RawBody().Close()
+
+		flagMu.Lock()
+		mayReadFlag = false
+		flagMu.Unlock()
+
+		resp, err = c.R().
+			SetResult(read).
+			Get(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !resp.IsError() {
+			t.Fatal("improper success")
+		}
+
+		resp, err = c.R().
+			SetDoNotParseResponse(true).
+			SetHeader("Accept", "text/event-stream").
+			Get(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !resp.IsError() {
+			t.Fatal("improper success")
+		}
+	})
+}
+
 func withAPI(t *testing.T, cb func(*testing.T, *API, string, *resty.Client)) {
 	dir, err := os.MkdirTemp("", "")
 	if err != nil {
@@ -450,4 +672,59 @@ type TestType struct {
 	metadata.Metadata
 	Text string `json:"text"`
 	Num  int64  `json:"num"`
+}
+
+type FlagType struct {
+	metadata.Metadata
+}
+
+var mayCreateFlag bool
+var mayUpdateFlag bool
+var mayDeleteFlag bool
+var mayReadFlag bool
+
+var flagMu sync.Mutex
+
+func (*FlagType) MayCreate(r *http.Request) error {
+	flagMu.Lock()
+	defer flagMu.Unlock()
+
+	if mayCreateFlag {
+		return nil
+	} else {
+		return fmt.Errorf("may not create")
+	}
+}
+
+func (*FlagType) MayUpdate(patch *FlagType, r *http.Request) error {
+	flagMu.Lock()
+	defer flagMu.Unlock()
+
+	if mayUpdateFlag {
+		return nil
+	} else {
+		return fmt.Errorf("may not update")
+	}
+}
+
+func (*FlagType) MayDelete(r *http.Request) error {
+	flagMu.Lock()
+	defer flagMu.Unlock()
+
+	if mayDeleteFlag {
+		return nil
+	} else {
+		return fmt.Errorf("may not delete")
+	}
+}
+
+func (*FlagType) MayRead(r *http.Request) error {
+	flagMu.Lock()
+	defer flagMu.Unlock()
+
+	if mayReadFlag {
+		return nil
+	} else {
+		return fmt.Errorf("may not read")
+	}
 }
