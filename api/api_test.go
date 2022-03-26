@@ -451,19 +451,3 @@ type TestType struct {
 	Text string `json:"text"`
 	Num  int64  `json:"num"`
 }
-
-func (tt *TestType) MayCreate(r *http.Request) error {
-	return nil
-}
-
-func (tt *TestType) MayUpdate(patch *TestType, r *http.Request) error {
-	return nil
-}
-
-func (tt *TestType) MayDelete(r *http.Request) error {
-	return nil
-}
-
-func (tt *TestType) MayRead(r *http.Request) error {
-	return nil
-}
