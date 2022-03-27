@@ -55,6 +55,14 @@ func (sb *StoreBus) Subscribe(t string, obj interface{}) chan interface{} {
 	return sb.bus.Subscribe(t, obj)
 }
 
+func (sb *StoreBus) GetStore() *store.Store {
+	return sb.store
+}
+
+func (sb *StoreBus) GetBus() *bus.Bus {
+	return sb.bus
+}
+
 func updateHash(obj interface{}) error {
 	m := metadata.GetMetadata(obj)
 	m.Sha256 = ""

@@ -8,18 +8,25 @@ import "github.com/google/uuid"
 import "github.com/gorilla/mux"
 
 import "github.com/firestuff/patchy/metadata"
+import "github.com/firestuff/patchy/potency"
 import "github.com/firestuff/patchy/storebus"
 
 type API struct {
-	router *mux.Router
-	sb     *storebus.StoreBus
+	router  *mux.Router
+	sb      *storebus.StoreBus
+	potency *potency.Potency
 }
 
 func NewAPI(root string) (*API, error) {
-	return &API{
+	api := &API{
 		router: mux.NewRouter(),
 		sb:     storebus.NewStoreBus(root),
-	}, nil
+	}
+
+	api.potency = potency.NewPotency(api.sb.GetStore())
+	api.router.Use(api.potency.Middleware)
+
+	return api, nil
 }
 
 type mayCreate interface {
