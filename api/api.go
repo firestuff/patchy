@@ -45,12 +45,12 @@ type mayRead interface {
 	MayRead(*http.Request) error
 }
 
-func Register[T any](api *API, t string, factory func() *T) {
+func Register[T any](api *API, t string) {
 	cfg := &config{
-		Factory: func() any { return factory() },
+		Factory: func() any { return new(T) },
 	}
 
-	obj := factory()
+	obj := new(T)
 
 	if _, has := any(obj).(mayCreate); has {
 		cfg.MayCreate = func(obj any, r *http.Request) error {

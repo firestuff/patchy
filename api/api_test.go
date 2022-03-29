@@ -377,7 +377,7 @@ func TestAPIStreamRace(t *testing.T) {
 
 func TestAPIMayCreate(t *testing.T) {
 	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
-		Register[FlagType](api, "flagtype", func() *FlagType { return &FlagType{} })
+		Register[FlagType](api, "flagtype")
 
 		created := &FlagType{}
 
@@ -419,7 +419,7 @@ func TestAPIMayCreate(t *testing.T) {
 
 func TestAPIMayUpdate(t *testing.T) {
 	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
-		Register[FlagType](api, "flagtype", func() *FlagType { return &FlagType{} })
+		Register[FlagType](api, "flagtype")
 
 		created := &FlagType{}
 
@@ -471,7 +471,7 @@ func TestAPIMayUpdate(t *testing.T) {
 
 func TestAPIMayDelete(t *testing.T) {
 	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
-		Register[FlagType](api, "flagtype", func() *FlagType { return &FlagType{} })
+		Register[FlagType](api, "flagtype")
 
 		created := &FlagType{}
 
@@ -517,7 +517,7 @@ func TestAPIMayDelete(t *testing.T) {
 
 func TestAPIMayRead(t *testing.T) {
 	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
-		Register[FlagType](api, "flagtype", func() *FlagType { return &FlagType{} })
+		Register[FlagType](api, "flagtype")
 
 		created := &FlagType{}
 
@@ -661,7 +661,7 @@ func withAPI(t *testing.T, cb func(*testing.T, *API, string, *resty.Client)) {
 		t.Fatal(err)
 	}
 
-	Register[TestType](api, "testtype", func() *TestType { return &TestType{} })
+	Register[TestType](api, "testtype")
 
 	mux := http.NewServeMux()
 	// Test that prefix stripping works
