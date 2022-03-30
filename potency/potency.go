@@ -39,8 +39,13 @@ func NewPotency(store *store.Store) *Potency {
 func (p *Potency) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		val := r.Header.Get("Idempotency-Key")
-		if len(val) < 2 || !strings.HasPrefix(val, `"`) || !strings.HasSuffix(val, `"`) {
+		if val == "" {
 			next.ServeHTTP(w, r)
+			return
+		}
+
+		if len(val) < 2 || !strings.HasPrefix(val, `"`) || !strings.HasSuffix(val, `"`) {
+			http.Error(w, "Invalid Idempotency-Key", http.StatusBadRequest)
 			return
 		}
 
