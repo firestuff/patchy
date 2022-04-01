@@ -2,6 +2,7 @@ package api
 
 import "fmt"
 import "net/http"
+import "strings"
 
 import "github.com/gorilla/mux"
 
@@ -25,8 +26,12 @@ func (api *API) patch(t string, cfg *config, w http.ResponseWriter, r *http.Requ
 
 	ifMatch := r.Header.Get("If-Match")
 	if ifMatch != "" {
-		// TODO: Check for invalid header format
-		if ifMatch != fmt.Sprintf(`"%s"`, metadata.GetMetadata(obj).Sha256) {
+		if len(ifMatch) < 2 || !strings.HasPrefix(ifMatch, `"`) || !strings.HasSuffix(ifMatch, `"`) {
+			http.Error(w, "Invalid If-Match", http.StatusBadRequest)
+			return
+		}
+
+		if ifMatch[1:len(ifMatch)-1] != metadata.GetMetadata(obj).Sha256 {
 			http.Error(w, fmt.Sprintf("If-Match mismatch"), http.StatusPreconditionFailed)
 			return
 		}
