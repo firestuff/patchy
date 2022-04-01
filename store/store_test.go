@@ -67,7 +67,7 @@ func TestStore(t *testing.T) {
 	}
 }
 
-func TestStoreDelete(t *testing.T) {
+func TestDelete(t *testing.T) {
 	t.Parallel()
 
 	dir, err := os.MkdirTemp("", "")
@@ -119,6 +119,52 @@ func TestStoreDelete(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatal("Read() succeeded")
+	}
+}
+
+func TestList(t *testing.T) {
+	t.Parallel()
+
+	dir, err := os.MkdirTemp("", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+
+	store := NewStore(dir)
+
+	err = store.Write("storeTest", &storeTest{
+		Metadata: metadata.Metadata{
+			Id: "id1",
+		},
+		Opaque: "foo",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = store.Write("storeTest", &storeTest{
+		Metadata: metadata.Metadata{
+			Id: "id2",
+		},
+		Opaque: "bar",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	objs, err := store.List("storeTest", func() any { return &storeTest{} })
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(objs) != 2 {
+		t.Fatalf("%+v", objs)
+	}
+
+	if !((objs[0].(*storeTest).Opaque == "foo" && objs[1].(*storeTest).Opaque == "bar") ||
+		(objs[0].(*storeTest).Opaque == "bar" && objs[1].(*storeTest).Opaque == "foo")) {
+		t.Fatalf("%+v", objs)
 	}
 }
 
