@@ -22,6 +22,7 @@ type savedResult struct {
 	metadata.Metadata
 
 	Method string `json:"method"`
+	URL    string `json:"url"`
 	Sha256 string `json:"sha256"`
 
 	StatusCode int         `json:"statusCode"`
@@ -61,6 +62,11 @@ func (p *Potency) Middleware(next http.Handler) http.Handler {
 		if err == nil {
 			if r.Method != saved.Method {
 				http.Error(w, "Idempotency-Key method mismatch", http.StatusBadRequest)
+				return
+			}
+
+			if r.URL.String() != saved.URL {
+				http.Error(w, "Idempotency-Key URL mismatch", http.StatusBadRequest)
 				return
 			}
 
@@ -104,6 +110,7 @@ func (p *Potency) Middleware(next http.Handler) http.Handler {
 			},
 
 			Method: r.Method,
+			URL:    r.URL.String(),
 			Sha256: hex.EncodeToString(bi.sha256.Sum(nil)),
 
 			StatusCode: rwi.statusCode,
