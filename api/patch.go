@@ -2,6 +2,7 @@ package api
 
 import "fmt"
 import "net/http"
+import "os"
 import "strings"
 
 import "github.com/gorilla/mux"
@@ -19,8 +20,11 @@ func (api *API) patch(t string, cfg *config, w http.ResponseWriter, r *http.Requ
 	defer cfg.mu.Unlock()
 
 	err := api.sb.Read(t, obj)
-	if err != nil {
+	if err == os.ErrNotExist {
 		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 

@@ -1,6 +1,7 @@
 package api
 
 import "net/http"
+import "os"
 import "time"
 
 import "github.com/gorilla/mux"
@@ -27,8 +28,12 @@ func (api *API) getStream(t string, cfg *config, w http.ResponseWriter, r *http.
 	// THIS LOCK REQUIRES MANUAL UNLOCKING IN ALL BRANCHES
 
 	err := api.sb.Read(t, obj)
-	if err != nil {
+	if err == os.ErrNotExist {
 		http.Error(w, err.Error(), http.StatusNotFound)
+		cfg.mu.RUnlock()
+		return
+	} else if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		cfg.mu.RUnlock()
 		return
 	}
