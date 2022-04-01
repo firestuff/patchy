@@ -62,8 +62,39 @@ func (s *Store) Delete(t string, obj any) error {
 func (s *Store) Read(t string, obj any) error {
 	dir := filepath.Join(s.root, t)
 	filename := metadata.GetMetadata(obj).GetSafeId()
+	return s.read(filepath.Join(dir, filename), obj)
+}
 
-	fh, err := os.Open(filepath.Join(dir, filename))
+func (s *Store) List(t string, factory func() any) ([]any, error) {
+	dir := filepath.Join(s.root, t)
+
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := []any{}
+
+	for _, entry := range files {
+		if entry.IsDir() {
+			continue
+		}
+
+		obj := factory()
+
+		err = s.read(filepath.Join(dir, entry.Name()), obj)
+		if err != nil {
+			return nil, err
+		}
+
+		ret = append(ret, obj)
+	}
+
+	return ret, nil
+}
+
+func (s *Store) read(path string, obj any) error {
+	fh, err := os.Open(path)
 	if err != nil {
 		return err
 	}
@@ -72,10 +103,5 @@ func (s *Store) Read(t string, obj any) error {
 	dec := json.NewDecoder(fh)
 	dec.DisallowUnknownFields()
 
-	err = dec.Decode(obj)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return dec.Decode(obj)
 }
