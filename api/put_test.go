@@ -5,7 +5,7 @@ import "testing"
 
 import "github.com/go-resty/resty/v2"
 
-func TestPATCH(t *testing.T) {
+func TestPUT(t *testing.T) {
 	t.Parallel()
 
 	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
@@ -14,6 +14,7 @@ func TestPATCH(t *testing.T) {
 		_, err := c.R().
 			SetBody(&testType{
 				Text: "foo",
+				Num:  1,
 			}).
 			SetResult(created).
 			Post(fmt.Sprintf("%s/testtype", baseURL))
@@ -21,27 +22,27 @@ func TestPATCH(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		updated := &testType{}
+		replaced := &testType{}
 
-		patch, err := c.R().
+		put, err := c.R().
 			SetBody(&testType{
 				Text: "bar",
 			}).
-			SetResult(updated).
-			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+			SetResult(replaced).
+			Put(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
 		if err != nil {
 			t.Fatal(err)
 		}
-		if patch.IsError() {
-			t.Fatal(patch)
+		if put.IsError() {
+			t.Fatal(put)
 		}
 
-		if updated.Text != "bar" {
-			t.Fatalf("%s", updated.Text)
+		if replaced.Text != "bar" {
+			t.Fatalf("%+v", replaced)
 		}
 
-		if updated.Id != created.Id {
-			t.Fatalf("%s %s", updated.Id, created.Id)
+		if replaced.Id != created.Id {
+			t.Fatalf("%+v %+v", replaced, created)
 		}
 
 		read := &testType{}
@@ -54,16 +55,20 @@ func TestPATCH(t *testing.T) {
 		}
 
 		if read.Text != "bar" {
-			t.Fatalf("%s", read.Text)
+			t.Fatalf("%+v", read)
+		}
+
+		if read.Num != 0 {
+			t.Fatalf("%+v", read)
 		}
 
 		if read.Id != created.Id {
-			t.Fatalf("%s %s", read.Id, created.Id)
+			t.Fatalf("%+v %+v", read, created)
 		}
 	})
 }
 
-func TestPATCHIfMatch(t *testing.T) {
+func TestPUTIfMatch(t *testing.T) {
 	t.Parallel()
 
 	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
@@ -84,24 +89,24 @@ func TestPATCHIfMatch(t *testing.T) {
 			t.Fatalf("%s vs %+v", etag, created)
 		}
 
-		updated := &testType{}
+		replaced := &testType{}
 
 		resp, err = c.R().
 			SetBody(&testType{
 				Text: "bar",
 			}).
-			SetResult(updated).
-			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+			SetResult(replaced).
+			Put(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		etag = resp.Header().Get("ETag")
-		if etag != fmt.Sprintf(`"%s"`, updated.Sha256) {
-			t.Fatalf("%s vs %+v", etag, updated)
+		if etag != fmt.Sprintf(`"%s"`, replaced.Sha256) {
+			t.Fatalf("%s vs %+v", etag, replaced)
 		}
 
-		if updated.Sha256 == created.Sha256 {
+		if replaced.Sha256 == created.Sha256 {
 			t.Fatalf("sha256 unchanged")
 		}
 
@@ -110,8 +115,8 @@ func TestPATCHIfMatch(t *testing.T) {
 			SetBody(&testType{
 				Text: "zig",
 			}).
-			SetResult(updated).
-			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+			SetResult(replaced).
+			Put(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
 		if err != nil {
 			t.Fatal(err)
 		}
