@@ -7,10 +7,8 @@ import "testing"
 
 import "github.com/go-resty/resty/v2"
 
-import "github.com/firestuff/patchy/metadata"
-
 type flagType struct {
-	metadata.Metadata
+	Metadata
 }
 
 var mayCreateFlag bool

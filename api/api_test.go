@@ -14,8 +14,6 @@ import "testing"
 
 import "github.com/go-resty/resty/v2"
 
-import "github.com/firestuff/patchy/metadata"
-
 func withAPI(t *testing.T, cb func(*testing.T, *API, string, *resty.Client)) {
 	dir, err := os.MkdirTemp("", "")
 	if err != nil {
@@ -89,7 +87,7 @@ func readEvent(scan *bufio.Scanner, out any) (string, error) {
 }
 
 type testType struct {
-	metadata.Metadata
+	Metadata
 	Text string `json:"text"`
 	Num  int64  `json:"num"`
 }

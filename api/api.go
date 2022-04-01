@@ -5,6 +5,7 @@ import "net/http"
 
 import "github.com/gorilla/mux"
 
+import "github.com/firestuff/patchy/metadata"
 import "github.com/firestuff/patchy/potency"
 import "github.com/firestuff/patchy/storebus"
 
@@ -13,6 +14,8 @@ type API struct {
 	sb      *storebus.StoreBus
 	potency *potency.Potency
 }
+
+type Metadata = metadata.Metadata
 
 func NewAPI(root string) (*API, error) {
 	api := &API{
