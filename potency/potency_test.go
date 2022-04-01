@@ -25,8 +25,6 @@ func TestGet(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		fmt.Printf("%+v\n", resp1a)
-
 		resp1b, err := c.R().
 			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
 			Get(url)
@@ -34,7 +32,9 @@ func TestGet(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		fmt.Printf("%+v\n", resp1b)
+		if resp1a.String() != resp1b.String() {
+			t.Fatalf("%s vs %s", resp1a, resp1b)
+		}
 	})
 }
 
