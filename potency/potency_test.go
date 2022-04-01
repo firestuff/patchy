@@ -2,6 +2,7 @@ package potency
 
 import "context"
 import "fmt"
+import "io/ioutil"
 import "net"
 import "net/http"
 import "os"
@@ -12,7 +13,7 @@ import "github.com/google/uuid"
 import "github.com/gorilla/mux"
 import "github.com/go-resty/resty/v2"
 
-func TestGet(t *testing.T) {
+func TestGET(t *testing.T) {
 	t.Parallel()
 
 	withServer(t, func(t *testing.T, url string, c *resty.Client) {
@@ -24,6 +25,9 @@ func TestGet(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		if resp1a.IsError() {
+			t.Fatal(resp1a)
+		}
 
 		resp1b, err := c.R().
 			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
@@ -31,9 +35,93 @@ func TestGet(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		if resp1b.IsError() {
+			t.Fatal(resp1b)
+		}
 
 		if resp1a.String() != resp1b.String() {
 			t.Fatalf("%s vs %s", resp1a, resp1b)
+		}
+
+		key2 := uuid.NewString()
+
+		resp2, err := c.R().
+			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key2)).
+			Get(url)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if resp2.IsError() {
+			t.Fatal(resp2)
+		}
+
+		if resp1a.String() == resp2.String() {
+			t.Fatal(resp1a)
+		}
+
+		resp1c, err := c.R().
+			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
+			Get(fmt.Sprintf("%sx", url))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !resp1c.IsError() {
+			t.Fatal("Improper success")
+		}
+
+		resp1d, err := c.R().
+			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
+			Delete(url)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !resp1d.IsError() {
+			t.Fatal("Improper success")
+		}
+	})
+}
+
+func TestPOST(t *testing.T) {
+	t.Parallel()
+
+	withServer(t, func(t *testing.T, url string, c *resty.Client) {
+		key1 := uuid.NewString()
+
+		resp1a, err := c.R().
+			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
+			SetBody("test1").
+			Post(url)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if resp1a.IsError() {
+			t.Fatal(resp1a)
+		}
+
+		resp1b, err := c.R().
+			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
+			SetBody("test1").
+			Post(url)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if resp1b.IsError() {
+			t.Fatal(resp1b)
+		}
+
+		if resp1a.String() != resp1b.String() {
+			t.Fatalf("%s vs %s", resp1a, resp1b)
+		}
+
+		resp1c, err := c.R().
+			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
+			SetBody("test2").
+			Post(url)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !resp1c.IsError() {
+			t.Fatal(resp1c)
 		}
 	})
 }
@@ -55,7 +143,8 @@ func withServer(t *testing.T, cb func(*testing.T, string, *resty.Client)) {
 
 	router := mux.NewRouter()
 	router.Use(p.Middleware)
-	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	router.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ioutil.ReadAll(r.Body)
 		w.Write([]byte(uuid.NewString()))
 	})
 
