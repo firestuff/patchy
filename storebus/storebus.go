@@ -9,7 +9,7 @@ import "github.com/firestuff/patchy/metadata"
 import "github.com/firestuff/patchy/store"
 
 type StoreBus struct {
-	store *store.Store
+	store store.Storer
 	bus   *bus.Bus
 }
 
@@ -55,7 +55,7 @@ func (sb *StoreBus) Subscribe(t string, obj interface{}) chan interface{} {
 	return sb.bus.Subscribe(t, obj)
 }
 
-func (sb *StoreBus) GetStore() *store.Store {
+func (sb *StoreBus) GetStore() store.Storer {
 	return sb.store
 }
 

@@ -12,7 +12,7 @@ import "github.com/firestuff/patchy/metadata"
 import "github.com/firestuff/patchy/store"
 
 type Potency struct {
-	store *store.Store
+	store store.Storer
 
 	inProgress map[string]bool
 	mu         sync.Mutex
@@ -30,7 +30,7 @@ type savedResult struct {
 	Result     []byte      `json:"result"`
 }
 
-func NewPotency(store *store.Store) *Potency {
+func NewPotency(store store.Storer) *Potency {
 	return &Potency{
 		store:      store,
 		inProgress: map[string]bool{},
