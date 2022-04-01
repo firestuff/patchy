@@ -14,6 +14,7 @@ type flagType struct {
 }
 
 var mayCreateFlag bool
+var mayReplaceFlag bool
 var mayUpdateFlag bool
 var mayDeleteFlag bool
 var mayReadFlag bool
@@ -28,6 +29,17 @@ func (*flagType) MayCreate(r *http.Request) error {
 		return nil
 	} else {
 		return fmt.Errorf("may not create")
+	}
+}
+
+func (*flagType) MayReplace(replace *flagType, r *http.Request) error {
+	flagMu.Lock()
+	defer flagMu.Unlock()
+
+	if mayReplaceFlag {
+		return nil
+	} else {
+		return fmt.Errorf("may not replace")
 	}
 }
 
@@ -97,6 +109,58 @@ func TestMayCreate(t *testing.T) {
 			SetBody(&flagType{}).
 			SetResult(created).
 			Post(fmt.Sprintf("%s/flagtype", baseURL))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !resp.IsError() {
+			t.Fatal("improper success")
+		}
+	})
+}
+
+func TestMayReplace(t *testing.T) {
+	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
+		Register[flagType](api, "flagtype")
+
+		created := &flagType{}
+
+		flagMu.Lock()
+		mayCreateFlag = true
+		flagMu.Unlock()
+
+		_, err := c.R().
+			SetBody(&flagType{}).
+			SetResult(created).
+			Post(fmt.Sprintf("%s/flagtype", baseURL))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		flagMu.Lock()
+		mayReplaceFlag = true
+		flagMu.Unlock()
+
+		replaced := &flagType{}
+
+		resp, err := c.R().
+			SetBody(&flagType{}).
+			SetResult(replaced).
+			Put(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if resp.IsError() {
+			t.Fatal(resp)
+		}
+
+		flagMu.Lock()
+		mayReplaceFlag = false
+		flagMu.Unlock()
+
+		resp, err = c.R().
+			SetBody(&flagType{}).
+			SetResult(replaced).
+			Put(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
 		if err != nil {
 			t.Fatal(err)
 		}

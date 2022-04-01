@@ -30,6 +30,10 @@ type mayCreate interface {
 	MayCreate(*http.Request) error
 }
 
+type mayReplace[T any] interface {
+	MayReplace(*T, *http.Request) error
+}
+
 type mayUpdate[T any] interface {
 	MayUpdate(*T, *http.Request) error
 }
@@ -52,6 +56,12 @@ func Register[T any](api *API, t string) {
 	if _, has := any(obj).(mayCreate); has {
 		cfg.MayCreate = func(obj any, r *http.Request) error {
 			return obj.(mayCreate).MayCreate(r)
+		}
+	}
+
+	if _, found := any(obj).(mayReplace[T]); found {
+		cfg.MayReplace = func(obj any, replace any, r *http.Request) error {
+			return obj.(mayReplace[T]).MayReplace(replace.(*T), r)
 		}
 	}
 
@@ -78,6 +88,13 @@ func Register[T any](api *API, t string) {
 		func(w http.ResponseWriter, r *http.Request) { api.post(t, cfg, w, r) },
 	).
 		Methods("POST").
+		Headers("Content-Type", "application/json")
+
+	api.router.HandleFunc(
+		fmt.Sprintf("/%s/{id}", t),
+		func(w http.ResponseWriter, r *http.Request) { api.put(t, cfg, w, r) },
+	).
+		Methods("PUT").
 		Headers("Content-Type", "application/json")
 
 	api.router.HandleFunc(
