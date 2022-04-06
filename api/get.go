@@ -10,7 +10,7 @@ import "github.com/firestuff/patchy/metadata"
 func (api *API) get(t string, cfg *config, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	obj := cfg.Factory()
+	obj := cfg.factory()
 
 	metadata.GetMetadata(obj).Id = vars["id"]
 
@@ -23,8 +23,8 @@ func (api *API) get(t string, cfg *config, w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if cfg.MayRead != nil {
-		err = cfg.MayRead(obj, r)
+	if cfg.mayRead != nil {
+		err = cfg.mayRead(obj, r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return

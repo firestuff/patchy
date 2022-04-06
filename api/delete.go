@@ -10,7 +10,7 @@ import "github.com/firestuff/patchy/metadata"
 func (api *API) delete(t string, cfg *config, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	obj := cfg.Factory()
+	obj := cfg.factory()
 
 	metadata.GetMetadata(obj).Id = vars["id"]
 
@@ -26,8 +26,8 @@ func (api *API) delete(t string, cfg *config, w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if cfg.MayDelete != nil {
-		err = cfg.MayDelete(obj, r)
+	if cfg.mayDelete != nil {
+		err = cfg.mayDelete(obj, r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return

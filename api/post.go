@@ -7,7 +7,7 @@ import "github.com/google/uuid"
 import "github.com/firestuff/patchy/metadata"
 
 func (api *API) post(t string, cfg *config, w http.ResponseWriter, r *http.Request) {
-	obj := cfg.Factory()
+	obj := cfg.factory()
 
 	err := readJson(r, obj)
 	if err != nil {
@@ -17,8 +17,8 @@ func (api *API) post(t string, cfg *config, w http.ResponseWriter, r *http.Reque
 
 	metadata.GetMetadata(obj).Id = uuid.NewString()
 
-	if cfg.MayCreate != nil {
-		err = cfg.MayCreate(obj, r)
+	if cfg.mayCreate != nil {
+		err = cfg.mayCreate(obj, r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return

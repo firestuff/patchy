@@ -21,3 +21,10 @@ func writeJson(w http.ResponseWriter, obj any) error {
 	enc := json.NewEncoder(w)
 	return enc.Encode(obj)
 }
+
+func writeJsonList(w http.ResponseWriter, list []any) error {
+	w.Header().Set("Content-Type", "application/json")
+
+	enc := json.NewEncoder(w)
+	return enc.Encode(list)
+}
