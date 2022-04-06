@@ -12,7 +12,7 @@ import "github.com/firestuff/patchy/metadata"
 func (api *API) patch(t string, cfg *config, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	obj := cfg.Factory()
+	obj := cfg.factory()
 
 	metadata.GetMetadata(obj).Id = vars["id"]
 
@@ -41,7 +41,7 @@ func (api *API) patch(t string, cfg *config, w http.ResponseWriter, r *http.Requ
 		}
 	}
 
-	patch := cfg.Factory()
+	patch := cfg.factory()
 
 	err = readJson(r, patch)
 	if err != nil {
@@ -52,8 +52,8 @@ func (api *API) patch(t string, cfg *config, w http.ResponseWriter, r *http.Requ
 	// Metadata is immutable or server-owned
 	metadata.ClearMetadata(patch)
 
-	if cfg.MayUpdate != nil {
-		err = cfg.MayUpdate(obj, patch, r)
+	if cfg.mayUpdate != nil {
+		err = cfg.mayUpdate(obj, patch, r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return

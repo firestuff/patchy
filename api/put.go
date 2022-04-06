@@ -12,7 +12,7 @@ import "github.com/firestuff/patchy/metadata"
 func (api *API) put(t string, cfg *config, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	obj := cfg.Factory()
+	obj := cfg.factory()
 
 	metadata.GetMetadata(obj).Id = vars["id"]
 
@@ -41,7 +41,7 @@ func (api *API) put(t string, cfg *config, w http.ResponseWriter, r *http.Reques
 		}
 	}
 
-	replace := cfg.Factory()
+	replace := cfg.factory()
 
 	err = readJson(r, replace)
 	if err != nil {
@@ -53,8 +53,8 @@ func (api *API) put(t string, cfg *config, w http.ResponseWriter, r *http.Reques
 	metadata.ClearMetadata(replace)
 	metadata.GetMetadata(replace).Id = vars["id"]
 
-	if cfg.MayReplace != nil {
-		err = cfg.MayReplace(obj, replace, r)
+	if cfg.mayReplace != nil {
+		err = cfg.mayReplace(obj, replace, r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return

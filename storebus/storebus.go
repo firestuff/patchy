@@ -51,6 +51,10 @@ func (sb *StoreBus) Read(t string, obj interface{}) error {
 	return sb.store.Read(t, obj)
 }
 
+func (sb *StoreBus) List(t string, factory func() any) ([]any, error) {
+	return sb.store.List(t, factory)
+}
+
 func (sb *StoreBus) Subscribe(t string, obj interface{}) chan interface{} {
 	return sb.bus.Subscribe(t, obj)
 }

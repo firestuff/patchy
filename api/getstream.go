@@ -20,7 +20,7 @@ func (api *API) getStream(t string, cfg *config, w http.ResponseWriter, r *http.
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 
-	obj := cfg.Factory()
+	obj := cfg.factory()
 
 	metadata.GetMetadata(obj).Id = vars["id"]
 
@@ -38,8 +38,8 @@ func (api *API) getStream(t string, cfg *config, w http.ResponseWriter, r *http.
 		return
 	}
 
-	if cfg.MayRead != nil {
-		err = cfg.MayRead(obj, r)
+	if cfg.mayRead != nil {
+		err = cfg.mayRead(obj, r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			cfg.mu.RUnlock()
