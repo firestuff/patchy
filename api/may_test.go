@@ -76,7 +76,7 @@ func (*flagType) MayRead(r *http.Request) error {
 
 func TestMayCreate(t *testing.T) {
 	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
-		Register[flagType](api, "flagtype")
+		Register[flagType](api)
 
 		created := &flagType{}
 
@@ -118,7 +118,7 @@ func TestMayCreate(t *testing.T) {
 
 func TestMayReplace(t *testing.T) {
 	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
-		Register[flagType](api, "flagtype")
+		Register[flagType](api)
 
 		created := &flagType{}
 
@@ -170,7 +170,7 @@ func TestMayReplace(t *testing.T) {
 
 func TestMayUpdate(t *testing.T) {
 	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
-		Register[flagType](api, "flagtype")
+		Register[flagType](api)
 
 		created := &flagType{}
 
@@ -222,7 +222,7 @@ func TestMayUpdate(t *testing.T) {
 
 func TestMayDelete(t *testing.T) {
 	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
-		Register[flagType](api, "flagtype")
+		Register[flagType](api)
 
 		created := &flagType{}
 
@@ -268,7 +268,7 @@ func TestMayDelete(t *testing.T) {
 
 func TestMayRead(t *testing.T) {
 	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
-		Register[flagType](api, "flagtype")
+		Register[flagType](api)
 
 		created := &flagType{}
 
