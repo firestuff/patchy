@@ -41,7 +41,7 @@ func TestStoreBus(t *testing.T) {
 		t.Errorf("%+v", out1)
 	}
 
-	if out1.Sha256 != "5d6f98d2ff3b70bcd32c4ac16625c20456c97d8f16c7cbb21c36514268933ec5" {
+	if out1.ETag != "11cb2d0f4dddf836245d5cc0b667e1275b3c0e10777b29335985cfd97210bbbb" {
 		t.Errorf("%+v", out1)
 	}
 
@@ -64,7 +64,7 @@ func TestStoreBus(t *testing.T) {
 		t.Errorf("%+v", out3)
 	}
 
-	if out3.Sha256 != "e17f86cb37e9af977b4345fa542096d8974237bdad2c59e0be5d3975dffdc42e" {
+	if out3.ETag != "efce5d60be6fd043869c0dde09ac3477f1687fc36118ba68d82114b45549a800" {
 		t.Errorf("%+v", out3)
 	}
 }
