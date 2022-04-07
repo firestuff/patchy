@@ -2,8 +2,10 @@ package store
 
 import "encoding/json"
 import "fmt"
+import "io/fs"
 import "os"
 import "path/filepath"
+import "strings"
 
 import "github.com/firestuff/patchy/metadata"
 
@@ -18,15 +20,15 @@ func NewStore(root string) *Store {
 }
 
 func (s *Store) Write(t string, obj any) error {
-	dir := filepath.Join(s.root, t)
-	filename := metadata.GetMetadata(obj).GetSafeId()
+	id := metadata.GetMetadata(obj).GetSafeId()
+	dir := filepath.Join(s.root, t, id[:4])
 
 	err := os.MkdirAll(dir, 0700)
 	if err != nil {
 		return err
 	}
 
-	tmp, err := os.CreateTemp(dir, fmt.Sprintf("%s.*", filename))
+	tmp, err := os.CreateTemp(dir, fmt.Sprintf("%s.*", id))
 	if err != nil {
 		return err
 	}
@@ -45,7 +47,7 @@ func (s *Store) Write(t string, obj any) error {
 		return err
 	}
 
-	err = os.Rename(tmp.Name(), filepath.Join(dir, filename))
+	err = os.Rename(tmp.Name(), filepath.Join(dir, id))
 	if err != nil {
 		return err
 	}
@@ -54,40 +56,52 @@ func (s *Store) Write(t string, obj any) error {
 }
 
 func (s *Store) Delete(t string, obj any) error {
-	dir := filepath.Join(s.root, t)
-	filename := metadata.GetMetadata(obj).GetSafeId()
-	return os.Remove(filepath.Join(dir, filename))
+	id := metadata.GetMetadata(obj).GetSafeId()
+	dir := filepath.Join(s.root, t, id[:4])
+	return os.Remove(filepath.Join(dir, id))
 }
 
 func (s *Store) Read(t string, obj any) error {
-	dir := filepath.Join(s.root, t)
-	filename := metadata.GetMetadata(obj).GetSafeId()
-	return s.read(filepath.Join(dir, filename), obj)
+	id := metadata.GetMetadata(obj).GetSafeId()
+	dir := filepath.Join(s.root, t, id[:4])
+	return s.read(filepath.Join(dir, id), obj)
 }
 
 func (s *Store) List(t string, factory func() any) ([]any, error) {
 	dir := filepath.Join(s.root, t)
-
-	files, err := os.ReadDir(dir)
-	if err != nil {
-		return nil, err
-	}
+	fsys := os.DirFS(dir)
 
 	ret := []any{}
 
-	for _, entry := range files {
-		if entry.IsDir() {
-			continue
+	err := fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
+		fmt.Printf("%s %+v %s\n", path, d, err)
+
+		if err != nil {
+			return err
+		}
+
+		if d.IsDir() {
+			return nil
+		}
+
+		if strings.Contains(d.Name(), ".") {
+			// Temporary file
+			return nil
 		}
 
 		obj := factory()
 
-		err = s.read(filepath.Join(dir, entry.Name()), obj)
+		err = s.read(filepath.Join(dir, path), obj)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		ret = append(ret, obj)
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	return ret, nil
