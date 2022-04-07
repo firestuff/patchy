@@ -80,7 +80,7 @@ func TestPATCHIfMatch(t *testing.T) {
 		}
 
 		etag := resp.Header().Get("ETag")
-		if etag != fmt.Sprintf(`"%s"`, created.Sha256) {
+		if etag != fmt.Sprintf(`"%s"`, created.ETag) {
 			t.Fatalf("%s vs %+v", etag, created)
 		}
 
@@ -97,12 +97,12 @@ func TestPATCHIfMatch(t *testing.T) {
 		}
 
 		etag = resp.Header().Get("ETag")
-		if etag != fmt.Sprintf(`"%s"`, updated.Sha256) {
+		if etag != fmt.Sprintf(`"%s"`, updated.ETag) {
 			t.Fatalf("%s vs %+v", etag, updated)
 		}
 
-		if updated.Sha256 == created.Sha256 {
-			t.Fatalf("sha256 unchanged")
+		if updated.ETag == created.ETag {
+			t.Fatalf("ETag unchanged")
 		}
 
 		resp, err = c.R().

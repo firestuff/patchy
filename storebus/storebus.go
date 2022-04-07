@@ -69,7 +69,7 @@ func (sb *StoreBus) GetBus() *bus.Bus {
 
 func updateHash(obj interface{}) error {
 	m := metadata.GetMetadata(obj)
-	m.Sha256 = ""
+	m.ETag = ""
 
 	hash := sha256.New()
 	enc := json.NewEncoder(hash)
@@ -79,7 +79,7 @@ func updateHash(obj interface{}) error {
 		return err
 	}
 
-	m.Sha256 = hex.EncodeToString(hash.Sum(nil))
+	m.ETag = hex.EncodeToString(hash.Sum(nil))
 
 	return nil
 }

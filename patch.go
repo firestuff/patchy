@@ -35,7 +35,7 @@ func (api *API) patch(t string, cfg *config, w http.ResponseWriter, r *http.Requ
 			return
 		}
 
-		if ifMatch[1:len(ifMatch)-1] != metadata.GetMetadata(obj).Sha256 {
+		if ifMatch[1:len(ifMatch)-1] != metadata.GetMetadata(obj).ETag {
 			http.Error(w, fmt.Sprintf("If-Match mismatch"), http.StatusPreconditionFailed)
 			return
 		}

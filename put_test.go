@@ -85,7 +85,7 @@ func TestPUTIfMatch(t *testing.T) {
 		}
 
 		etag := resp.Header().Get("ETag")
-		if etag != fmt.Sprintf(`"%s"`, created.Sha256) {
+		if etag != fmt.Sprintf(`"%s"`, created.ETag) {
 			t.Fatalf("%s vs %+v", etag, created)
 		}
 
@@ -102,12 +102,12 @@ func TestPUTIfMatch(t *testing.T) {
 		}
 
 		etag = resp.Header().Get("ETag")
-		if etag != fmt.Sprintf(`"%s"`, replaced.Sha256) {
+		if etag != fmt.Sprintf(`"%s"`, replaced.ETag) {
 			t.Fatalf("%s vs %+v", etag, replaced)
 		}
 
-		if replaced.Sha256 == created.Sha256 {
-			t.Fatalf("sha256 unchanged")
+		if replaced.ETag == created.ETag {
+			t.Fatalf("ETag unchanged")
 		}
 
 		resp, err = c.R().

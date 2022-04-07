@@ -16,7 +16,7 @@ func writeJson(w http.ResponseWriter, obj any) error {
 	m := metadata.GetMetadata(obj)
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("ETag", fmt.Sprintf(`"%s"`, m.Sha256))
+	w.Header().Set("ETag", fmt.Sprintf(`"%s"`, m.ETag))
 
 	enc := json.NewEncoder(w)
 	return enc.Encode(obj)
