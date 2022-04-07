@@ -26,7 +26,7 @@ func withAPI(t *testing.T, cb func(*testing.T, *API, string, *resty.Client)) {
 		t.Fatal(err)
 	}
 
-	Register[testType](api, "testtype")
+	Register[testType](api)
 
 	mux := http.NewServeMux()
 	// Test that prefix stripping works

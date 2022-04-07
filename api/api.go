@@ -2,6 +2,8 @@ package api
 
 import "fmt"
 import "net/http"
+import "reflect"
+import "strings"
 
 import "github.com/gorilla/mux"
 
@@ -49,7 +51,13 @@ type mayRead interface {
 	MayRead(*http.Request) error
 }
 
-func Register[T any](api *API, t string) {
+func Register[T any](api *API) {
+	obj := new(T)
+	t := reflect.TypeOf(*obj)
+	RegisterName[T](api, strings.ToLower(t.Name()))
+}
+
+func RegisterName[T any](api *API, t string) {
 	cfg := &config{
 		factory: func() any { return new(T) },
 	}
