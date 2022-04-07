@@ -25,12 +25,12 @@ func TestMetadata(t *testing.T) {
 	}
 
 	sid := m.GetSafeId()
-	if sid != "616263313233" {
+	if sid != "6ca13d52ca70c883e0f0bb101e425a89e8624de51db2d2392593af6a84118090" {
 		t.Fatal(sid)
 	}
 
 	key := m.GetKey("testtype")
-	if key != "testtype:616263313233" {
+	if key != "testtype:6ca13d52ca70c883e0f0bb101e425a89e8624de51db2d2392593af6a84118090" {
 		t.Fatal(key)
 	}
 
