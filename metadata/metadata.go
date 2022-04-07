@@ -1,5 +1,6 @@
 package metadata
 
+import "crypto/sha256"
 import "encoding/hex"
 import "fmt"
 import "reflect"
@@ -18,7 +19,9 @@ func ClearMetadata(obj any) {
 }
 
 func (m *Metadata) GetSafeId() string {
-	return hex.EncodeToString([]byte(m.Id))
+	h := sha256.New()
+	h.Write([]byte(m.Id))
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 func (m *Metadata) GetKey(t string) string {
