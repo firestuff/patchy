@@ -19,6 +19,7 @@ func ClearMetadata(obj any) {
 }
 
 func (m *Metadata) GetSafeId() string {
+	// TODO: Make this an hmac to prevent partial collision DoS attacks
 	h := sha256.New()
 	h.Write([]byte(m.Id))
 	return hex.EncodeToString(h.Sum(nil))
