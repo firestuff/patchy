@@ -4,6 +4,7 @@ import "os"
 import "testing"
 
 import "github.com/firestuff/patchy/metadata"
+import "github.com/firestuff/patchy/store"
 
 func TestStoreBus(t *testing.T) {
 	t.Parallel()
@@ -14,7 +15,7 @@ func TestStoreBus(t *testing.T) {
 	}
 	defer os.RemoveAll(dir)
 
-	sb := NewStoreBus(dir)
+	sb := NewStoreBus(store.NewLocalStore(dir))
 
 	err = sb.Write("storeBusTest", &storeBusTest{
 		Metadata: metadata.Metadata{
@@ -78,7 +79,7 @@ func TestStoreBusDelete(t *testing.T) {
 	}
 	defer os.RemoveAll(dir)
 
-	sb := NewStoreBus(dir)
+	sb := NewStoreBus(store.NewLocalStore(dir))
 
 	ch := sb.Subscribe("storeBusTest", &storeBusTest{
 		Metadata: metadata.Metadata{

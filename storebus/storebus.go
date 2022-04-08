@@ -13,9 +13,9 @@ type StoreBus struct {
 	bus   *bus.Bus
 }
 
-func NewStoreBus(root string) *StoreBus {
+func NewStoreBus(st store.Storer) *StoreBus {
 	return &StoreBus{
-		store: store.NewStore(root),
+		store: st,
 		bus:   bus.NewBus(),
 	}
 }

@@ -9,6 +9,7 @@ import "github.com/gorilla/mux"
 
 import "github.com/firestuff/patchy/metadata"
 import "github.com/firestuff/patchy/potency"
+import "github.com/firestuff/patchy/store"
 import "github.com/firestuff/patchy/storebus"
 
 type API struct {
@@ -19,13 +20,17 @@ type API struct {
 
 type Metadata = metadata.Metadata
 
-func NewAPI(root string) (*API, error) {
+func NewLocalStoreAPI(root string) (*API, error) {
+	return NewAPI(store.NewLocalStore(root))
+}
+
+func NewAPI(st store.Storer) (*API, error) {
 	api := &API{
 		router: mux.NewRouter(),
-		sb:     storebus.NewStoreBus(root),
+		sb:     storebus.NewStoreBus(st),
 	}
 
-	api.potency = potency.NewPotency(api.sb.GetStore())
+	api.potency = potency.NewPotency(st)
 	api.router.Use(api.potency.Middleware)
 
 	return api, nil

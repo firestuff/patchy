@@ -21,7 +21,7 @@ func withAPI(t *testing.T, cb func(*testing.T, *API, string, *resty.Client)) {
 	}
 	defer os.RemoveAll(dir)
 
-	api, err := NewAPI(dir)
+	api, err := NewLocalStoreAPI(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
