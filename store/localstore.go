@@ -9,17 +9,17 @@ import "strings"
 
 import "github.com/firestuff/patchy/metadata"
 
-type Store struct {
+type LocalStore struct {
 	root string
 }
 
-func NewStore(root string) *Store {
-	return &Store{
+func NewLocalStore(root string) Storer {
+	return &LocalStore{
 		root: root,
 	}
 }
 
-func (s *Store) Write(t string, obj any) error {
+func (s *LocalStore) Write(t string, obj any) error {
 	id := metadata.GetMetadata(obj).GetSafeId()
 	dir := filepath.Join(s.root, t, id[:4])
 
@@ -55,27 +55,25 @@ func (s *Store) Write(t string, obj any) error {
 	return nil
 }
 
-func (s *Store) Delete(t string, obj any) error {
+func (s *LocalStore) Delete(t string, obj any) error {
 	id := metadata.GetMetadata(obj).GetSafeId()
 	dir := filepath.Join(s.root, t, id[:4])
 	return os.Remove(filepath.Join(dir, id))
 }
 
-func (s *Store) Read(t string, obj any) error {
+func (s *LocalStore) Read(t string, obj any) error {
 	id := metadata.GetMetadata(obj).GetSafeId()
 	dir := filepath.Join(s.root, t, id[:4])
 	return s.read(filepath.Join(dir, id), obj)
 }
 
-func (s *Store) List(t string, factory func() any) ([]any, error) {
+func (s *LocalStore) List(t string, factory func() any) ([]any, error) {
 	dir := filepath.Join(s.root, t)
 	fsys := os.DirFS(dir)
 
 	ret := []any{}
 
 	err := fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
-		fmt.Printf("%s %+v %s\n", path, d, err)
-
 		if err != nil {
 			return err
 		}
@@ -107,7 +105,7 @@ func (s *Store) List(t string, factory func() any) ([]any, error) {
 	return ret, nil
 }
 
-func (s *Store) read(path string, obj any) error {
+func (s *LocalStore) read(path string, obj any) error {
 	fh, err := os.Open(path)
 	if err != nil {
 		return err

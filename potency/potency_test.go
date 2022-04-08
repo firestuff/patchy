@@ -133,7 +133,7 @@ func withServer(t *testing.T, cb func(*testing.T, string, *resty.Client)) {
 	}
 	defer os.RemoveAll(dir)
 
-	store := store.NewStore(dir)
+	store := store.NewLocalStore(dir)
 	p := NewPotency(store)
 
 	listener, err := net.Listen("tcp", "[::]:0")

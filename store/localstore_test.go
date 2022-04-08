@@ -5,7 +5,7 @@ import "testing"
 
 import "github.com/firestuff/patchy/metadata"
 
-func TestStore(t *testing.T) {
+func TestLocalStore(t *testing.T) {
 	t.Parallel()
 
 	dir, err := os.MkdirTemp("", "")
@@ -14,7 +14,7 @@ func TestStore(t *testing.T) {
 	}
 	defer os.RemoveAll(dir)
 
-	store := NewStore(dir)
+	store := NewLocalStore(dir)
 
 	err = store.Write("storeTest", &storeTest{
 		Metadata: metadata.Metadata{
@@ -67,7 +67,7 @@ func TestStore(t *testing.T) {
 	}
 }
 
-func TestDelete(t *testing.T) {
+func TestLocalStoreDelete(t *testing.T) {
 	t.Parallel()
 
 	dir, err := os.MkdirTemp("", "")
@@ -76,7 +76,7 @@ func TestDelete(t *testing.T) {
 	}
 	defer os.RemoveAll(dir)
 
-	store := NewStore(dir)
+	store := NewLocalStore(dir)
 
 	err = store.Write("storeTest", &storeTest{
 		Metadata: metadata.Metadata{
@@ -122,7 +122,7 @@ func TestDelete(t *testing.T) {
 	}
 }
 
-func TestList(t *testing.T) {
+func TestLocalStoreList(t *testing.T) {
 	t.Parallel()
 
 	dir, err := os.MkdirTemp("", "")
@@ -131,7 +131,7 @@ func TestList(t *testing.T) {
 	}
 	defer os.RemoveAll(dir)
 
-	store := NewStore(dir)
+	store := NewLocalStore(dir)
 
 	err = store.Write("storeTest", &storeTest{
 		Metadata: metadata.Metadata{
