@@ -5,13 +5,17 @@ import "sync"
 import "github.com/firestuff/patchy/metadata"
 
 type Bus struct {
-	mu    sync.Mutex
-	chans map[string][]chan any
+	mu        sync.Mutex
+	keyChans  map[string][]chan any
+	typeChans map[string][]chan any
+	delChans  map[string][]chan any
 }
 
 func NewBus() *Bus {
 	return &Bus{
-		chans: map[string][]chan any{},
+		keyChans:  map[string][]chan any{},
+		typeChans: map[string][]chan any{},
+		delChans:  map[string][]chan any{},
 	}
 }
 
@@ -21,20 +25,36 @@ func (b *Bus) Announce(t string, obj any) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	chans := b.chans[key]
-	newChans := []chan any{}
+	keyChans := b.keyChans[key]
+	newKeyChans := []chan any{}
 
-	for _, ch := range chans {
+	for _, ch := range keyChans {
 		select {
 		case ch <- obj:
-			newChans = append(newChans, ch)
+			newKeyChans = append(newKeyChans, ch)
 		default:
 			close(ch)
 		}
 	}
 
-	if len(chans) != len(newChans) {
-		b.chans[key] = newChans
+	if len(keyChans) != len(newKeyChans) {
+		b.keyChans[key] = newKeyChans
+	}
+
+	typeChans := b.typeChans[t]
+	newTypeChans := []chan any{}
+
+	for _, ch := range typeChans {
+		select {
+		case ch <- obj:
+			newTypeChans = append(newTypeChans, ch)
+		default:
+			close(ch)
+		}
+	}
+
+	if len(typeChans) != len(newTypeChans) {
+		b.typeChans[key] = newTypeChans
 	}
 }
 
@@ -44,15 +64,20 @@ func (b *Bus) Delete(t string, obj any) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	chans := b.chans[key]
-	for _, ch := range chans {
+	keyChans := b.keyChans[key]
+	for _, ch := range keyChans {
 		close(ch)
 	}
 
-	delete(b.chans, key)
+	delete(b.keyChans, key)
+
+	delChans := b.delChans[t]
+	for _, ch := range delChans {
+		ch <- obj
+	}
 }
 
-func (b *Bus) Subscribe(t string, obj any) chan any {
+func (b *Bus) SubscribeKey(t string, obj any) chan any {
 	key := metadata.GetMetadata(obj).GetKey(t)
 
 	b.mu.Lock()
@@ -60,7 +85,20 @@ func (b *Bus) Subscribe(t string, obj any) chan any {
 
 	ch := make(chan any, 100)
 
-	b.chans[key] = append(b.chans[key], ch)
+	b.keyChans[key] = append(b.keyChans[key], ch)
 
 	return ch
+}
+
+func (b *Bus) SubscribeType(t string) (chan any, chan any) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	typeChan := make(chan any, 100)
+	b.typeChans[t] = append(b.typeChans[t], typeChan)
+
+	delChan := make(chan any, 100)
+	b.delChans[t] = append(b.delChans[t], delChan)
+
+	return typeChan, delChan
 }

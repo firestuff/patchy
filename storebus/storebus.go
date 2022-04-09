@@ -56,7 +56,7 @@ func (sb *StoreBus) List(t string, factory func() any) ([]any, error) {
 }
 
 func (sb *StoreBus) Subscribe(t string, obj interface{}) chan interface{} {
-	return sb.bus.Subscribe(t, obj)
+	return sb.bus.SubscribeKey(t, obj)
 }
 
 func (sb *StoreBus) GetStore() store.Storer {
