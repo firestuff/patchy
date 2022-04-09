@@ -8,14 +8,14 @@ type Bus struct {
 	mu        sync.Mutex
 	keyChans  map[string][]chan any
 	typeChans map[string][]chan any
-	delChans  map[string][]chan any
+	delChans  map[string][]chan string
 }
 
 func NewBus() *Bus {
 	return &Bus{
 		keyChans:  map[string][]chan any{},
 		typeChans: map[string][]chan any{},
-		delChans:  map[string][]chan any{},
+		delChans:  map[string][]chan string{},
 	}
 }
 
@@ -58,8 +58,8 @@ func (b *Bus) Announce(t string, obj any) {
 	}
 }
 
-func (b *Bus) Delete(t string, obj any) {
-	key := metadata.GetMetadata(obj).GetKey(t)
+func (b *Bus) Delete(t string, id string) {
+	key := metadata.GetKey(t, id)
 
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -73,7 +73,7 @@ func (b *Bus) Delete(t string, obj any) {
 
 	delChans := b.delChans[t]
 	for _, ch := range delChans {
-		ch <- obj
+		ch <- id
 	}
 }
 
@@ -90,14 +90,14 @@ func (b *Bus) SubscribeKey(t string, obj any) chan any {
 	return ch
 }
 
-func (b *Bus) SubscribeType(t string) (chan any, chan any) {
+func (b *Bus) SubscribeType(t string) (chan any, chan string) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
 	typeChan := make(chan any, 100)
 	b.typeChans[t] = append(b.typeChans[t], typeChan)
 
-	delChan := make(chan any, 100)
+	delChan := make(chan string, 100)
 	b.delChans[t] = append(b.delChans[t], delChan)
 
 	return typeChan, delChan

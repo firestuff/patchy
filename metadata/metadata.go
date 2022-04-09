@@ -19,14 +19,22 @@ func ClearMetadata(obj any) {
 }
 
 func (m *Metadata) GetSafeId() string {
-	// TODO: Make this an hmac to prevent partial collision DoS attacks
-	h := sha256.New()
-	h.Write([]byte(m.Id))
-	return hex.EncodeToString(h.Sum(nil))
+	return GetSafeId(m.Id)
 }
 
 func (m *Metadata) GetKey(t string) string {
-	return fmt.Sprintf("%s:%s", t, m.GetSafeId())
+	return GetKey(t, m.Id)
+}
+
+func GetSafeId(id string) string {
+	// TODO: Make this an hmac to prevent partial collision DoS attacks
+	h := sha256.New()
+	h.Write([]byte(id))
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+func GetKey(t string, id string) string {
+	return fmt.Sprintf("%s:%s", t, GetSafeId(id))
 }
 
 func getMetadataField(obj any) reflect.Value {

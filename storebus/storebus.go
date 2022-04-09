@@ -36,13 +36,13 @@ func (sb *StoreBus) Write(t string, obj interface{}) error {
 	return nil
 }
 
-func (sb *StoreBus) Delete(t string, obj interface{}) error {
-	err := sb.store.Delete(t, obj)
+func (sb *StoreBus) Delete(t string, id string) error {
+	err := sb.store.Delete(t, id)
 	if err != nil {
 		return err
 	}
 
-	sb.bus.Delete(t, obj)
+	sb.bus.Delete(t, id)
 
 	return nil
 }
