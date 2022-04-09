@@ -144,20 +144,16 @@ func TestBusDelete(t *testing.T) {
 		t.Errorf("%+v", msg)
 	}
 
-	bus.Delete("busTest", &busTest{
-		Metadata: metadata.Metadata{
-			Id: "id1",
-		},
-	})
+	bus.Delete("busTest", "id1")
 
 	msg, ok := <-keyChan
 	if ok {
 		t.Errorf("%+v", msg)
 	}
 
-	msg = <-delChan
-	if msg.(*busTest).Id != "id1" {
-		t.Errorf("%+v", msg)
+	id := <-delChan
+	if id != "id1" {
+		t.Errorf("%+v", id)
 	}
 }
 

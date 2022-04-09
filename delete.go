@@ -34,7 +34,7 @@ func (api *API) delete(t string, cfg *config, w http.ResponseWriter, r *http.Req
 		}
 	}
 
-	err = api.sb.Delete(t, obj)
+	err = api.sb.Delete(t, vars["id"])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

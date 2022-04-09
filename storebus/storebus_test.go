@@ -99,11 +99,7 @@ func TestStoreBusDelete(t *testing.T) {
 		t.Errorf("%+v", out)
 	}
 
-	sb.Delete("storeBusTest", &storeBusTest{
-		Metadata: metadata.Metadata{
-			Id: "id1",
-		},
-	})
+	sb.Delete("storeBusTest", "id1")
 
 	out2, ok := <-ch
 	if ok {

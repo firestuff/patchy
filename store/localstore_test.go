@@ -103,11 +103,7 @@ func TestLocalStoreDelete(t *testing.T) {
 		t.Errorf("%+v", out1)
 	}
 
-	err = store.Delete("storeTest", &storeTest{
-		Metadata: metadata.Metadata{
-			Id: "id1",
-		},
-	})
+	err = store.Delete("storeTest", "id1")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -55,10 +55,10 @@ func (s *LocalStore) Write(t string, obj any) error {
 	return nil
 }
 
-func (s *LocalStore) Delete(t string, obj any) error {
-	id := metadata.GetMetadata(obj).GetSafeId()
-	dir := filepath.Join(s.root, t, id[:4])
-	return os.Remove(filepath.Join(dir, id))
+func (s *LocalStore) Delete(t string, id string) error {
+	safeId := metadata.GetSafeId(id)
+	dir := filepath.Join(s.root, t, safeId[:4])
+	return os.Remove(filepath.Join(dir, safeId))
 }
 
 func (s *LocalStore) Read(t string, obj any) error {
