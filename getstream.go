@@ -8,7 +8,7 @@ import "github.com/gorilla/mux"
 
 import "github.com/firestuff/patchy/metadata"
 
-func (api *API) getStream(t string, cfg *config, w http.ResponseWriter, r *http.Request) {
+func (api *API) getStream(cfg *config, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	_, ok := w.(http.Flusher)
@@ -27,7 +27,7 @@ func (api *API) getStream(t string, cfg *config, w http.ResponseWriter, r *http.
 	cfg.mu.RLock()
 	// THIS LOCK REQUIRES MANUAL UNLOCKING IN ALL BRANCHES
 
-	err := api.sb.Read(t, obj)
+	err := api.sb.Read(cfg.typeName, obj)
 	if err == os.ErrNotExist {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		cfg.mu.RUnlock()
@@ -55,7 +55,7 @@ func (api *API) getStream(t string, cfg *config, w http.ResponseWriter, r *http.
 	}
 
 	closeChan := w.(http.CloseNotifier).CloseNotify()
-	objChan := api.sb.Subscribe(t, obj)
+	objChan := api.sb.Subscribe(cfg.typeName, obj)
 	ticker := time.NewTicker(5 * time.Second)
 
 	cfg.mu.RUnlock()

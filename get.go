@@ -7,14 +7,14 @@ import "github.com/gorilla/mux"
 
 import "github.com/firestuff/patchy/metadata"
 
-func (api *API) get(t string, cfg *config, w http.ResponseWriter, r *http.Request) {
+func (api *API) get(cfg *config, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	obj := cfg.factory()
 
 	metadata.GetMetadata(obj).Id = vars["id"]
 
-	err := api.sb.Read(t, obj)
+	err := api.sb.Read(cfg.typeName, obj)
 	if err == os.ErrNotExist {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return

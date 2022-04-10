@@ -2,8 +2,8 @@ package api
 
 import "net/http"
 
-func (api *API) getList(t string, cfg *config, w http.ResponseWriter, r *http.Request) {
-	list, err := api.sb.List(t, cfg.factory)
+func (api *API) getList(cfg *config, w http.ResponseWriter, r *http.Request) {
+	list, err := api.sb.List(cfg.typeName, cfg.factory)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

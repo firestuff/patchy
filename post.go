@@ -6,7 +6,7 @@ import "github.com/google/uuid"
 
 import "github.com/firestuff/patchy/metadata"
 
-func (api *API) post(t string, cfg *config, w http.ResponseWriter, r *http.Request) {
+func (api *API) post(cfg *config, w http.ResponseWriter, r *http.Request) {
 	obj := cfg.factory()
 
 	err := readJson(r, obj)
@@ -25,7 +25,7 @@ func (api *API) post(t string, cfg *config, w http.ResponseWriter, r *http.Reque
 		}
 	}
 
-	err = api.sb.Write(t, obj)
+	err = api.sb.Write(cfg.typeName, obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
