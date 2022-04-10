@@ -47,7 +47,7 @@ func (api *API) stream(cfg *config, w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = writeUpdate(w, obj)
+	err = writeEvent(w, "initial", obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		cfg.mu.RUnlock()
@@ -69,19 +69,22 @@ func (api *API) stream(cfg *config, w http.ResponseWriter, r *http.Request) {
 
 		case msg, ok := <-objChan:
 			if ok {
-				err = writeUpdate(w, msg)
+				err = writeEvent(w, "update", msg)
 				if err != nil {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
 			} else {
-				writeDelete(w)
+				writeEvent(w, "delete", emptyEvent)
 				connected = false
 			}
 
 		case <-ticker.C:
-			writeHeartbeat(w)
-
+			err = writeEvent(w, "heartbeat", emptyEvent)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 		}
 	}
 }

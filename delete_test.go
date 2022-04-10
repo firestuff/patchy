@@ -36,7 +36,7 @@ func TestDELETE(t *testing.T) {
 		initial := &testType{}
 		eventType, err := readEvent(scan, initial)
 		require.Nil(t, err)
-		require.Equal(t, "update", eventType)
+		require.Equal(t, "initial", eventType)
 		require.Equal(t, "foo", initial.Text)
 
 		resp, err = c.R().

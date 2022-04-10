@@ -102,6 +102,13 @@ func RegisterName[T any](api *API, t string) {
 
 	api.router.HandleFunc(
 		fmt.Sprintf("/%s", t),
+		func(w http.ResponseWriter, r *http.Request) { api.streamList(cfg, w, r) },
+	).
+		Methods("GET").
+		Headers("Accept", "text/event-stream")
+
+	api.router.HandleFunc(
+		fmt.Sprintf("/%s", t),
 		func(w http.ResponseWriter, r *http.Request) { api.getList(cfg, w, r) },
 	).
 		Methods("GET")
