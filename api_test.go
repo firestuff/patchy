@@ -20,7 +20,7 @@ func withAPI(t *testing.T, cb func(*testing.T, *API, string, *resty.Client)) {
 	require.Nil(t, err)
 	defer os.RemoveAll(dir)
 
-	api, err := NewLocalStoreAPI(dir)
+	api, err := NewFileStoreAPI(dir)
 	require.Nil(t, err)
 
 	Register[testType](api)

@@ -15,7 +15,7 @@ func TestStoreBus(t *testing.T) {
 	require.Nil(t, err)
 	defer os.RemoveAll(dir)
 
-	sb := NewStoreBus(store.NewLocalStore(dir))
+	sb := NewStoreBus(store.NewFileStore(dir))
 
 	err = sb.Write("storeBusTest", &storeBusTest{
 		Metadata: metadata.Metadata{
@@ -61,7 +61,7 @@ func TestStoreBusDelete(t *testing.T) {
 	require.Nil(t, err)
 	defer os.RemoveAll(dir)
 
-	sb := NewStoreBus(store.NewLocalStore(dir))
+	sb := NewStoreBus(store.NewFileStore(dir))
 
 	ch := sb.Subscribe("storeBusTest", &storeBusTest{
 		Metadata: metadata.Metadata{

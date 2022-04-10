@@ -7,14 +7,14 @@ import "github.com/stretchr/testify/require"
 
 import "github.com/firestuff/patchy/metadata"
 
-func TestLocalStore(t *testing.T) {
+func TestFileStore(t *testing.T) {
 	t.Parallel()
 
 	dir, err := os.MkdirTemp("", "")
 	require.Nil(t, err)
 	defer os.RemoveAll(dir)
 
-	store := NewLocalStore(dir)
+	store := NewFileStore(dir)
 
 	err = store.Write("storeTest", &storeTest{
 		Metadata: metadata.Metadata{
@@ -53,14 +53,14 @@ func TestLocalStore(t *testing.T) {
 	require.Equal(t, "bar", out2.Opaque)
 }
 
-func TestLocalStoreDelete(t *testing.T) {
+func TestFileStoreDelete(t *testing.T) {
 	t.Parallel()
 
 	dir, err := os.MkdirTemp("", "")
 	require.Nil(t, err)
 	defer os.RemoveAll(dir)
 
-	store := NewLocalStore(dir)
+	store := NewFileStore(dir)
 
 	err = store.Write("storeTest", &storeTest{
 		Metadata: metadata.Metadata{
@@ -91,14 +91,14 @@ func TestLocalStoreDelete(t *testing.T) {
 	require.NotNil(t, err)
 }
 
-func TestLocalStoreList(t *testing.T) {
+func TestFileStoreList(t *testing.T) {
 	t.Parallel()
 
 	dir, err := os.MkdirTemp("", "")
 	require.Nil(t, err)
 	defer os.RemoveAll(dir)
 
-	store := NewLocalStore(dir)
+	store := NewFileStore(dir)
 
 	err = store.Write("storeTest", &storeTest{
 		Metadata: metadata.Metadata{
