@@ -64,7 +64,8 @@ func Register[T any](api *API) {
 
 func RegisterName[T any](api *API, t string) {
 	cfg := &config{
-		factory: func() any { return new(T) },
+		typeName: t,
+		factory:  func() any { return new(T) },
 	}
 
 	obj := new(T)
@@ -101,48 +102,48 @@ func RegisterName[T any](api *API, t string) {
 
 	api.router.HandleFunc(
 		fmt.Sprintf("/%s", t),
-		func(w http.ResponseWriter, r *http.Request) { api.getList(t, cfg, w, r) },
+		func(w http.ResponseWriter, r *http.Request) { api.getList(cfg, w, r) },
 	).
 		Methods("GET").
 		Headers("Content-Type", "application/json")
 
 	api.router.HandleFunc(
 		fmt.Sprintf("/%s", t),
-		func(w http.ResponseWriter, r *http.Request) { api.post(t, cfg, w, r) },
+		func(w http.ResponseWriter, r *http.Request) { api.post(cfg, w, r) },
 	).
 		Methods("POST").
 		Headers("Content-Type", "application/json")
 
 	api.router.HandleFunc(
 		fmt.Sprintf("/%s/{id}", t),
-		func(w http.ResponseWriter, r *http.Request) { api.put(t, cfg, w, r) },
+		func(w http.ResponseWriter, r *http.Request) { api.put(cfg, w, r) },
 	).
 		Methods("PUT").
 		Headers("Content-Type", "application/json")
 
 	api.router.HandleFunc(
 		fmt.Sprintf("/%s/{id}", t),
-		func(w http.ResponseWriter, r *http.Request) { api.patch(t, cfg, w, r) },
+		func(w http.ResponseWriter, r *http.Request) { api.patch(cfg, w, r) },
 	).
 		Methods("PATCH").
 		Headers("Content-Type", "application/json")
 
 	api.router.HandleFunc(
 		fmt.Sprintf("/%s/{id}", t),
-		func(w http.ResponseWriter, r *http.Request) { api.delete(t, cfg, w, r) },
+		func(w http.ResponseWriter, r *http.Request) { api.delete(cfg, w, r) },
 	).
 		Methods("DELETE")
 
 	api.router.HandleFunc(
 		fmt.Sprintf("/%s/{id}", t),
-		func(w http.ResponseWriter, r *http.Request) { api.getStream(t, cfg, w, r) },
+		func(w http.ResponseWriter, r *http.Request) { api.getStream(cfg, w, r) },
 	).
 		Methods("GET").
 		Headers("Accept", "text/event-stream")
 
 	api.router.HandleFunc(
 		fmt.Sprintf("/%s/{id}", t),
-		func(w http.ResponseWriter, r *http.Request) { api.get(t, cfg, w, r) },
+		func(w http.ResponseWriter, r *http.Request) { api.get(cfg, w, r) },
 	).
 		Methods("GET")
 }

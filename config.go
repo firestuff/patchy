@@ -4,6 +4,8 @@ import "net/http"
 import "sync"
 
 type config struct {
+	typeName string
+
 	factory func() any
 
 	mayCreate  func(any, *http.Request) error

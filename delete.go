@@ -7,7 +7,7 @@ import "github.com/gorilla/mux"
 
 import "github.com/firestuff/patchy/metadata"
 
-func (api *API) delete(t string, cfg *config, w http.ResponseWriter, r *http.Request) {
+func (api *API) delete(cfg *config, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	obj := cfg.factory()
@@ -17,7 +17,7 @@ func (api *API) delete(t string, cfg *config, w http.ResponseWriter, r *http.Req
 	cfg.mu.Lock()
 	defer cfg.mu.Unlock()
 
-	err := api.sb.Read(t, obj)
+	err := api.sb.Read(cfg.typeName, obj)
 	if err == os.ErrNotExist {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -34,7 +34,7 @@ func (api *API) delete(t string, cfg *config, w http.ResponseWriter, r *http.Req
 		}
 	}
 
-	err = api.sb.Delete(t, vars["id"])
+	err = api.sb.Delete(cfg.typeName, vars["id"])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

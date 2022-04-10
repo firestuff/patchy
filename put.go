@@ -9,7 +9,7 @@ import "github.com/gorilla/mux"
 
 import "github.com/firestuff/patchy/metadata"
 
-func (api *API) put(t string, cfg *config, w http.ResponseWriter, r *http.Request) {
+func (api *API) put(cfg *config, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	obj := cfg.factory()
@@ -19,7 +19,7 @@ func (api *API) put(t string, cfg *config, w http.ResponseWriter, r *http.Reques
 	cfg.mu.Lock()
 	defer cfg.mu.Unlock()
 
-	err := api.sb.Read(t, obj)
+	err := api.sb.Read(cfg.typeName, obj)
 	if err == os.ErrNotExist {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -61,7 +61,7 @@ func (api *API) put(t string, cfg *config, w http.ResponseWriter, r *http.Reques
 		}
 	}
 
-	err = api.sb.Write(t, replace)
+	err = api.sb.Write(cfg.typeName, replace)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
