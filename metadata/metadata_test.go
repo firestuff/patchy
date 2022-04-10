@@ -2,6 +2,8 @@ package metadata
 
 import "testing"
 
+import "github.com/stretchr/testify/require"
+
 type TestType struct {
 	Metadata
 	Text string
@@ -16,27 +18,11 @@ func TestMetadata(t *testing.T) {
 	tt.Id = "abc123"
 
 	m := GetMetadata(tt)
-	if m == nil {
-		t.Fatal("GetMetadata")
-	}
-
-	if m.Id != "abc123" {
-		t.Fatal(m.Id)
-	}
-
-	sid := m.GetSafeId()
-	if sid != "6ca13d52ca70c883e0f0bb101e425a89e8624de51db2d2392593af6a84118090" {
-		t.Fatal(sid)
-	}
-
-	key := m.GetKey("testtype")
-	if key != "testtype:6ca13d52ca70c883e0f0bb101e425a89e8624de51db2d2392593af6a84118090" {
-		t.Fatal(key)
-	}
+	require.NotNil(t, m)
+	require.Equal(t, "abc123", m.Id)
+	require.Equal(t, "6ca13d52ca70c883e0f0bb101e425a89e8624de51db2d2392593af6a84118090", m.GetSafeId())
+	require.Equal(t, "testtype:6ca13d52ca70c883e0f0bb101e425a89e8624de51db2d2392593af6a84118090", m.GetKey("testtype"))
 
 	ClearMetadata(tt)
-
-	if tt.Id != "" {
-		t.Fatal(tt.Id)
-	}
+	require.Empty(t, tt.Id)
 }

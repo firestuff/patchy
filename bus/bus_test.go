@@ -2,6 +2,8 @@ package bus
 
 import "testing"
 
+import "github.com/stretchr/testify/require"
+
 import "github.com/firestuff/patchy/metadata"
 
 func TestBus(t *testing.T) {
@@ -52,14 +54,10 @@ func TestBus(t *testing.T) {
 	})
 
 	msg := <-ch1a
-	if msg.(*busTest).Id != "id-overlap" {
-		t.Errorf("%+v", msg)
-	}
+	require.Equal(t, "id-overlap", msg.(*busTest).Id)
 
 	msg = <-ch1
-	if msg.(*busTest).Id != "id-overlap" {
-		t.Errorf("%+v", msg)
-	}
+	require.Equal(t, "id-overlap", msg.(*busTest).Id)
 
 	select {
 	case msg := <-ch2a:
@@ -84,14 +82,10 @@ func TestBus(t *testing.T) {
 	}
 
 	msg = <-ch2a
-	if msg.(*busTest).Id != "id-overlap" {
-		t.Errorf("%+v", msg)
-	}
+	require.Equal(t, "id-overlap", msg.(*busTest).Id)
 
 	msg = <-ch2
-	if msg.(*busTest).Id != "id-overlap" {
-		t.Errorf("%+v", msg)
-	}
+	require.Equal(t, "id-overlap", msg.(*busTest).Id)
 
 	bus.Announce("busTest2", &busTest{
 		Metadata: metadata.Metadata{
@@ -100,19 +94,13 @@ func TestBus(t *testing.T) {
 	})
 
 	msg = <-ch2b
-	if msg.(*busTest).Id != "id-dupe" {
-		t.Errorf("%+v", msg)
-	}
+	require.Equal(t, "id-dupe", msg.(*busTest).Id)
 
 	msg = <-ch2c
-	if msg.(*busTest).Id != "id-dupe" {
-		t.Errorf("%+v", msg)
-	}
+	require.Equal(t, "id-dupe", msg.(*busTest).Id)
 
 	msg = <-ch2
-	if msg.(*busTest).Id != "id-dupe" {
-		t.Errorf("%+v", msg)
-	}
+	require.Equal(t, "id-dupe", msg.(*busTest).Id)
 }
 
 func TestBusDelete(t *testing.T) {
@@ -135,26 +123,18 @@ func TestBusDelete(t *testing.T) {
 	})
 
 	msg := <-keyChan
-	if msg.(*busTest).Id != "id1" {
-		t.Errorf("%+v", msg)
-	}
+	require.Equal(t, "id1", msg.(*busTest).Id)
 
 	msg = <-typeChan
-	if msg.(*busTest).Id != "id1" {
-		t.Errorf("%+v", msg)
-	}
+	require.Equal(t, "id1", msg.(*busTest).Id)
 
 	bus.Delete("busTest", "id1")
 
 	msg, ok := <-keyChan
-	if ok {
-		t.Errorf("%+v", msg)
-	}
+	require.False(t, ok)
 
 	id := <-delChan
-	if id != "id1" {
-		t.Errorf("%+v", id)
-	}
+	require.Equal(t, "id1", id)
 }
 
 type busTest struct {

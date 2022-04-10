@@ -13,18 +13,15 @@ import "strings"
 import "testing"
 
 import "github.com/go-resty/resty/v2"
+import "github.com/stretchr/testify/require"
 
 func withAPI(t *testing.T, cb func(*testing.T, *API, string, *resty.Client)) {
 	dir, err := os.MkdirTemp("", "")
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Nil(t, err)
 	defer os.RemoveAll(dir)
 
 	api, err := NewLocalStoreAPI(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Nil(t, err)
 
 	Register[testType](api)
 
@@ -33,9 +30,7 @@ func withAPI(t *testing.T, cb func(*testing.T, *API, string, *resty.Client)) {
 	mux.Handle("/api/", http.StripPrefix("/api", api))
 
 	listener, err := net.Listen("tcp", "[::]:0")
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Nil(t, err)
 
 	srv := &http.Server{
 		Handler: mux,

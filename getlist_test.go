@@ -4,6 +4,7 @@ import "fmt"
 import "testing"
 
 import "github.com/go-resty/resty/v2"
+import "github.com/stretchr/testify/require"
 
 func TestGETList(t *testing.T) {
 	t.Parallel()
@@ -17,12 +18,8 @@ func TestGETList(t *testing.T) {
 			}).
 			SetResult(created1).
 			Post(fmt.Sprintf("%s/testtype", baseURL))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if resp.IsError() {
-			t.Fatal(resp)
-		}
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
 
 		created2 := &testType{}
 
@@ -32,32 +29,17 @@ func TestGETList(t *testing.T) {
 			}).
 			SetResult(created2).
 			Post(fmt.Sprintf("%s/testtype", baseURL))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if resp.IsError() {
-			t.Fatal(resp)
-		}
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
 
 		list := []testType{}
 
 		resp, err = c.R().
 			SetResult(&list).
 			Get(fmt.Sprintf("%s/testtype", baseURL))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if resp.IsError() {
-			t.Fatal(resp)
-		}
-
-		if len(list) != 2 {
-			t.Fatalf("%+v", list)
-		}
-
-		if !((list[0].Text == "foo" && list[1].Text == "bar") ||
-			(list[0].Text == "bar" && list[1].Text == "foo")) {
-			t.Fatalf("%+v", list)
-		}
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
+		require.Len(t, list, 2)
+		require.ElementsMatch(t, []string{"foo", "bar"}, []string{list[0].Text, list[1].Text})
 	})
 }
