@@ -38,7 +38,7 @@ func TestStream(t *testing.T) {
 		initial := &testType{}
 		eventType, err := readEvent(scan, initial)
 		require.Nil(t, err)
-		require.Equal(t, "update", eventType)
+		require.Equal(t, "initial", eventType)
 		require.Equal(t, "foo", initial.Text)
 
 		// Heartbeat (after 5 seconds)
@@ -141,8 +141,8 @@ func TestStreamRace(t *testing.T) {
 						return
 					}
 
-					if eventType != "update" {
-						doneStream <- fmt.Errorf("update(1) != %s", eventType)
+					if eventType != "initial" {
+						doneStream <- fmt.Errorf("initial != %s", eventType)
 						return
 					}
 
@@ -154,7 +154,7 @@ func TestStreamRace(t *testing.T) {
 					}
 
 					if eventType != "update" {
-						doneStream <- fmt.Errorf("update(2) != %s", eventType)
+						doneStream <- fmt.Errorf("update != %s", eventType)
 						return
 					}
 
