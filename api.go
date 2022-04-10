@@ -20,8 +20,8 @@ type API struct {
 
 type Metadata = metadata.Metadata
 
-func NewLocalStoreAPI(root string) (*API, error) {
-	return NewAPI(store.NewLocalStore(root))
+func NewFileStoreAPI(root string) (*API, error) {
+	return NewAPI(store.NewFileStore(root))
 }
 
 func NewAPI(st store.Storer) (*API, error) {

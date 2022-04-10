@@ -9,17 +9,17 @@ import "strings"
 
 import "github.com/firestuff/patchy/metadata"
 
-type LocalStore struct {
+type FileStore struct {
 	root string
 }
 
-func NewLocalStore(root string) Storer {
-	return &LocalStore{
+func NewFileStore(root string) Storer {
+	return &FileStore{
 		root: root,
 	}
 }
 
-func (s *LocalStore) Write(t string, obj any) error {
+func (s *FileStore) Write(t string, obj any) error {
 	id := metadata.GetMetadata(obj).GetSafeId()
 	dir := filepath.Join(s.root, t, id[:4])
 
@@ -55,19 +55,19 @@ func (s *LocalStore) Write(t string, obj any) error {
 	return nil
 }
 
-func (s *LocalStore) Delete(t string, id string) error {
+func (s *FileStore) Delete(t string, id string) error {
 	safeId := metadata.GetSafeId(id)
 	dir := filepath.Join(s.root, t, safeId[:4])
 	return os.Remove(filepath.Join(dir, safeId))
 }
 
-func (s *LocalStore) Read(t string, obj any) error {
+func (s *FileStore) Read(t string, obj any) error {
 	id := metadata.GetMetadata(obj).GetSafeId()
 	dir := filepath.Join(s.root, t, id[:4])
 	return s.read(filepath.Join(dir, id), obj)
 }
 
-func (s *LocalStore) List(t string, factory func() any) ([]any, error) {
+func (s *FileStore) List(t string, factory func() any) ([]any, error) {
 	dir := filepath.Join(s.root, t)
 	fsys := os.DirFS(dir)
 
@@ -105,7 +105,7 @@ func (s *LocalStore) List(t string, factory func() any) ([]any, error) {
 	return ret, nil
 }
 
-func (s *LocalStore) read(path string, obj any) error {
+func (s *FileStore) read(path string, obj any) error {
 	fh, err := os.Open(path)
 	if err != nil {
 		return err
