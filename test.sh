@@ -1,6 +1,0 @@
-#!/bin/bash -ex
-
-cd $(dirname $0)
-
-go vet ./...
-go test -race -timeout=7s -parallel=10 ./...
