@@ -5,6 +5,7 @@ import "fmt"
 import "testing"
 
 import "github.com/go-resty/resty/v2"
+import "github.com/stretchr/testify/require"
 
 func TestDELETE(t *testing.T) {
 	t.Parallel()
@@ -12,23 +13,21 @@ func TestDELETE(t *testing.T) {
 	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
 		created := &testType{}
 
-		_, err := c.R().
+		resp, err := c.R().
 			SetBody(&testType{
 				Text: "foo",
 			}).
 			SetResult(created).
 			Post(fmt.Sprintf("%s/testtype", baseURL))
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
 
-		resp, err := c.R().
+		resp, err = c.R().
 			SetDoNotParseResponse(true).
 			SetHeader("Accept", "text/event-stream").
 			Get(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
 		body := resp.RawBody()
 		defer body.Close()
 
@@ -36,29 +35,17 @@ func TestDELETE(t *testing.T) {
 
 		initial := &testType{}
 		eventType, err := readEvent(scan, initial)
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.Nil(t, err)
+		require.Equal(t, "update", eventType)
+		require.Equal(t, "foo", initial.Text)
 
-		if eventType != "update" {
-			t.Error(eventType)
-		}
-
-		if initial.Text != "foo" {
-			t.Error(initial)
-		}
-
-		_, err = c.R().
+		resp, err = c.R().
 			Delete(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
 
 		eventType, err = readEvent(scan, nil)
-
-		if eventType != "delete" {
-			t.Error(eventType)
-		}
+		require.Equal(t, "delete", eventType)
 
 		body.Close()
 
@@ -67,8 +54,7 @@ func TestDELETE(t *testing.T) {
 		resp, err = c.R().
 			SetResult(read).
 			Get(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
-		if !resp.IsError() {
-			t.Fatal(read)
-		}
+		require.Nil(t, err)
+		require.True(t, resp.IsError())
 	})
 }

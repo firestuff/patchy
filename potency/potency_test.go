@@ -8,10 +8,12 @@ import "net/http"
 import "os"
 import "testing"
 
-import "github.com/firestuff/patchy/store"
 import "github.com/google/uuid"
 import "github.com/gorilla/mux"
 import "github.com/go-resty/resty/v2"
+import "github.com/stretchr/testify/require"
+
+import "github.com/firestuff/patchy/store"
 
 func TestGET(t *testing.T) {
 	t.Parallel()
@@ -22,62 +24,36 @@ func TestGET(t *testing.T) {
 		resp1a, err := c.R().
 			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
 			Get(url)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if resp1a.IsError() {
-			t.Fatal(resp1a)
-		}
+		require.Nil(t, err)
+		require.False(t, resp1a.IsError())
 
 		resp1b, err := c.R().
 			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
 			Get(url)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if resp1b.IsError() {
-			t.Fatal(resp1b)
-		}
-
-		if resp1a.String() != resp1b.String() {
-			t.Fatalf("%s vs %s", resp1a, resp1b)
-		}
+		require.Nil(t, err)
+		require.False(t, resp1b.IsError())
+		require.Equal(t, resp1a.String(), resp1b.String())
 
 		key2 := uuid.NewString()
 
 		resp2, err := c.R().
 			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key2)).
 			Get(url)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if resp2.IsError() {
-			t.Fatal(resp2)
-		}
-
-		if resp1a.String() == resp2.String() {
-			t.Fatal(resp1a)
-		}
+		require.Nil(t, err)
+		require.False(t, resp2.IsError())
+		require.NotEqual(t, resp1a.String(), resp2.String())
 
 		resp1c, err := c.R().
 			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
 			Get(fmt.Sprintf("%sx", url))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !resp1c.IsError() {
-			t.Fatal("Improper success")
-		}
+		require.Nil(t, err)
+		require.True(t, resp1c.IsError())
 
 		resp1d, err := c.R().
 			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
 			Delete(url)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !resp1d.IsError() {
-			t.Fatal("Improper success")
-		}
+		require.Nil(t, err)
+		require.True(t, resp1d.IsError())
 	})
 }
 
@@ -91,55 +67,36 @@ func TestPOST(t *testing.T) {
 			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
 			SetBody("test1").
 			Post(url)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if resp1a.IsError() {
-			t.Fatal(resp1a)
-		}
+		require.Nil(t, err)
+		require.False(t, resp1a.IsError())
 
 		resp1b, err := c.R().
 			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
 			SetBody("test1").
 			Post(url)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if resp1b.IsError() {
-			t.Fatal(resp1b)
-		}
-
-		if resp1a.String() != resp1b.String() {
-			t.Fatalf("%s vs %s", resp1a, resp1b)
-		}
+		require.Nil(t, err)
+		require.False(t, resp1b.IsError())
+		require.Equal(t, resp1b.String(), resp1a.String())
 
 		resp1c, err := c.R().
 			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
 			SetBody("test2").
 			Post(url)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !resp1c.IsError() {
-			t.Fatal(resp1c)
-		}
+		require.Nil(t, err)
+		require.True(t, resp1c.IsError())
 	})
 }
 
 func withServer(t *testing.T, cb func(*testing.T, string, *resty.Client)) {
 	dir, err := os.MkdirTemp("", "")
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Nil(t, err)
 	defer os.RemoveAll(dir)
 
 	store := store.NewLocalStore(dir)
 	p := NewPotency(store)
 
 	listener, err := net.Listen("tcp", "[::]:0")
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.Nil(t, err)
 
 	router := mux.NewRouter()
 	router.Use(p.Middleware)

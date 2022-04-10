@@ -4,6 +4,7 @@ import "fmt"
 import "testing"
 
 import "github.com/go-resty/resty/v2"
+import "github.com/stretchr/testify/require"
 
 func TestPUT(t *testing.T) {
 	t.Parallel()
@@ -11,60 +12,39 @@ func TestPUT(t *testing.T) {
 	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
 		created := &testType{}
 
-		_, err := c.R().
+		resp, err := c.R().
 			SetBody(&testType{
 				Text: "foo",
 				Num:  1,
 			}).
 			SetResult(created).
 			Post(fmt.Sprintf("%s/testtype", baseURL))
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
 
 		replaced := &testType{}
 
-		put, err := c.R().
+		resp, err = c.R().
 			SetBody(&testType{
 				Text: "bar",
 			}).
 			SetResult(replaced).
 			Put(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if put.IsError() {
-			t.Fatal(put)
-		}
-
-		if replaced.Text != "bar" {
-			t.Fatalf("%+v", replaced)
-		}
-
-		if replaced.Id != created.Id {
-			t.Fatalf("%+v %+v", replaced, created)
-		}
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
+		require.Equal(t, "bar", replaced.Text)
+		require.Equal(t, created.Id, replaced.Id)
 
 		read := &testType{}
 
-		_, err = c.R().
+		resp, err = c.R().
 			SetResult(read).
 			Get(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if read.Text != "bar" {
-			t.Fatalf("%+v", read)
-		}
-
-		if read.Num != 0 {
-			t.Fatalf("%+v", read)
-		}
-
-		if read.Id != created.Id {
-			t.Fatalf("%+v %+v", read, created)
-		}
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
+		require.Equal(t, "bar", read.Text)
+		require.Equal(t, int64(0), read.Num)
+		require.Equal(t, created.Id, read.Id)
 	})
 }
 
@@ -80,14 +60,11 @@ func TestPUTIfMatch(t *testing.T) {
 			}).
 			SetResult(created).
 			Post(fmt.Sprintf("%s/testtype", baseURL))
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
 
 		etag := resp.Header().Get("ETag")
-		if etag != fmt.Sprintf(`"%s"`, created.ETag) {
-			t.Fatalf("%s vs %+v", etag, created)
-		}
+		require.Equal(t, fmt.Sprintf(`"%s"`, created.ETag), etag)
 
 		replaced := &testType{}
 
@@ -97,18 +74,12 @@ func TestPUTIfMatch(t *testing.T) {
 			}).
 			SetResult(replaced).
 			Put(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
 
 		etag = resp.Header().Get("ETag")
-		if etag != fmt.Sprintf(`"%s"`, replaced.ETag) {
-			t.Fatalf("%s vs %+v", etag, replaced)
-		}
-
-		if replaced.ETag == created.ETag {
-			t.Fatalf("ETag unchanged")
-		}
+		require.Equal(t, fmt.Sprintf(`"%s"`, replaced.ETag), etag)
+		require.NotEqual(t, created.ETag, replaced.ETag)
 
 		resp, err = c.R().
 			SetHeader("If-Match", `"foobar"`).
@@ -117,14 +88,8 @@ func TestPUTIfMatch(t *testing.T) {
 			}).
 			SetResult(replaced).
 			Put(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !resp.IsError() {
-			t.Fatal("improper success")
-		}
-		if resp.StatusCode() != 412 {
-			t.Fatal(resp.StatusCode())
-		}
+		require.Nil(t, err)
+		require.True(t, resp.IsError())
+		require.Equal(t, 412, resp.StatusCode())
 	})
 }

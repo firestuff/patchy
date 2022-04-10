@@ -6,6 +6,7 @@ import "sync"
 import "testing"
 
 import "github.com/go-resty/resty/v2"
+import "github.com/stretchr/testify/require"
 
 type flagType struct {
 	Metadata
@@ -88,16 +89,9 @@ func TestMayCreate(t *testing.T) {
 			SetBody(&flagType{}).
 			SetResult(created).
 			Post(fmt.Sprintf("%s/flagtype", baseURL))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if resp.IsError() {
-			t.Fatal(resp.Error())
-		}
-
-		if created.Id == "" {
-			t.Fatal("missing ID")
-		}
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
+		require.NotEmpty(t, created.Id)
 
 		flagMu.Lock()
 		mayCreateFlag = false
@@ -107,12 +101,8 @@ func TestMayCreate(t *testing.T) {
 			SetBody(&flagType{}).
 			SetResult(created).
 			Post(fmt.Sprintf("%s/flagtype", baseURL))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !resp.IsError() {
-			t.Fatal("improper success")
-		}
+		require.Nil(t, err)
+		require.True(t, resp.IsError())
 	})
 }
 
@@ -126,13 +116,12 @@ func TestMayReplace(t *testing.T) {
 		mayCreateFlag = true
 		flagMu.Unlock()
 
-		_, err := c.R().
+		resp, err := c.R().
 			SetBody(&flagType{}).
 			SetResult(created).
 			Post(fmt.Sprintf("%s/flagtype", baseURL))
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
 
 		flagMu.Lock()
 		mayReplaceFlag = true
@@ -140,16 +129,12 @@ func TestMayReplace(t *testing.T) {
 
 		replaced := &flagType{}
 
-		resp, err := c.R().
+		resp, err = c.R().
 			SetBody(&flagType{}).
 			SetResult(replaced).
 			Put(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if resp.IsError() {
-			t.Fatal(resp)
-		}
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
 
 		flagMu.Lock()
 		mayReplaceFlag = false
@@ -159,12 +144,8 @@ func TestMayReplace(t *testing.T) {
 			SetBody(&flagType{}).
 			SetResult(replaced).
 			Put(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !resp.IsError() {
-			t.Fatal("improper success")
-		}
+		require.Nil(t, err)
+		require.True(t, resp.IsError())
 	})
 }
 
@@ -178,13 +159,12 @@ func TestMayUpdate(t *testing.T) {
 		mayCreateFlag = true
 		flagMu.Unlock()
 
-		_, err := c.R().
+		resp, err := c.R().
 			SetBody(&flagType{}).
 			SetResult(created).
 			Post(fmt.Sprintf("%s/flagtype", baseURL))
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
 
 		flagMu.Lock()
 		mayUpdateFlag = true
@@ -192,16 +172,12 @@ func TestMayUpdate(t *testing.T) {
 
 		updated := &flagType{}
 
-		resp, err := c.R().
+		resp, err = c.R().
 			SetBody(&flagType{}).
 			SetResult(updated).
 			Patch(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if resp.IsError() {
-			t.Fatal(resp)
-		}
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
 
 		flagMu.Lock()
 		mayUpdateFlag = false
@@ -211,12 +187,8 @@ func TestMayUpdate(t *testing.T) {
 			SetBody(&flagType{}).
 			SetResult(updated).
 			Patch(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !resp.IsError() {
-			t.Fatal("improper success")
-		}
+		require.Nil(t, err)
+		require.True(t, resp.IsError())
 	})
 }
 
@@ -230,26 +202,21 @@ func TestMayDelete(t *testing.T) {
 		mayCreateFlag = true
 		flagMu.Unlock()
 
-		_, err := c.R().
+		resp, err := c.R().
 			SetBody(&flagType{}).
 			SetResult(created).
 			Post(fmt.Sprintf("%s/flagtype", baseURL))
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
 
 		flagMu.Lock()
 		mayDeleteFlag = false
 		flagMu.Unlock()
 
-		resp, err := c.R().
+		resp, err = c.R().
 			Delete(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !resp.IsError() {
-			t.Fatal("improper success")
-		}
+		require.Nil(t, err)
+		require.True(t, resp.IsError())
 
 		flagMu.Lock()
 		mayDeleteFlag = true
@@ -257,12 +224,8 @@ func TestMayDelete(t *testing.T) {
 
 		resp, err = c.R().
 			Delete(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if resp.IsError() {
-			t.Fatal(resp)
-		}
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
 	})
 }
 
@@ -276,13 +239,12 @@ func TestMayRead(t *testing.T) {
 		mayCreateFlag = true
 		flagMu.Unlock()
 
-		_, err := c.R().
+		resp, err := c.R().
 			SetBody(&flagType{}).
 			SetResult(created).
 			Post(fmt.Sprintf("%s/flagtype", baseURL))
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
 
 		read := &testType{}
 
@@ -290,26 +252,18 @@ func TestMayRead(t *testing.T) {
 		mayReadFlag = true
 		flagMu.Unlock()
 
-		resp, err := c.R().
+		resp, err = c.R().
 			SetResult(read).
 			Get(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if resp.IsError() {
-			t.Fatal(resp)
-		}
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
 
 		resp, err = c.R().
 			SetDoNotParseResponse(true).
 			SetHeader("Accept", "text/event-stream").
 			Get(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if resp.IsError() {
-			t.Fatal(resp)
-		}
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
 		resp.RawBody().Close()
 
 		flagMu.Lock()
@@ -319,22 +273,14 @@ func TestMayRead(t *testing.T) {
 		resp, err = c.R().
 			SetResult(read).
 			Get(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !resp.IsError() {
-			t.Fatal("improper success")
-		}
+		require.Nil(t, err)
+		require.True(t, resp.IsError())
 
 		resp, err = c.R().
 			SetDoNotParseResponse(true).
 			SetHeader("Accept", "text/event-stream").
 			Get(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !resp.IsError() {
-			t.Fatal("improper success")
-		}
+		require.Nil(t, err)
+		require.True(t, resp.IsError())
 	})
 }
