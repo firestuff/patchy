@@ -104,8 +104,7 @@ func RegisterName[T any](api *API, t string) {
 		fmt.Sprintf("/%s", t),
 		func(w http.ResponseWriter, r *http.Request) { api.getList(cfg, w, r) },
 	).
-		Methods("GET").
-		Headers("Content-Type", "application/json")
+		Methods("GET")
 
 	api.router.HandleFunc(
 		fmt.Sprintf("/%s", t),
@@ -136,7 +135,7 @@ func RegisterName[T any](api *API, t string) {
 
 	api.router.HandleFunc(
 		fmt.Sprintf("/%s/{id}", t),
-		func(w http.ResponseWriter, r *http.Request) { api.getStream(cfg, w, r) },
+		func(w http.ResponseWriter, r *http.Request) { api.stream(cfg, w, r) },
 	).
 		Methods("GET").
 		Headers("Accept", "text/event-stream")
