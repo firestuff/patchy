@@ -8,7 +8,7 @@ import "github.com/gorilla/mux"
 
 import "github.com/firestuff/patchy/metadata"
 
-func (api *API) getStream(cfg *config, w http.ResponseWriter, r *http.Request) {
+func (api *API) stream(cfg *config, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	_, ok := w.(http.Flusher)

@@ -8,7 +8,7 @@ import "time"
 import "github.com/go-resty/resty/v2"
 import "github.com/stretchr/testify/require"
 
-func TestGETStream(t *testing.T) {
+func TestStream(t *testing.T) {
 	t.Parallel()
 
 	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
@@ -63,7 +63,7 @@ func TestGETStream(t *testing.T) {
 	})
 }
 
-func TestGETStreamRace(t *testing.T) {
+func TestStreamRace(t *testing.T) {
 	t.Parallel()
 
 	// Check that Subscribe always gets its first and second events in order
