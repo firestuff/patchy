@@ -16,33 +16,40 @@ func Match(obj any, path string, val1 string) (bool, error) {
 	case int:
 		v1, err := strconv.ParseInt(val1, 10, 64)
 		if err != nil {
-			return false, err
+			return false, fmt.Errorf("%s: %w", path, err)
 		}
 		return v1 == int64(v2), nil
 
 	case int64:
 		v1, err := strconv.ParseInt(val1, 10, 64)
 		if err != nil {
-			return false, err
+			return false, fmt.Errorf("%s: %w", path, err)
 		}
 		return v1 == v2, nil
 
 	case uint:
 		v1, err := strconv.ParseUint(val1, 10, 64)
 		if err != nil {
-			return false, err
+			return false, fmt.Errorf("%s: %w", path, err)
 		}
 		return v1 == uint64(v2), nil
 
 	case uint64:
 		v1, err := strconv.ParseUint(val1, 10, 64)
 		if err != nil {
-			return false, err
+			return false, fmt.Errorf("%s: %w", path, err)
 		}
 		return v1 == v2, nil
 
 	case string:
 		return val1 == v2, nil
+
+	case bool:
+		v1, err := strconv.ParseBool(val1)
+		if err != nil {
+			return false, fmt.Errorf("%s: %w", path, err)
+		}
+		return v1 == v2, nil
 
 	case time.Time:
 		for _, layout := range []string{
