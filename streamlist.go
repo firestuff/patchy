@@ -20,11 +20,9 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	for _, obj := range list {
-		err = writeEvent(w, "initial", obj)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+	err = writeEvent(w, "list", list)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 }

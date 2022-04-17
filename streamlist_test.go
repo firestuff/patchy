@@ -45,17 +45,12 @@ func TestStreamList(t *testing.T) {
 
 		scan := bufio.NewScanner(body)
 
-		initials := []*testType{}
+		list := []*testType{}
 
-		for i := 0; i < 2; i++ {
-			initial := &testType{}
-			eventType, err := readEvent(scan, initial)
-			require.Nil(t, err)
-			require.Equal(t, "initial", eventType)
+		eventType, err := readEvent(scan, &list)
+		require.Nil(t, err)
+		require.Equal(t, "list", eventType)
 
-			initials = append(initials, initial)
-		}
-
-		require.ElementsMatch(t, []string{"foo", "bar"}, []string{initials[0].Text, initials[1].Text})
+		require.ElementsMatch(t, []string{"foo", "bar"}, []string{list[0].Text, list[1].Text})
 	})
 }
