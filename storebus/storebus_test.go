@@ -36,11 +36,7 @@ func TestStoreBus(t *testing.T) {
 	require.Equal(t, "foo", out1.Opaque)
 	require.Equal(t, "11cb2d0f4dddf836245d5cc0b667e1275b3c0e10777b29335985cfd97210bbbb", out1.ETag)
 
-	ch := sb.Subscribe("storeBusTest", &storeBusTest{
-		Metadata: metadata.Metadata{
-			Id: "id1",
-		},
-	})
+	ch := sb.SubscribeKey("storeBusTest", "id1")
 
 	sb.Write("storeBusTest", &storeBusTest{
 		Metadata: metadata.Metadata{
@@ -63,11 +59,7 @@ func TestStoreBusDelete(t *testing.T) {
 
 	sb := NewStoreBus(store.NewFileStore(dir))
 
-	ch := sb.Subscribe("storeBusTest", &storeBusTest{
-		Metadata: metadata.Metadata{
-			Id: "id1",
-		},
-	})
+	ch := sb.SubscribeKey("storeBusTest", "id1")
 
 	sb.Write("storeBusTest", &storeBusTest{
 		Metadata: metadata.Metadata{
