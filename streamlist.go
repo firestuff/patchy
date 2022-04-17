@@ -34,14 +34,15 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 
 	connected := true
 	for connected {
-		var changed *any
+		changedId := ""
 
 		select {
 		case <-closeChan:
 			connected = false
+			continue // XXX: Does this work?
 
 		case u := <-updated:
-			changed = &u
+			changedId = metadata.GetMetadata(u).Id
 
 		case <-deleted:
 
@@ -60,7 +61,7 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 			return
 		}
 
-		if listMatches(prev, list, changed) {
+		if listMatches(prev, list, changedId) {
 			continue
 		}
 
@@ -74,21 +75,15 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-func listMatches(l1 []any, l2 []any, changed *any) bool {
+func listMatches(l1 []any, l2 []any, changedId string) bool {
 	if len(l1) != len(l2) {
 		return false
-	}
-
-	var changedId string
-
-	if changed != nil {
-		changedId = metadata.GetMetadata(changed).Id
 	}
 
 	for i, o1 := range l1 {
 		o1Id := metadata.GetMetadata(o1).Id
 
-		if changed != nil && o1Id == changedId {
+		if changedId != "" && o1Id == changedId {
 			return false
 		}
 

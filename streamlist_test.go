@@ -75,5 +75,33 @@ func TestStreamList(t *testing.T) {
 
 		require.Len(t, list, 3)
 		require.ElementsMatch(t, []string{"foo", "bar", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
+
+		resp, err = c.R().
+			SetBody(&testType{
+				Text: "zag",
+			}).
+			SetResult(created3).
+			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created3.Id))
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
+
+		eventType, err = readEvent(scan, &list)
+		require.Nil(t, err)
+		require.Equal(t, "list", eventType)
+
+		require.Len(t, list, 3)
+		require.ElementsMatch(t, []string{"foo", "bar", "zag"}, []string{list[0].Text, list[1].Text, list[2].Text})
+
+		resp, err = c.R().
+			Delete(fmt.Sprintf("%s/testtype/%s", baseURL, created3.Id))
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
+
+		eventType, err = readEvent(scan, &list)
+		require.Nil(t, err)
+		require.Equal(t, "list", eventType)
+
+		require.Len(t, list, 2)
+		require.ElementsMatch(t, []string{"foo", "bar"}, []string{list[0].Text, list[1].Text})
 	})
 }
