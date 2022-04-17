@@ -1,6 +1,7 @@
 package path
 
 import "testing"
+import "time"
 
 import "github.com/stretchr/testify/require"
 
@@ -54,6 +55,57 @@ func TestPath(t *testing.T) {
 	}, "string", "foo")
 	require.Nil(t, err)
 	require.True(t, match)
+
+	match, err = Match(&testType1{
+		String: "foo",
+	}, "string", "foo")
+	require.Nil(t, err)
+	require.True(t, match)
+
+	tm, err := time.Parse("2006-01-02T15:04:05Z", "2006-01-02T15:04:05Z")
+	require.Nil(t, err)
+
+	match, err = Match(&testType1{
+		Time: tm,
+	}, "time", "2006-01-02T15:04:05Z")
+	require.Nil(t, err)
+	require.True(t, match)
+
+	match, err = Match(&testType1{
+		Time: tm,
+	}, "time", "2006-01-02T15:04:05+00:00")
+	require.Nil(t, err)
+	require.True(t, match)
+
+	match, err = Match(&testType1{
+		Time: tm,
+	}, "time", "2006-01-02T15:04:05+01:00")
+	require.Nil(t, err)
+	require.False(t, match)
+
+	match, err = Match(&testType1{
+		Time: tm,
+	}, "time", "1136214245")
+	require.Nil(t, err)
+	require.True(t, match)
+
+	match, err = Match(&testType1{
+		Time: tm,
+	}, "time", "1136214246")
+	require.Nil(t, err)
+	require.False(t, match)
+
+	match, err = Match(&testType1{
+		Time: tm,
+	}, "time", "1136214245000")
+	require.Nil(t, err)
+	require.True(t, match)
+
+	match, err = Match(&testType1{
+		Time: tm,
+	}, "time", "1136214245001")
+	require.Nil(t, err)
+	require.False(t, match)
 }
 
 type testType1 struct {
@@ -62,6 +114,7 @@ type testType1 struct {
 	UInt   uint
 	UInt64 uint64
 	String string
+	Time   time.Time
 }
 
 type testType2 struct {
