@@ -54,6 +54,10 @@ func TestStreamList(t *testing.T) {
 		require.Len(t, list, 2)
 		require.ElementsMatch(t, []string{"foo", "bar"}, []string{list[0].Text, list[1].Text})
 
+		// Heartbeat (after 5 seconds)
+		eventType, err = readEvent(scan, nil)
+		require.Equal(t, "heartbeat", eventType)
+
 		created3 := &testType{}
 
 		resp, err = c.R().

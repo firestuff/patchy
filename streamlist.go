@@ -1,6 +1,7 @@
 package api
 
 import "net/http"
+import "time"
 
 import "github.com/firestuff/patchy/metadata"
 
@@ -29,6 +30,7 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 	}
 
 	closeChan := w.(http.CloseNotifier).CloseNotify()
+	ticker := time.NewTicker(5 * time.Second)
 
 	connected := true
 	for connected {
@@ -42,6 +44,14 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 			changed = &u
 
 		case <-deleted:
+
+		case <-ticker.C:
+			err = writeEvent(w, "heartbeat", emptyEvent)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			continue
 		}
 
 		list, err := api.list(cfg, r)
@@ -69,7 +79,11 @@ func listMatches(l1 []any, l2 []any, changed *any) bool {
 		return false
 	}
 
-	changedId := metadata.GetMetadata(changed).Id
+	var changedId string
+
+	if changed != nil {
+		changedId = metadata.GetMetadata(changed).Id
+	}
 
 	for i, o1 := range l1 {
 		o1Id := metadata.GetMetadata(o1).Id
