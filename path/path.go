@@ -4,6 +4,7 @@ import "fmt"
 import "reflect"
 import "strings"
 import "strconv"
+import "time"
 
 func Match(obj any, path string, val1 string) (bool, error) {
 	val2, err := getAny(obj, path)
@@ -42,6 +43,33 @@ func Match(obj any, path string, val1 string) (bool, error) {
 
 	case string:
 		return val1 == v2, nil
+
+	case time.Time:
+		for _, layout := range []string{
+			"2006-01-02T15:04:05Z",
+			"2006-01-02T15:04:05-07:00",
+		} {
+			v1, err := time.Parse(layout, val1)
+			if err != nil {
+				continue
+			}
+
+			return v1.Equal(v2), nil
+		}
+
+		v1, err := strconv.ParseInt(val1, 10, 64)
+		if err != nil {
+			return false, fmt.Errorf("%s: unknown time format", path)
+		}
+
+		// UNIX Seconds: 2969-05-03
+		// UNIX Millis:  1971-01-01
+		// Intended to give us a wide range of useful values in both schemes
+		if v1 > 31536000000 {
+			return v2.Equal(time.UnixMilli(v1)), nil
+		} else {
+			return v2.Equal(time.Unix(v1, 0)), nil
+		}
 
 	default:
 		return false, fmt.Errorf("%s: unsupported struct type (%T)", path, val2)
