@@ -62,6 +62,12 @@ func TestPath(t *testing.T) {
 	require.Nil(t, err)
 	require.True(t, match)
 
+	match, err = Match(&testType1{
+		Bool: true,
+	}, "bool", "true")
+	require.Nil(t, err)
+	require.True(t, match)
+
 	tm, err := time.Parse("2006-01-02T15:04:05Z", "2006-01-02T15:04:05Z")
 	require.Nil(t, err)
 
@@ -114,6 +120,7 @@ type testType1 struct {
 	UInt   uint
 	UInt64 uint64
 	String string
+	Bool   bool
 	Time   time.Time
 }
 
