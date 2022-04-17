@@ -1,5 +1,6 @@
 package bus
 
+import "fmt"
 import "sync"
 
 import "github.com/firestuff/patchy/metadata"
@@ -20,7 +21,7 @@ func NewBus() *Bus {
 }
 
 func (b *Bus) Announce(t string, obj any) {
-	key := metadata.GetMetadata(obj).GetKey(t)
+	key := getObjKey(t, obj)
 
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -59,7 +60,7 @@ func (b *Bus) Announce(t string, obj any) {
 }
 
 func (b *Bus) Delete(t string, id string) {
-	key := metadata.GetKey(t, id)
+	key := getKey(t, id)
 
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -77,8 +78,8 @@ func (b *Bus) Delete(t string, id string) {
 	}
 }
 
-func (b *Bus) SubscribeKey(t string, obj any) chan any {
-	key := metadata.GetMetadata(obj).GetKey(t)
+func (b *Bus) SubscribeKey(t string, id string) chan any {
+	key := getKey(t, id)
 
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -101,4 +102,12 @@ func (b *Bus) SubscribeType(t string) (chan any, chan string) {
 	b.delChans[t] = append(b.delChans[t], delChan)
 
 	return typeChan, delChan
+}
+
+func getObjKey(t string, obj any) string {
+	return getKey(t, metadata.GetMetadata(obj).Id)
+}
+
+func getKey(t string, id string) string {
+	return fmt.Sprintf("%s:%s", t, id)
 }

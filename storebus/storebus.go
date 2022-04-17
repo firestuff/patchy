@@ -20,7 +20,7 @@ func NewStoreBus(st store.Storer) *StoreBus {
 	}
 }
 
-func (sb *StoreBus) Write(t string, obj interface{}) error {
+func (sb *StoreBus) Write(t string, obj any) error {
 	err := updateHash(obj)
 	if err != nil {
 		return err
@@ -47,7 +47,7 @@ func (sb *StoreBus) Delete(t string, id string) error {
 	return nil
 }
 
-func (sb *StoreBus) Read(t string, obj interface{}) error {
+func (sb *StoreBus) Read(t string, obj any) error {
 	return sb.store.Read(t, obj)
 }
 
@@ -55,8 +55,12 @@ func (sb *StoreBus) List(t string, factory func() any) ([]any, error) {
 	return sb.store.List(t, factory)
 }
 
-func (sb *StoreBus) Subscribe(t string, obj interface{}) chan interface{} {
-	return sb.bus.SubscribeKey(t, obj)
+func (sb *StoreBus) SubscribeKey(t string, id string) chan any {
+	return sb.bus.SubscribeKey(t, id)
+}
+
+func (sb *StoreBus) SubscribeType(t string) (chan any, chan string) {
+	return sb.bus.SubscribeType(t)
 }
 
 func (sb *StoreBus) GetStore() store.Storer {
@@ -67,7 +71,7 @@ func (sb *StoreBus) GetBus() *bus.Bus {
 	return sb.bus
 }
 
-func updateHash(obj interface{}) error {
+func updateHash(obj any) error {
 	m := metadata.GetMetadata(obj)
 	m.ETag = ""
 

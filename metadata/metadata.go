@@ -2,7 +2,6 @@ package metadata
 
 import "crypto/sha256"
 import "encoding/hex"
-import "fmt"
 import "reflect"
 
 type Metadata struct {
@@ -22,19 +21,11 @@ func (m *Metadata) GetSafeId() string {
 	return GetSafeId(m.Id)
 }
 
-func (m *Metadata) GetKey(t string) string {
-	return GetKey(t, m.Id)
-}
-
 func GetSafeId(id string) string {
 	// TODO: Make this an hmac to prevent partial collision DoS attacks
 	h := sha256.New()
 	h.Write([]byte(id))
 	return hex.EncodeToString(h.Sum(nil))
-}
-
-func GetKey(t string, id string) string {
-	return fmt.Sprintf("%s:%s", t, GetSafeId(id))
 }
 
 func getMetadataField(obj any) reflect.Value {

@@ -55,7 +55,7 @@ func (api *API) stream(cfg *config, w http.ResponseWriter, r *http.Request) {
 	}
 
 	closeChan := w.(http.CloseNotifier).CloseNotify()
-	objChan := api.sb.Subscribe(cfg.typeName, obj)
+	objChan := api.sb.SubscribeKey(cfg.typeName, vars["id"])
 	ticker := time.NewTicker(5 * time.Second)
 
 	cfg.mu.RUnlock()

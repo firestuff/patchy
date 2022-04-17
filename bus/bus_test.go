@@ -19,29 +19,10 @@ func TestBus(t *testing.T) {
 	})
 
 	// Complex subscription layout
-	ch1a := bus.SubscribeKey("busTest1", &busTest{
-		Metadata: metadata.Metadata{
-			Id: "id-overlap",
-		},
-	})
-
-	ch2a := bus.SubscribeKey("busTest2", &busTest{
-		Metadata: metadata.Metadata{
-			Id: "id-overlap",
-		},
-	})
-
-	ch2b := bus.SubscribeKey("busTest2", &busTest{
-		Metadata: metadata.Metadata{
-			Id: "id-dupe",
-		},
-	})
-
-	ch2c := bus.SubscribeKey("busTest2", &busTest{
-		Metadata: metadata.Metadata{
-			Id: "id-dupe",
-		},
-	})
+	ch1a := bus.SubscribeKey("busTest1", "id-overlap")
+	ch2a := bus.SubscribeKey("busTest2", "id-overlap")
+	ch2b := bus.SubscribeKey("busTest2", "id-dupe")
+	ch2c := bus.SubscribeKey("busTest2", "id-dupe")
 
 	ch1, _ := bus.SubscribeType("busTest1")
 	ch2, _ := bus.SubscribeType("busTest2")
@@ -108,11 +89,7 @@ func TestBusDelete(t *testing.T) {
 
 	bus := NewBus()
 
-	keyChan := bus.SubscribeKey("busTest", &busTest{
-		Metadata: metadata.Metadata{
-			Id: "id1",
-		},
-	})
+	keyChan := bus.SubscribeKey("busTest", "id1")
 
 	typeChan, delChan := bus.SubscribeType("busTest")
 
