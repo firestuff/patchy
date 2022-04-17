@@ -37,10 +37,6 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 		changedId := ""
 
 		select {
-		case <-closeChan:
-			connected = false
-			continue // XXX: Does this work?
-
 		case u := <-updated:
 			changedId = metadata.GetMetadata(u).Id
 
@@ -52,6 +48,10 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
+			continue
+
+		case <-closeChan:
+			connected = false
 			continue
 		}
 
