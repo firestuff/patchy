@@ -1,7 +1,6 @@
 package path
 
 import "fmt"
-import "math"
 import "strconv"
 import "time"
 
@@ -10,11 +9,11 @@ import "golang.org/x/exp/slices"
 func match(val1 string, val2 any) (bool, error) {
 	switch v2 := val2.(type) {
 	case int:
-		v1, err := strconv.ParseInt(val1, 10, 64)
+		v1, err := strconv.ParseInt(val1, 10, strconv.IntSize)
 		if err != nil {
 			return false, err
 		}
-		return v1 == int64(v2), nil
+		return int(v1) == v2, nil
 
 	case int64:
 		v1, err := strconv.ParseInt(val1, 10, 64)
@@ -24,11 +23,11 @@ func match(val1 string, val2 any) (bool, error) {
 		return v1 == v2, nil
 
 	case uint:
-		v1, err := strconv.ParseUint(val1, 10, 64)
+		v1, err := strconv.ParseUint(val1, 10, strconv.IntSize)
 		if err != nil {
 			return false, err
 		}
-		return v1 == uint64(v2), nil
+		return uint(v1) == v2, nil
 
 	case uint64:
 		v1, err := strconv.ParseUint(val1, 10, 64)
@@ -38,18 +37,18 @@ func match(val1 string, val2 any) (bool, error) {
 		return v1 == v2, nil
 
 	case float32:
-		v1, err := strconv.ParseFloat(val1, 64)
+		v1, err := strconv.ParseFloat(val1, 32)
 		if err != nil {
 			return false, err
 		}
-		return float32Equal(v1, float64(v2)), nil
+		return float32(v1) == v2, nil
 
 	case float64:
 		v1, err := strconv.ParseFloat(val1, 64)
 		if err != nil {
 			return false, err
 		}
-		return float64Equal(v1, v2), nil
+		return v1 == v2, nil
 
 	case string:
 		return val1 == v2, nil
@@ -62,7 +61,7 @@ func match(val1 string, val2 any) (bool, error) {
 		return v1 == v2, nil
 
 	case []int:
-		v1, err := strconv.ParseInt(val1, 10, 64)
+		v1, err := strconv.ParseInt(val1, 10, strconv.IntSize)
 		if err != nil {
 			return false, err
 		}
@@ -76,7 +75,7 @@ func match(val1 string, val2 any) (bool, error) {
 		return slices.Contains(v2, v1), nil
 
 	case []uint:
-		v1, err := strconv.ParseUint(val1, 10, 64)
+		v1, err := strconv.ParseUint(val1, 10, strconv.IntSize)
 		if err != nil {
 			return false, err
 		}
@@ -90,13 +89,13 @@ func match(val1 string, val2 any) (bool, error) {
 		return slices.Contains(v2, v1), nil
 
 	case []float32:
-		v1, err := strconv.ParseFloat(val1, 64)
+		v1, err := strconv.ParseFloat(val1, 32)
 		if err != nil {
 			return false, err
 		}
 
 		for _, iter := range v2 {
-			if float32Equal(v1, float64(iter)) {
+			if float32(v1) == iter {
 				return true, nil
 			}
 		}
@@ -110,7 +109,7 @@ func match(val1 string, val2 any) (bool, error) {
 		}
 
 		for _, iter := range v2 {
-			if float64Equal(v1, iter) {
+			if v1 == iter {
 				return true, nil
 			}
 		}
@@ -179,16 +178,4 @@ func parseTime(str string) (time.Time, error) {
 	} else {
 		return time.Unix(i, 0), nil
 	}
-}
-
-func float32Equal(f1 float64, f2 float64) bool {
-	smaller := float64(math.Nextafter32(float32(f1), float32(math.Inf(-1))))
-	larger := float64(math.Nextafter32(float32(f1), float32(math.Inf(+1))))
-	return f2 >= smaller && f2 <= larger
-}
-
-func float64Equal(f1 float64, f2 float64) bool {
-	smaller := math.Nextafter(f1, math.Inf(-1))
-	larger := math.Nextafter(f1, math.Inf(+1))
-	return f2 >= smaller && f2 <= larger
 }
