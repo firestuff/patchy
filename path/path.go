@@ -49,16 +49,18 @@ func Match(obj any, path string, val1 string) (bool, error) {
 		if err != nil {
 			return false, fmt.Errorf("%s: %w", path, err)
 		}
-		epsilon32 := math.Nextafter32(1.0, 2.0) - 1.0
-		return math.Abs(v1-float64(v2)) < float64(epsilon32), nil
+		larger := float32(math.Max(math.Abs(v1), math.Abs(float64(v2))))
+		epsilon := math.Nextafter32(larger, math.MaxFloat32) - larger
+		return math.Abs(v1-float64(v2)) < float64(epsilon), nil
 
 	case float64:
 		v1, err := strconv.ParseFloat(val1, 64)
 		if err != nil {
 			return false, fmt.Errorf("%s: %w", path, err)
 		}
-		epsilon64 := math.Nextafter(1.0, 2.0) - 1.0
-		return math.Abs(v1-v2) < epsilon64, nil
+		larger := math.Max(math.Abs(v1), math.Abs(v2))
+		epsilon := math.Nextafter(larger, math.MaxFloat64) - larger
+		return math.Abs(v1-v2) < epsilon, nil
 
 	case string:
 		return val1 == v2, nil
