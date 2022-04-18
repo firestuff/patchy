@@ -6,7 +6,6 @@ import "time"
 import "github.com/stretchr/testify/require"
 
 // TODO: Test struct pointers
-// TODO: Negative tests for everything
 // TODO: Better float32 & int comparison
 
 func TestMatchStruct(t *testing.T) {
@@ -45,6 +44,12 @@ func TestMatchInt64(t *testing.T) {
 	}, "int64", "3456")
 	require.Nil(t, err)
 	require.True(t, match)
+
+	match, err = Match(&testType1{
+		Int64: 3456,
+	}, "int64", "3457")
+	require.Nil(t, err)
+	require.False(t, match)
 }
 
 func TestMatchUInt(t *testing.T) {
@@ -55,6 +60,12 @@ func TestMatchUInt(t *testing.T) {
 	}, "uint", "4567")
 	require.Nil(t, err)
 	require.True(t, match)
+
+	match, err = Match(&testType1{
+		UInt: 4567,
+	}, "uint", "4568")
+	require.Nil(t, err)
+	require.False(t, match)
 }
 
 func TestMatchUInt64(t *testing.T) {
@@ -97,6 +108,12 @@ func TestMatchFloat64(t *testing.T) {
 	}, "float64", "3.14159265")
 	require.Nil(t, err)
 	require.True(t, match)
+
+	match, err = Match(&testType1{
+		Float64: 3.14159265,
+	}, "float64", "3.14159266")
+	require.Nil(t, err)
+	require.False(t, match)
 }
 
 func TestMatchString(t *testing.T) {
@@ -123,6 +140,12 @@ func TestMatchBool(t *testing.T) {
 	}, "bool", "true")
 	require.Nil(t, err)
 	require.True(t, match)
+
+	match, err = Match(&testType1{
+		Bool: true,
+	}, "bool", "false")
+	require.Nil(t, err)
+	require.False(t, match)
 }
 
 func TestMatchInts(t *testing.T) {
@@ -133,6 +156,12 @@ func TestMatchInts(t *testing.T) {
 	}, "ints", "4")
 	require.Nil(t, err)
 	require.True(t, match)
+
+	match, err = Match(&testType1{
+		Ints: []int{2, 4, 7},
+	}, "ints", "5")
+	require.Nil(t, err)
+	require.False(t, match)
 }
 
 func TestMatchInt64s(t *testing.T) {
@@ -143,6 +172,12 @@ func TestMatchInt64s(t *testing.T) {
 	}, "int64s", "4")
 	require.Nil(t, err)
 	require.True(t, match)
+
+	match, err = Match(&testType1{
+		Int64s: []int64{2, 4, 7},
+	}, "int64s", "5")
+	require.Nil(t, err)
+	require.False(t, match)
 }
 
 func TestMatchUInts(t *testing.T) {
@@ -153,6 +188,12 @@ func TestMatchUInts(t *testing.T) {
 	}, "uints", "4")
 	require.Nil(t, err)
 	require.True(t, match)
+
+	match, err = Match(&testType1{
+		UInts: []uint{2, 4, 7},
+	}, "uints", "5")
+	require.Nil(t, err)
+	require.False(t, match)
 }
 
 func TestMatchUInt64s(t *testing.T) {
@@ -163,6 +204,12 @@ func TestMatchUInt64s(t *testing.T) {
 	}, "uint64s", "4")
 	require.Nil(t, err)
 	require.True(t, match)
+
+	match, err = Match(&testType1{
+		UInt64s: []uint64{2, 4, 7},
+	}, "uint64s", "5")
+	require.Nil(t, err)
+	require.False(t, match)
 }
 
 func TestMatchFloat32s(t *testing.T) {
@@ -173,6 +220,12 @@ func TestMatchFloat32s(t *testing.T) {
 	}, "float32s", "2.7182")
 	require.Nil(t, err)
 	require.True(t, match)
+
+	match, err = Match(&testType1{
+		Float32s: []float32{3.1415, 2.7182},
+	}, "float32s", "2.7183")
+	require.Nil(t, err)
+	require.False(t, match)
 }
 
 func TestMatchFloat64s(t *testing.T) {
@@ -286,6 +339,12 @@ func TestMatchTimes(t *testing.T) {
 	}, "times", "1136214245000")
 	require.Nil(t, err)
 	require.True(t, match)
+
+	match, err = Match(&testType1{
+		Times: []time.Time{tm, tm2},
+	}, "times", "1136214245001")
+	require.Nil(t, err)
+	require.False(t, match)
 }
 
 type testType1 struct {
