@@ -51,6 +51,18 @@ func TestPath(t *testing.T) {
 	require.True(t, match)
 
 	match, err = Match(&testType1{
+		Float32: 3.1415,
+	}, "float32", "3.1415")
+	require.Nil(t, err)
+	require.True(t, match)
+
+	match, err = Match(&testType1{
+		Float64: 3.14159265,
+	}, "float64", "3.14159265")
+	require.Nil(t, err)
+	require.True(t, match)
+
+	match, err = Match(&testType1{
 		String: "foo",
 	}, "string", "foo")
 	require.Nil(t, err)
@@ -115,13 +127,15 @@ func TestPath(t *testing.T) {
 }
 
 type testType1 struct {
-	Int    int
-	Int64  int64
-	UInt   uint
-	UInt64 uint64
-	String string
-	Bool   bool
-	Time   time.Time
+	Int     int
+	Int64   int64
+	UInt    uint
+	UInt64  uint64
+	Float32 float32
+	Float64 float64
+	String  string
+	Bool    bool
+	Time    time.Time
 }
 
 type testType2 struct {
