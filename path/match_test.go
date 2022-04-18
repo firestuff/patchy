@@ -5,7 +5,7 @@ import "time"
 
 import "github.com/stretchr/testify/require"
 
-func TestPath(t *testing.T) {
+func TestMatch(t *testing.T) {
 	match, err := Match(&testType1{
 		Int: 1234,
 	}, "int", "1234")
