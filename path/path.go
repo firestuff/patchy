@@ -75,6 +75,20 @@ func Match(obj any, path string, val1 string) (bool, error) {
 	case []string:
 		return slices.Contains(v2, val1), nil
 
+	case []int:
+		v1, err := strconv.ParseInt(val1, 10, 64)
+		if err != nil {
+			return false, fmt.Errorf("%s: %w", path, err)
+		}
+		return slices.Contains(v2, int(v1)), nil
+
+	case []int64:
+		v1, err := strconv.ParseInt(val1, 10, 64)
+		if err != nil {
+			return false, fmt.Errorf("%s: %w", path, err)
+		}
+		return slices.Contains(v2, v1), nil
+
 	case time.Time:
 		for _, layout := range []string{
 			"2006-01-02T15:04:05Z",

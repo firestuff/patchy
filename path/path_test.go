@@ -87,6 +87,18 @@ func TestPath(t *testing.T) {
 	require.True(t, match)
 
 	match, err = Match(&testType1{
+		Ints: []int{2, 4, 7},
+	}, "ints", "4")
+	require.Nil(t, err)
+	require.True(t, match)
+
+	match, err = Match(&testType1{
+		Int64s: []int64{2, 4, 7},
+	}, "int64s", "4")
+	require.Nil(t, err)
+	require.True(t, match)
+
+	match, err = Match(&testType1{
 		Strings: []string{"foo", "bar"},
 	}, "strings", "zig")
 	require.Nil(t, err)
@@ -148,6 +160,8 @@ type testType1 struct {
 	String  string
 	Bool    bool
 
+	Ints    []int
+	Int64s  []int64
 	Strings []string
 
 	Time time.Time
