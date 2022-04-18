@@ -57,6 +57,12 @@ func TestPath(t *testing.T) {
 	require.True(t, match)
 
 	match, err = Match(&testType1{
+		Float32: 3.1415,
+	}, "float32", "3.1416")
+	require.Nil(t, err)
+	require.False(t, match)
+
+	match, err = Match(&testType1{
 		Float64: 3.14159265,
 	}, "float64", "3.14159265")
 	require.Nil(t, err)
