@@ -80,6 +80,18 @@ func TestPath(t *testing.T) {
 	require.Nil(t, err)
 	require.True(t, match)
 
+	match, err = Match(&testType1{
+		Strings: []string{"foo", "bar"},
+	}, "strings", "foo")
+	require.Nil(t, err)
+	require.True(t, match)
+
+	match, err = Match(&testType1{
+		Strings: []string{"foo", "bar"},
+	}, "strings", "zig")
+	require.Nil(t, err)
+	require.False(t, match)
+
 	tm, err := time.Parse("2006-01-02T15:04:05Z", "2006-01-02T15:04:05Z")
 	require.Nil(t, err)
 
@@ -135,7 +147,10 @@ type testType1 struct {
 	Float64 float64
 	String  string
 	Bool    bool
-	Time    time.Time
+
+	Strings []string
+
+	Time time.Time
 }
 
 type testType2 struct {

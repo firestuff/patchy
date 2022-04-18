@@ -7,6 +7,8 @@ import "strings"
 import "strconv"
 import "time"
 
+import "golang.org/x/exp/slices"
+
 func Match(obj any, path string, val1 string) (bool, error) {
 	val2, err := getAny(obj, path)
 	if err != nil {
@@ -67,6 +69,9 @@ func Match(obj any, path string, val1 string) (bool, error) {
 			return false, fmt.Errorf("%s: %w", path, err)
 		}
 		return v1 == v2, nil
+
+	case []string:
+		return slices.Contains(v2, val1), nil
 
 	case time.Time:
 		for _, layout := range []string{
