@@ -6,7 +6,6 @@ import "time"
 import "github.com/stretchr/testify/require"
 
 // TODO: Test struct pointers
-// TODO: Better float32 & int comparison
 
 func TestMatchStruct(t *testing.T) {
 	t.Parallel()
