@@ -229,15 +229,15 @@ func parseTime(str string) (time.Time, error) {
 }
 
 func float32Equal(f1 float64, f2 float64) bool {
-	larger := float32(math.Max(math.Abs(f1), math.Abs(f2)))
-	epsilon := math.Nextafter32(larger, math.MaxFloat32) - larger
-	return math.Abs(f1-f2) < float64(epsilon)
+	smaller := float64(math.Nextafter32(float32(f1), float32(math.Inf(-1))))
+	larger := float64(math.Nextafter32(float32(f1), float32(math.Inf(+1))))
+	return f2 >= smaller && f2 <= larger
 }
 
 func float64Equal(f1 float64, f2 float64) bool {
-	larger := math.Max(math.Abs(f1), math.Abs(f2))
-	epsilon := math.Nextafter(larger, math.MaxFloat64) - larger
-	return math.Abs(f1-f2) < epsilon
+	smaller := math.Nextafter(f1, math.Inf(-1))
+	larger := math.Nextafter(f1, math.Inf(+1))
+	return f2 >= smaller && f2 <= larger
 }
 
 func errorPath(prev []string, part string) string {
