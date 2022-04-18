@@ -99,8 +99,50 @@ func TestPath(t *testing.T) {
 	require.True(t, match)
 
 	match, err = Match(&testType1{
+		UInts: []uint{2, 4, 7},
+	}, "uints", "4")
+	require.Nil(t, err)
+	require.True(t, match)
+
+	match, err = Match(&testType1{
+		UInt64s: []uint64{2, 4, 7},
+	}, "uint64s", "4")
+	require.Nil(t, err)
+	require.True(t, match)
+
+	match, err = Match(&testType1{
+		Float32s: []float32{3.1415, 2.7182},
+	}, "float32s", "2.7182")
+	require.Nil(t, err)
+	require.True(t, match)
+
+	match, err = Match(&testType1{
+		Float64s: []float64{3.1415, 2.7182},
+	}, "float64s", "2.7182")
+	require.Nil(t, err)
+	require.True(t, match)
+
+	match, err = Match(&testType1{
+		Float64s: []float64{3.1415, 2.7182},
+	}, "float64s", "2.7183")
+	require.Nil(t, err)
+	require.False(t, match)
+
+	match, err = Match(&testType1{
 		Strings: []string{"foo", "bar"},
 	}, "strings", "zig")
+	require.Nil(t, err)
+	require.False(t, match)
+
+	match, err = Match(&testType1{
+		Bools: []bool{true, false},
+	}, "bools", "true")
+	require.Nil(t, err)
+	require.True(t, match)
+
+	match, err = Match(&testType1{
+		Bools: []bool{false, false},
+	}, "bools", "true")
 	require.Nil(t, err)
 	require.False(t, match)
 
@@ -148,6 +190,15 @@ func TestPath(t *testing.T) {
 	}, "time", "1136214245001")
 	require.Nil(t, err)
 	require.False(t, match)
+
+	tm2, err := time.Parse("2006-01-02T15:04:05Z", "2006-01-10T15:04:05Z")
+	require.Nil(t, err)
+
+	match, err = Match(&testType1{
+		Times: []time.Time{tm, tm2},
+	}, "times", "1136214245000")
+	require.Nil(t, err)
+	require.True(t, match)
 }
 
 type testType1 struct {
@@ -160,11 +211,17 @@ type testType1 struct {
 	String  string
 	Bool    bool
 
-	Ints    []int
-	Int64s  []int64
-	Strings []string
+	Ints     []int
+	Int64s   []int64
+	UInts    []uint
+	UInt64s  []uint64
+	Float32s []float32
+	Float64s []float64
+	Strings  []string
+	Bools    []bool
 
-	Time time.Time
+	Time  time.Time
+	Times []time.Time
 }
 
 type testType2 struct {
