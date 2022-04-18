@@ -1,6 +1,7 @@
 package api
 
 import "net/http"
+import "net/url"
 import "time"
 
 import "github.com/firestuff/patchy/metadata"
@@ -12,12 +13,18 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	params, err := url.ParseQuery(r.URL.RawQuery)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 
 	updated, deleted := api.sb.SubscribeType(cfg.typeName)
 
-	prev, err := api.list(cfg, r)
+	prev, err := api.list(cfg, r, params)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -55,7 +62,7 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 			continue
 		}
 
-		list, err := api.list(cfg, r)
+		list, err := api.list(cfg, r, params)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

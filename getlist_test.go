@@ -41,5 +41,14 @@ func TestGETList(t *testing.T) {
 		require.False(t, resp.IsError())
 		require.Len(t, list, 2)
 		require.ElementsMatch(t, []string{"foo", "bar"}, []string{list[0].Text, list[1].Text})
+
+		resp, err = c.R().
+			SetResult(&list).
+			SetQueryParam("text", "bar").
+			Get(fmt.Sprintf("%s/testtype", baseURL))
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
+		require.Len(t, list, 1)
+		require.ElementsMatch(t, []string{"bar"}, []string{list[0].Text})
 	})
 }
