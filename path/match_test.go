@@ -5,8 +5,6 @@ import "time"
 
 import "github.com/stretchr/testify/require"
 
-// TODO: Test struct pointers
-
 func TestMatchStruct(t *testing.T) {
 	t.Parallel()
 
@@ -17,6 +15,18 @@ func TestMatchStruct(t *testing.T) {
 	}, "tt1.int", "2345")
 	require.Nil(t, err)
 	require.True(t, match)
+
+	match, err = Match(&testType2{
+		Tt1p: &testType1{
+			Int: 2345,
+		},
+	}, "tt1p.int", "2345")
+	require.Nil(t, err)
+	require.True(t, match)
+
+	match, err = Match(&testType2{}, "tt1p.int", "2345")
+	require.Nil(t, err)
+	require.False(t, match)
 }
 
 func TestMatchInt(t *testing.T) {
@@ -370,5 +380,6 @@ type testType1 struct {
 }
 
 type testType2 struct {
-	Tt1 testType1
+	Tt1  testType1
+	Tt1p *testType1
 }

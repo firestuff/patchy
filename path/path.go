@@ -10,6 +10,10 @@ func Match(obj any, path string, val1 string) (bool, error) {
 		return false, err
 	}
 
+	if val2 == nil {
+		return false, nil
+	}
+
 	ret, err := match(val1, val2)
 	if err != nil {
 		return false, fmt.Errorf("%s: %w", path, err)
