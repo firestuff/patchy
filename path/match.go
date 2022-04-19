@@ -127,20 +127,20 @@ func match(val1 string, val2 any) (bool, error) {
 		return slices.Contains(v2, v1), nil
 
 	case time.Time:
-		v1, err := parseTime(val1)
+		v1, precision, err := parseTime(val1)
 		if err != nil {
 			return false, err
 		}
-		return v1.Equal(v2), nil
+		return v1.Equal(v2.Truncate(precision)), nil
 
 	case []time.Time:
-		v1, err := parseTime(val1)
+		v1, precision, err := parseTime(val1)
 		if err != nil {
 			return false, err
 		}
 
 		for _, iter := range v2 {
-			if v1.Equal(iter) {
+			if v1.Equal(iter.Truncate(precision)) {
 				return true, nil
 			}
 		}
@@ -153,7 +153,7 @@ func match(val1 string, val2 any) (bool, error) {
 
 }
 
-func parseTime(str string) (time.Time, error) {
+func parseTime(str string) (time.Time, time.Duration, error) {
 	for _, layout := range []string{
 		"2006-01-02T15:04:05Z",
 		"2006-01-02T15:04:05-07:00",
@@ -162,20 +162,20 @@ func parseTime(str string) (time.Time, error) {
 		if err != nil {
 			continue
 		}
-		return tm, nil
+		return tm, 1 * time.Second, nil
 	}
 
 	i, err := strconv.ParseInt(str, 10, 64)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("unknown time format")
+		return time.Time{}, 0, fmt.Errorf("unknown time format")
 	}
 
 	// UNIX Seconds: 2969-05-03
 	// UNIX Millis:  1971-01-01
 	// Intended to give us a wide range of useful values in both schemes
 	if i > 31536000000 {
-		return time.UnixMilli(i), nil
+		return time.UnixMilli(i), 1 * time.Millisecond, nil
 	} else {
-		return time.Unix(i, 0), nil
+		return time.Unix(i, 0), 1 * time.Second, nil
 	}
 }
