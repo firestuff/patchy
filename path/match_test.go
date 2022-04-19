@@ -332,6 +332,15 @@ func TestMatchTime(t *testing.T) {
 	}, "time", "1136214245001")
 	require.Nil(t, err)
 	require.False(t, match)
+
+	tm2, err := time.Parse("2006-01-02T15:04:05.999999999Z", "2006-01-02T15:04:05.500000000Z")
+	require.Nil(t, err)
+
+	match, err = Match(&testType1{
+		Time: tm2,
+	}, "time", "1136214245")
+	require.Nil(t, err)
+	require.True(t, match)
 }
 
 func TestMatchTimes(t *testing.T) {
