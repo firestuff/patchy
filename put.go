@@ -14,7 +14,8 @@ func (api *API) put(cfg *config, w http.ResponseWriter, r *http.Request) {
 
 	obj := cfg.factory()
 
-	metadata.GetMetadata(obj).Id = vars["id"]
+	objMD := metadata.GetMetadata(obj)
+	objMD.Id = vars["id"]
 
 	cfg.mu.Lock()
 	defer cfg.mu.Unlock()
@@ -51,7 +52,9 @@ func (api *API) put(cfg *config, w http.ResponseWriter, r *http.Request) {
 
 	// Metadata is immutable or server-owned
 	metadata.ClearMetadata(replace)
-	metadata.GetMetadata(replace).Id = vars["id"]
+	replaceMD := metadata.GetMetadata(replace)
+	replaceMD.Id = vars["id"]
+	replaceMD.Generation = objMD.Generation + 1
 
 	if cfg.mayReplace != nil {
 		err = cfg.mayReplace(obj, replace, r)

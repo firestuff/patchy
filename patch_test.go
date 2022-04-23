@@ -20,6 +20,7 @@ func TestPATCH(t *testing.T) {
 			Post(fmt.Sprintf("%s/testtype", baseURL))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
+		require.Equal(t, int64(0), created.Generation)
 
 		updated := &testType{}
 
@@ -33,6 +34,7 @@ func TestPATCH(t *testing.T) {
 		require.False(t, resp.IsError())
 		require.Equal(t, "bar", updated.Text)
 		require.Equal(t, created.Id, updated.Id)
+		require.Equal(t, int64(1), updated.Generation)
 
 		read := &testType{}
 
@@ -43,6 +45,7 @@ func TestPATCH(t *testing.T) {
 		require.False(t, resp.IsError())
 		require.Equal(t, "bar", read.Text)
 		require.Equal(t, created.Id, read.Id)
+		require.Equal(t, int64(1), read.Generation)
 	})
 }
 
@@ -60,6 +63,7 @@ func TestPATCHIfMatch(t *testing.T) {
 			Post(fmt.Sprintf("%s/testtype", baseURL))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
+		require.Equal(t, int64(0), created.Generation)
 
 		etag := resp.Header().Get("ETag")
 		require.Equal(t, fmt.Sprintf(`"%s"`, created.ETag), etag)
@@ -74,6 +78,7 @@ func TestPATCHIfMatch(t *testing.T) {
 			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
+		require.Equal(t, int64(1), updated.Generation)
 
 		etag = resp.Header().Get("ETag")
 		require.Equal(t, fmt.Sprintf(`"%s"`, updated.ETag), etag)

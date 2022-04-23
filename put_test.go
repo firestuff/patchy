@@ -21,6 +21,7 @@ func TestPUT(t *testing.T) {
 			Post(fmt.Sprintf("%s/testtype", baseURL))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
+		require.Equal(t, int64(0), created.Generation)
 
 		replaced := &testType{}
 
@@ -34,6 +35,7 @@ func TestPUT(t *testing.T) {
 		require.False(t, resp.IsError())
 		require.Equal(t, "bar", replaced.Text)
 		require.Equal(t, created.Id, replaced.Id)
+		require.Equal(t, int64(1), replaced.Generation)
 
 		read := &testType{}
 
@@ -45,6 +47,7 @@ func TestPUT(t *testing.T) {
 		require.Equal(t, "bar", read.Text)
 		require.Equal(t, int64(0), read.Num)
 		require.Equal(t, created.Id, read.Id)
+		require.Equal(t, int64(1), read.Generation)
 	})
 }
 
@@ -62,6 +65,7 @@ func TestPUTIfMatch(t *testing.T) {
 			Post(fmt.Sprintf("%s/testtype", baseURL))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
+		require.Equal(t, int64(0), created.Generation)
 
 		etag := resp.Header().Get("ETag")
 		require.Equal(t, fmt.Sprintf(`"%s"`, created.ETag), etag)
@@ -76,6 +80,7 @@ func TestPUTIfMatch(t *testing.T) {
 			Put(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
+		require.Equal(t, int64(1), replaced.Generation)
 
 		etag = resp.Header().Get("ETag")
 		require.Equal(t, fmt.Sprintf(`"%s"`, replaced.ETag), etag)
