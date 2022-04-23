@@ -66,6 +66,8 @@ func (api *API) patch(cfg *config, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	metadata.GetMetadata(obj).Generation++
+
 	err = api.sb.Write(cfg.typeName, obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

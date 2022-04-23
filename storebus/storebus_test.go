@@ -34,7 +34,7 @@ func TestStoreBus(t *testing.T) {
 	err = sb.Read("storeBusTest", out1)
 	require.Nil(t, err)
 	require.Equal(t, "foo", out1.Opaque)
-	require.Equal(t, "etag:11cb2d0f4dddf836245d5cc0b667e1275b3c0e10777b29335985cfd97210bbbb", out1.ETag)
+	require.Equal(t, "etag:2c8edc6414452b8dee7826bd55e585f850ac47a0dcfc357dc1fcaaa3164cdfa2", out1.ETag)
 
 	ch := sb.SubscribeKey("storeBusTest", "id1")
 
@@ -47,7 +47,7 @@ func TestStoreBus(t *testing.T) {
 
 	out3 := (<-ch).(*storeBusTest)
 	require.Equal(t, "bar", out3.Opaque)
-	require.Equal(t, "etag:efce5d60be6fd043869c0dde09ac3477f1687fc36118ba68d82114b45549a800", out3.ETag)
+	require.Equal(t, "etag:906fda69e9893280ca9294bd04eb276794da9a8904fc0b671c69175f08cc03c6", out3.ETag)
 }
 
 func TestStoreBusDelete(t *testing.T) {

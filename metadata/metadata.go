@@ -5,8 +5,9 @@ import "encoding/hex"
 import "reflect"
 
 type Metadata struct {
-	Id   string `json:"id"`
-	ETag string `json:"etag"`
+	Id         string `json:"id"`
+	ETag       string `json:"etag"`
+	Generation int64  `json:"generation"`
 }
 
 func GetMetadata(obj any) *Metadata {
@@ -14,7 +15,11 @@ func GetMetadata(obj any) *Metadata {
 }
 
 func ClearMetadata(obj any) {
-	getMetadataField(obj).Set(reflect.ValueOf(Metadata{}))
+	SetMetadata(obj, &Metadata{})
+}
+
+func SetMetadata(obj any, md *Metadata) {
+	getMetadataField(obj).Set(reflect.ValueOf(*md))
 }
 
 func (m *Metadata) GetSafeId() string {
