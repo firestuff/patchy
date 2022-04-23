@@ -1,8 +1,8 @@
 package storebus
 
 import "crypto/sha256"
-import "encoding/hex"
 import "encoding/json"
+import "fmt"
 
 import "github.com/firestuff/patchy/bus"
 import "github.com/firestuff/patchy/metadata"
@@ -83,7 +83,7 @@ func updateHash(obj any) error {
 		return err
 	}
 
-	m.ETag = hex.EncodeToString(hash.Sum(nil))
+	m.ETag = fmt.Sprintf("etag:%x", hash.Sum(nil))
 
 	return nil
 }
