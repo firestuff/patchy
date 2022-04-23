@@ -73,6 +73,7 @@ func TestPUTIfMatch(t *testing.T) {
 		replaced := &testType{}
 
 		resp, err = c.R().
+			SetHeader("If-Match", etag).
 			SetBody(&testType{
 				Text: "bar",
 			}).
@@ -91,7 +92,38 @@ func TestPUTIfMatch(t *testing.T) {
 			SetBody(&testType{
 				Text: "zig",
 			}).
+			Put(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+		require.Nil(t, err)
+		require.True(t, resp.IsError())
+		require.Equal(t, 400, resp.StatusCode())
+
+		resp, err = c.R().
+			SetHeader("If-Match", `"etag:foobar"`).
+			SetBody(&testType{
+				Text: "zig",
+			}).
+			Put(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+		require.Nil(t, err)
+		require.True(t, resp.IsError())
+		require.Equal(t, 412, resp.StatusCode())
+
+		resp, err = c.R().
+			SetHeader("If-Match", `"generation:1"`).
+			SetBody(&testType{
+				Text: "zig",
+			}).
 			SetResult(replaced).
+			Put(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
+		require.Equal(t, int64(2), replaced.Generation)
+		require.Equal(t, "zig", replaced.Text)
+
+		resp, err = c.R().
+			SetHeader("If-Match", `"generation:1"`).
+			SetBody(&testType{
+				Text: "zag",
+			}).
 			Put(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
 		require.Nil(t, err)
 		require.True(t, resp.IsError())

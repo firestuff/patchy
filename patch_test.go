@@ -71,6 +71,7 @@ func TestPATCHIfMatch(t *testing.T) {
 		updated := &testType{}
 
 		resp, err = c.R().
+			SetHeader("If-Match", etag).
 			SetBody(&testType{
 				Text: "bar",
 			}).
@@ -89,7 +90,38 @@ func TestPATCHIfMatch(t *testing.T) {
 			SetBody(&testType{
 				Text: "zig",
 			}).
+			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+		require.Nil(t, err)
+		require.True(t, resp.IsError())
+		require.Equal(t, 400, resp.StatusCode())
+
+		resp, err = c.R().
+			SetHeader("If-Match", `"etag:foobar"`).
+			SetBody(&testType{
+				Text: "zig",
+			}).
+			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+		require.Nil(t, err)
+		require.True(t, resp.IsError())
+		require.Equal(t, 412, resp.StatusCode())
+
+		resp, err = c.R().
+			SetHeader("If-Match", `"generation:1"`).
+			SetBody(&testType{
+				Text: "zig",
+			}).
 			SetResult(updated).
+			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
+		require.Equal(t, int64(2), updated.Generation)
+		require.Equal(t, "zig", updated.Text)
+
+		resp, err = c.R().
+			SetHeader("If-Match", `"generation:1"`).
+			SetBody(&testType{
+				Text: "zag",
+			}).
 			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
 		require.Nil(t, err)
 		require.True(t, resp.IsError())

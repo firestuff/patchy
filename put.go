@@ -1,9 +1,7 @@
 package api
 
-import "fmt"
 import "net/http"
 import "os"
-import "strings"
 
 import "github.com/gorilla/mux"
 
@@ -29,17 +27,8 @@ func (api *API) put(cfg *config, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ifMatch := r.Header.Get("If-Match")
-	if ifMatch != "" {
-		if len(ifMatch) < 2 || !strings.HasPrefix(ifMatch, `"`) || !strings.HasSuffix(ifMatch, `"`) {
-			http.Error(w, "Invalid If-Match", http.StatusBadRequest)
-			return
-		}
-
-		if ifMatch[1:len(ifMatch)-1] != metadata.GetMetadata(obj).ETag {
-			http.Error(w, fmt.Sprintf("If-Match mismatch"), http.StatusPreconditionFailed)
-			return
-		}
+	if !ifMatch(obj, w, r) {
+		return
 	}
 
 	replace := cfg.factory()
