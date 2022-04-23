@@ -86,5 +86,24 @@ func TestGETList(t *testing.T) {
 		require.False(t, resp.IsError())
 		require.Len(t, list, 1)
 		require.True(t, list[0].Text == "foo" || list[0].Text == "bar")
+
+		resp, err = c.R().
+			SetResult(&list).
+			Get(fmt.Sprintf("%s/testtype", baseURL))
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
+		require.Len(t, list, 2)
+		require.ElementsMatch(t, []string{"foo", "bar"}, []string{list[0].Text, list[1].Text})
+
+		list2 := []testType{}
+
+		resp, err = c.R().
+			SetResult(&list2).
+			SetQueryParam("_after", list[0].Id).
+			Get(fmt.Sprintf("%s/testtype", baseURL))
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
+		require.Len(t, list2, 1)
+		require.Equal(t, list[1].Text, list2[0].Text)
 	})
 }
