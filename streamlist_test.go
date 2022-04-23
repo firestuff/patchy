@@ -103,5 +103,25 @@ func TestStreamList(t *testing.T) {
 
 		require.Len(t, list, 2)
 		require.ElementsMatch(t, []string{"foo", "bar"}, []string{list[0].Text, list[1].Text})
+
+		resp, err = c.R().
+			SetDoNotParseResponse(true).
+			SetHeader("Accept", "text/event-stream").
+			SetQueryParam("_limit", "1").
+			Get(fmt.Sprintf("%s/testtype", baseURL))
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
+
+		body2 := resp.RawBody()
+		defer body2.Close()
+
+		scan2 := bufio.NewScanner(body2)
+
+		eventType, err = readEvent(scan2, &list)
+		require.Nil(t, err)
+		require.Equal(t, "list", eventType)
+
+		require.Len(t, list, 1)
+		require.True(t, list[0].Text == "foo" || list[0].Text == "bar")
 	})
 }

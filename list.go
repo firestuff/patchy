@@ -8,38 +8,57 @@ import "strconv"
 import "github.com/firestuff/patchy/metadata"
 import "github.com/firestuff/patchy/path"
 
-func (api *API) list(cfg *config, r *http.Request, params url.Values) ([]any, error) {
-	list, err := api.sb.List(cfg.typeName, cfg.factory)
-	if err != nil {
-		return nil, err
+type listParams struct {
+	limit   int64
+	offset  int64
+	after   string
+	filters url.Values
+}
+
+func parseListParams(params url.Values) (*listParams, error) {
+	ret := &listParams{
+		limit:  math.MaxInt64,
+		offset: 0,
+		after:  "",
 	}
 
-	ret := []any{}
+	var err error
 
-	limit := int64(math.MaxInt64)
-	limitStr := params.Get("_limit")
-	if limitStr != "" {
-		limit, err = strconv.ParseInt(limitStr, 10, 64)
+	limit := params.Get("_limit")
+	if limit != "" {
+		ret.limit, err = strconv.ParseInt(limit, 10, 64)
 		if err != nil {
 			return nil, err
 		}
 		params.Del("_limit")
 	}
 
-	offset := int64(0)
-	offsetStr := params.Get("_offset")
-	if offsetStr != "" {
-		offset, err = strconv.ParseInt(offsetStr, 10, 64)
+	offset := params.Get("_offset")
+	if offset != "" {
+		ret.offset, err = strconv.ParseInt(offset, 10, 64)
 		if err != nil {
 			return nil, err
 		}
 		params.Del("_offset")
 	}
 
-	after := params.Get("_after")
-	if after != "" {
+	ret.after = params.Get("_after")
+	if ret.after != "" {
 		params.Del("_after")
 	}
+
+	ret.filters = params
+
+	return ret, nil
+}
+
+func (api *API) list(cfg *config, r *http.Request, params *listParams) ([]any, error) {
+	list, err := api.sb.List(cfg.typeName, cfg.factory)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := []any{}
 
 	for _, obj := range list {
 		if cfg.mayRead != nil {
@@ -48,7 +67,7 @@ func (api *API) list(cfg *config, r *http.Request, params url.Values) ([]any, er
 			}
 		}
 
-		matches, err := match(obj, params)
+		matches, err := match(obj, params.filters)
 		if err != nil {
 			return nil, err
 		}
@@ -56,20 +75,20 @@ func (api *API) list(cfg *config, r *http.Request, params url.Values) ([]any, er
 			continue
 		}
 
-		if after != "" {
-			if metadata.GetMetadata(obj).Id == after {
-				after = ""
+		if params.after != "" {
+			if metadata.GetMetadata(obj).Id == params.after {
+				params.after = ""
 			}
 			continue
 		}
 
-		if offset > 0 {
-			offset--
+		if params.offset > 0 {
+			params.offset--
 			continue
 		}
 
-		limit--
-		if limit < 0 {
+		params.limit--
+		if params.limit < 0 {
 			break
 		}
 

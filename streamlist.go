@@ -19,12 +19,18 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	parsed, err := parseListParams(params)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 
 	updated, deleted := api.sb.SubscribeType(cfg.typeName)
 
-	prev, err := api.list(cfg, r, params)
+	prev, err := api.list(cfg, r, parsed)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -62,7 +68,7 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 			continue
 		}
 
-		list, err := api.list(cfg, r, params)
+		list, err := api.list(cfg, r, parsed)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
