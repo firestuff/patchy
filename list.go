@@ -25,6 +25,16 @@ func (api *API) list(cfg *config, r *http.Request, params url.Values) ([]any, er
 		params.Del("_limit")
 	}
 
+	offset := int64(0)
+	offsetStr := params.Get("_offset")
+	if offsetStr != "" {
+		offset, err = strconv.ParseInt(offsetStr, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		params.Del("_offset")
+	}
+
 	for _, obj := range list {
 		if cfg.mayRead != nil {
 			if cfg.mayRead(obj, r) != nil {
@@ -37,6 +47,11 @@ func (api *API) list(cfg *config, r *http.Request, params url.Values) ([]any, er
 			return nil, err
 		}
 		if !matches {
+			continue
+		}
+
+		if offset > 0 {
+			offset--
 			continue
 		}
 
