@@ -5,6 +5,7 @@ import "net/http"
 import "net/url"
 import "strconv"
 
+import "github.com/firestuff/patchy/metadata"
 import "github.com/firestuff/patchy/path"
 
 func (api *API) list(cfg *config, r *http.Request, params url.Values) ([]any, error) {
@@ -35,6 +36,11 @@ func (api *API) list(cfg *config, r *http.Request, params url.Values) ([]any, er
 		params.Del("_offset")
 	}
 
+	after := params.Get("_after")
+	if after != "" {
+		params.Del("_after")
+	}
+
 	for _, obj := range list {
 		if cfg.mayRead != nil {
 			if cfg.mayRead(obj, r) != nil {
@@ -47,6 +53,13 @@ func (api *API) list(cfg *config, r *http.Request, params url.Values) ([]any, er
 			return nil, err
 		}
 		if !matches {
+			continue
+		}
+
+		if after != "" {
+			if metadata.GetMetadata(obj).Id == after {
+				after = ""
+			}
 			continue
 		}
 
