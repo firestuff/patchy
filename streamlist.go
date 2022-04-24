@@ -28,6 +28,23 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 
+	stream := params.Get("_stream")
+	params.Del("_stream")
+	switch stream {
+	case "":
+		fallthrough
+	case "full":
+		api.streamListFull(cfg, w, r, params, parsed)
+
+	case "diff":
+		api.streamListDiff(cfg, w, r, params, parsed)
+
+	default:
+		http.Error(w, "Unknown _stream format", http.StatusBadRequest)
+	}
+}
+
+func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Request, params url.Values, parsed *listParams) {
 	updated, deleted := api.sb.SubscribeType(cfg.typeName)
 
 	prev, err := api.list(cfg, r, parsed)
@@ -85,6 +102,24 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 		}
 
 		prev = list
+	}
+}
+
+func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Request, params url.Values, parsed *listParams) {
+	// XXX updated, deleted := api.sb.SubscribeType(cfg.typeName)
+
+	list, err := api.list(cfg, r, parsed)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	for _, obj := range list {
+		err = writeEvent(w, "add", obj)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
