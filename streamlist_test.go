@@ -176,7 +176,32 @@ func TestStreamListDiff(t *testing.T) {
 		eventType, err = readEvent(scan, &obj2)
 		require.Nil(t, err)
 		require.Equal(t, "add", eventType)
-
 		require.ElementsMatch(t, []string{"foo", "bar"}, []string{obj1.Text, obj2.Text})
+
+		resp, err = c.R().
+			SetBody(&testType{
+				Text: "zig",
+			}).
+			SetResult(created2).
+			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created2.Id))
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
+
+		eventType, err = readEvent(scan, &obj1)
+		require.Nil(t, err)
+		require.Equal(t, "update", eventType)
+		require.Equal(t, created2.Id, obj1.Id)
+		require.Equal(t, "zig", obj1.Text)
+
+		resp, err = c.R().
+			Delete(fmt.Sprintf("%s/testtype/%s", baseURL, created1.Id))
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
+
+		eventType, err = readEvent(scan, &obj1)
+		require.Nil(t, err)
+		require.Equal(t, "remove", eventType)
+		require.Equal(t, created1.Id, obj1.Id)
+		require.Equal(t, "foo", obj1.Text)
 	})
 }

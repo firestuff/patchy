@@ -106,7 +106,7 @@ func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Reque
 }
 
 func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Request, params url.Values, parsed *listParams) {
-	// XXX updated, deleted := api.sb.SubscribeType(cfg.typeName)
+	updated, deleted := api.sb.SubscribeType(cfg.typeName)
 
 	list, err := api.list(cfg, r, parsed)
 	if err != nil {
@@ -114,11 +114,92 @@ func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	live := map[string]any{}
+
 	for _, obj := range list {
 		err = writeEvent(w, "add", obj)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
+		}
+
+		live[metadata.GetMetadata(obj).Id] = obj
+	}
+
+	closeChan := w.(http.CloseNotifier).CloseNotify()
+	ticker := time.NewTicker(5 * time.Second)
+
+	connected := true
+	for connected {
+		changedId := ""
+
+		select {
+		case u := <-updated:
+			changedId = metadata.GetMetadata(u).Id
+
+		case <-deleted:
+
+		case <-ticker.C:
+			err = writeEvent(w, "heartbeat", emptyEvent)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			continue
+
+		case <-closeChan:
+			connected = false
+			continue
+		}
+
+		list, err := api.list(cfg, r, parsed)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		cur := map[string]any{}
+
+		for _, obj := range list {
+			objMD := metadata.GetMetadata(obj)
+
+			_, found := live[objMD.Id]
+			if found {
+				// In both old and new lists, but flagged as changed by subscription chan
+				if objMD.Id == changedId {
+					err = writeEvent(w, "update", obj)
+					if err != nil {
+						http.Error(w, err.Error(), http.StatusInternalServerError)
+						return
+					}
+				}
+			} else {
+				// In the new list but not the old
+				err = writeEvent(w, "add", obj)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+			}
+
+			cur[objMD.Id] = obj
+			live[objMD.Id] = obj
+		}
+
+		for id, old := range live {
+			_, found := cur[id]
+			if found {
+				continue
+			}
+
+			// In the old list but not the new
+			err = writeEvent(w, "remove", old)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			delete(live, id)
 		}
 	}
 }
