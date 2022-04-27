@@ -3,6 +3,7 @@ package path
 import "testing"
 import "time"
 
+import "cloud.google.com/go/civil"
 import "github.com/stretchr/testify/require"
 
 func TestSortStruct(t *testing.T) {
@@ -247,4 +248,32 @@ func TestSortTime(t *testing.T) {
 	require.Nil(t, err)
 	require.Len(t, objs, 3)
 	require.Equal(t, []time.Time{t1, t2, t3}, []time.Time{objs[0].Time, objs[1].Time, objs[2].Time})
+}
+
+func TestSortDate(t *testing.T) {
+	t.Parallel()
+
+	d1, err := civil.ParseDate("2006-01-01")
+	require.Nil(t, err)
+	d2, err := civil.ParseDate("2006-01-02")
+	require.Nil(t, err)
+	d3, err := civil.ParseDate("2006-01-03")
+	require.Nil(t, err)
+
+	objs := []*testType1{
+		&testType1{
+			Date: d3,
+		},
+		&testType1{
+			Date: d1,
+		},
+		&testType1{
+			Date: d2,
+		},
+	}
+
+	err = Sort(objs, "date")
+	require.Nil(t, err)
+	require.Len(t, objs, 3)
+	require.Equal(t, []civil.Date{d1, d2, d3}, []civil.Date{objs[0].Date, objs[1].Date, objs[2].Date})
 }

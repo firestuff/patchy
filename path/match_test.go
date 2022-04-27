@@ -3,8 +3,8 @@ package path
 import "testing"
 import "time"
 
-import "github.com/stretchr/testify/require"
 import "cloud.google.com/go/civil"
+import "github.com/stretchr/testify/require"
 
 func TestMatchStruct(t *testing.T) {
 	t.Parallel()
