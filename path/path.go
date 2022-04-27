@@ -4,24 +4,6 @@ import "fmt"
 import "reflect"
 import "strings"
 
-func Match(obj any, path string, val1 string) (bool, error) {
-	val2, err := getAny(obj, path)
-	if err != nil {
-		return false, err
-	}
-
-	if val2 == nil {
-		return false, nil
-	}
-
-	ret, err := match(val1, val2)
-	if err != nil {
-		return false, fmt.Errorf("%s: %w", path, err)
-	}
-
-	return ret, nil
-}
-
 func getAny(obj any, path string) (any, error) {
 	parts := strings.Split(path, ".")
 	v := reflect.ValueOf(obj)
