@@ -1,4 +1,4 @@
-package api
+package patchy
 
 import "math"
 import "net/http"
