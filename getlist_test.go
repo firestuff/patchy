@@ -105,5 +105,32 @@ func TestGETList(t *testing.T) {
 		require.False(t, resp.IsError())
 		require.Len(t, list2, 1)
 		require.Equal(t, list[1].Text, list2[0].Text)
+
+		resp, err = c.R().
+			SetResult(&list).
+			SetQueryParam("_sort", "text").
+			Get(fmt.Sprintf("%s/testtype", baseURL))
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
+		require.Len(t, list, 2)
+		require.Equal(t, []string{"bar", "foo"}, []string{list[0].Text, list[1].Text})
+
+		resp, err = c.R().
+			SetResult(&list).
+			SetQueryParam("_sort", "+text").
+			Get(fmt.Sprintf("%s/testtype", baseURL))
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
+		require.Len(t, list, 2)
+		require.Equal(t, []string{"bar", "foo"}, []string{list[0].Text, list[1].Text})
+
+		resp, err = c.R().
+			SetResult(&list).
+			SetQueryParam("_sort", "-text").
+			Get(fmt.Sprintf("%s/testtype", baseURL))
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
+		require.Len(t, list, 2)
+		require.Equal(t, []string{"foo", "bar"}, []string{list[0].Text, list[1].Text})
 	})
 }
