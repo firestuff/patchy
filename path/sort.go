@@ -5,6 +5,8 @@ import "reflect"
 import "sort"
 import "time"
 
+import "cloud.google.com/go/civil"
+
 func Sort(objs any, path string) error {
 	as := newAnySlice(objs, path)
 	sort.Sort(as)
@@ -86,6 +88,9 @@ func (as *anySlice) Less(i, j int) bool {
 
 	case time.Time:
 		return t1.Before(v2.(time.Time))
+
+	case civil.Date:
+		return t1.Before(v2.(civil.Date))
 
 	default:
 		as.err = fmt.Errorf("%s: unsupported sort type (%T)", as.path, t1)

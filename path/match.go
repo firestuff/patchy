@@ -4,8 +4,8 @@ import "fmt"
 import "strconv"
 import "time"
 
-import "golang.org/x/exp/slices"
 import "cloud.google.com/go/civil"
+import "golang.org/x/exp/slices"
 
 func Match(obj any, path string, val1 string) (bool, error) {
 	val2, err := getAny(obj, path)
