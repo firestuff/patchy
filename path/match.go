@@ -5,6 +5,7 @@ import "strconv"
 import "time"
 
 import "golang.org/x/exp/slices"
+import "cloud.google.com/go/civil"
 
 func Match(obj any, path string, val1 string) (bool, error) {
 	val2, err := getAny(obj, path)
@@ -98,6 +99,12 @@ func match(str string, val any) (bool, error) {
 
 		return false, nil
 
+	case civil.Date:
+		return v == s.(civil.Date), nil
+
+	case []civil.Date:
+		return slices.Contains(v, s.(civil.Date)), nil
+
 	default:
 		return false, fmt.Errorf("unsupported struct type (%T)", v)
 	}
@@ -158,6 +165,12 @@ func parse(str string, t any) (any, error) {
 
 	case []time.Time:
 		return parseTime(str)
+
+	case civil.Date:
+		return civil.ParseDate(str)
+
+	case []civil.Date:
+		return civil.ParseDate(str)
 
 	default:
 		return nil, fmt.Errorf("unsupported struct type (%T)", v)
