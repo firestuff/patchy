@@ -30,6 +30,25 @@ func TestMatchStruct(t *testing.T) {
 	require.False(t, match)
 }
 
+func TestMatchPointer(t *testing.T) {
+	t.Parallel()
+
+	tm, err := time.Parse("2006-01-02T15:04:05Z", "2006-01-02T15:04:05Z")
+	require.Nil(t, err)
+
+	match, err := Match(&testType1{
+		TimeP: &tm,
+	}, "timep", "2006-01-02T15:04:05Z")
+	require.Nil(t, err)
+	require.True(t, match)
+
+	match, err = Match(&testType1{
+		TimeP: &tm,
+	}, "timep", "2006-01-02T15:04:05+01:00")
+	require.Nil(t, err)
+	require.False(t, match)
+}
+
 func TestMatchInt(t *testing.T) {
 	t.Parallel()
 
@@ -430,6 +449,8 @@ type testType1 struct {
 	Times []time.Time
 	Date  civil.Date
 	Dates []civil.Date
+
+	TimeP *time.Time
 }
 
 type testType2 struct {
