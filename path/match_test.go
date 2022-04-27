@@ -4,6 +4,7 @@ import "testing"
 import "time"
 
 import "github.com/stretchr/testify/require"
+import "cloud.google.com/go/civil"
 
 func TestMatchStruct(t *testing.T) {
 	t.Parallel()
@@ -365,6 +366,47 @@ func TestMatchTimes(t *testing.T) {
 	require.False(t, match)
 }
 
+func TestMatchDate(t *testing.T) {
+	t.Parallel()
+
+	d, err := civil.ParseDate("2006-01-01")
+	require.Nil(t, err)
+
+	match, err := Match(&testType1{
+		Date: d,
+	}, "date", "2006-01-01")
+	require.Nil(t, err)
+	require.True(t, match)
+
+	match, err = Match(&testType1{
+		Date: d,
+	}, "date", "2006-01-02")
+	require.Nil(t, err)
+	require.False(t, match)
+}
+
+func TestMatchDates(t *testing.T) {
+	t.Parallel()
+
+	d1, err := civil.ParseDate("2006-01-01")
+	require.Nil(t, err)
+
+	d2, err := civil.ParseDate("2006-01-02")
+	require.Nil(t, err)
+
+	match, err := Match(&testType1{
+		Dates: []civil.Date{d1, d2},
+	}, "dates", "2006-01-02")
+	require.Nil(t, err)
+	require.True(t, match)
+
+	match, err = Match(&testType1{
+		Dates: []civil.Date{d1, d2},
+	}, "dates", "2006-01-03")
+	require.Nil(t, err)
+	require.False(t, match)
+}
+
 type testType1 struct {
 	Int     int
 	Int64   int64
@@ -386,6 +428,8 @@ type testType1 struct {
 
 	Time  time.Time
 	Times []time.Time
+	Date  civil.Date
+	Dates []civil.Date
 }
 
 type testType2 struct {
