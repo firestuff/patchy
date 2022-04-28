@@ -53,6 +53,22 @@ func TestGETList(t *testing.T) {
 
 		resp, err = c.R().
 			SetResult(&list).
+			SetQueryParam("text[eq]", "bar").
+			Get(fmt.Sprintf("%s/testtype", baseURL))
+		require.Nil(t, err)
+		require.False(t, resp.IsError(), resp.String())
+		require.Len(t, list, 1)
+		require.ElementsMatch(t, []string{"bar"}, []string{list[0].Text})
+
+		resp, err = c.R().
+			SetResult(&list).
+			SetQueryParam("text[junk]", "bar").
+			Get(fmt.Sprintf("%s/testtype", baseURL))
+		require.Nil(t, err)
+		require.True(t, resp.IsError())
+
+		resp, err = c.R().
+			SetResult(&list).
 			SetQueryParam("_limit", "2").
 			Get(fmt.Sprintf("%s/testtype", baseURL))
 		require.Nil(t, err)
