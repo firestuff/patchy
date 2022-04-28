@@ -31,30 +31,6 @@ func equal(str string, val any) (bool, error) {
 	}
 
 	switch v := val.(type) {
-	case int:
-		return s.(int) == v, nil
-
-	case int64:
-		return s.(int64) == v, nil
-
-	case uint:
-		return s.(uint) == v, nil
-
-	case uint64:
-		return s.(uint64) == v, nil
-
-	case float32:
-		return s.(float32) == v, nil
-
-	case float64:
-		return s.(float64) == v, nil
-
-	case string:
-		return s.(string) == v, nil
-
-	case bool:
-		return s.(bool) == v, nil
-
 	case []int:
 		return slices.Contains(v, s.(int)), nil
 
@@ -93,13 +69,10 @@ func equal(str string, val any) (bool, error) {
 
 		return false, nil
 
-	case civil.Date:
-		return v == s.(civil.Date), nil
-
 	case []civil.Date:
 		return slices.Contains(v, s.(civil.Date)), nil
 
 	default:
-		return false, fmt.Errorf("unsupported struct type (%T)", v)
+		return s == val, nil
 	}
 }
