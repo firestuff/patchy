@@ -5,109 +5,10 @@ import "strconv"
 import "time"
 
 import "cloud.google.com/go/civil"
-import "golang.org/x/exp/slices"
 
-func Match(obj any, path string, val1 string) (bool, error) {
-	val2, err := getAny(obj, path)
-	if err != nil {
-		return false, err
-	}
-
-	if val2 == nil {
-		return false, nil
-	}
-
-	ret, err := match(val1, val2)
-	if err != nil {
-		return false, fmt.Errorf("%s: %w", path, err)
-	}
-
-	return ret, nil
-}
-
-type timeMatch struct {
+type timeVal struct {
 	time      time.Time
 	precision time.Duration
-}
-
-func match(str string, val any) (bool, error) {
-	s, err := parse(str, val)
-	if err != nil {
-		return false, err
-	}
-
-	switch v := val.(type) {
-	case int:
-		return s.(int) == v, nil
-
-	case int64:
-		return s.(int64) == v, nil
-
-	case uint:
-		return s.(uint) == v, nil
-
-	case uint64:
-		return s.(uint64) == v, nil
-
-	case float32:
-		return s.(float32) == v, nil
-
-	case float64:
-		return s.(float64) == v, nil
-
-	case string:
-		return s.(string) == v, nil
-
-	case bool:
-		return s.(bool) == v, nil
-
-	case []int:
-		return slices.Contains(v, s.(int)), nil
-
-	case []int64:
-		return slices.Contains(v, s.(int64)), nil
-
-	case []uint:
-		return slices.Contains(v, s.(uint)), nil
-
-	case []uint64:
-		return slices.Contains(v, s.(uint64)), nil
-
-	case []float32:
-		return slices.Contains(v, s.(float32)), nil
-
-	case []float64:
-		return slices.Contains(v, s.(float64)), nil
-
-	case []string:
-		return slices.Contains(v, s.(string)), nil
-
-	case []bool:
-		return slices.Contains(v, s.(bool)), nil
-
-	case time.Time:
-		tm := s.(*timeMatch)
-		return tm.time.Equal(v.Truncate(tm.precision)), nil
-
-	case []time.Time:
-		tm := s.(*timeMatch)
-		for _, iter := range v {
-			if tm.time.Equal(iter.Truncate(tm.precision)) {
-				return true, nil
-			}
-		}
-
-		return false, nil
-
-	case civil.Date:
-		return v == s.(civil.Date), nil
-
-	case []civil.Date:
-		return slices.Contains(v, s.(civil.Date)), nil
-
-	default:
-		return false, fmt.Errorf("unsupported struct type (%T)", v)
-	}
 }
 
 func parse(str string, t any) (any, error) {
@@ -192,7 +93,7 @@ func parseFloat32(str string) (float32, error) {
 	return float32(val), err
 }
 
-func parseTime(str string) (*timeMatch, error) {
+func parseTime(str string) (*timeVal, error) {
 	for _, layout := range []string{
 		"2006-01-02T15:04:05Z",
 		"2006-01-02T15:04:05-07:00",
@@ -201,7 +102,7 @@ func parseTime(str string) (*timeMatch, error) {
 		if err != nil {
 			continue
 		}
-		return &timeMatch{
+		return &timeVal{
 			time:      tm,
 			precision: 1 * time.Second,
 		}, nil
@@ -216,12 +117,12 @@ func parseTime(str string) (*timeMatch, error) {
 	// UNIX Millis:  1971-01-01
 	// Intended to give us a wide range of useful values in both schemes
 	if i > 31536000000 {
-		return &timeMatch{
+		return &timeVal{
 			time:      time.UnixMilli(i),
 			precision: 1 * time.Millisecond,
 		}, nil
 	} else {
-		return &timeMatch{
+		return &timeVal{
 			time:      time.Unix(i, 0),
 			precision: 1 * time.Second,
 		}, nil

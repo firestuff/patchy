@@ -166,7 +166,10 @@ func match(obj any, filters []filter) (bool, error) {
 
 		switch filter.op {
 		case "eq":
-			matches, err = path.Match(obj, filter.path, filter.val)
+			matches, err = path.Equal(obj, filter.path, filter.val)
+
+			//		case "gt":
+			//			matches, err = path.GreaterThan(obj, filter.path, filter.val)
 		}
 
 		if err != nil {
