@@ -19,6 +19,9 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	stream := params.Get("_stream")
+	params.Del("_stream")
+
 	parsed, err := parseListParams(params)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -28,8 +31,6 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 
-	stream := params.Get("_stream")
-	params.Del("_stream")
 	switch stream {
 	case "":
 		fallthrough
