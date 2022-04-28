@@ -28,6 +28,7 @@ type filter struct {
 var opMatch = regexp.MustCompile(`^([^\[]+)\[(.+)\]$`)
 var validOps = map[string]bool{
 	"eq": true,
+	"gt": true,
 }
 
 func parseListParams(params url.Values) (*listParams, error) {
@@ -168,8 +169,8 @@ func match(obj any, filters []filter) (bool, error) {
 		case "eq":
 			matches, err = path.Equal(obj, filter.path, filter.val)
 
-			//		case "gt":
-			//			matches, err = path.GreaterThan(obj, filter.path, filter.val)
+		case "gt":
+			matches, err = path.Greater(obj, filter.path, filter.val)
 		}
 
 		if err != nil {
