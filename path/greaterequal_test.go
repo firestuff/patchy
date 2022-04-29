@@ -143,19 +143,19 @@ func TestGreaterEqualString(t *testing.T) {
 
 	match, err := GreaterEqual(&testType1{
 		String: "foo",
-	}, "string", "bar")
+	}, "string2", "bar")
 	require.Nil(t, err)
 	require.True(t, match)
 
 	match, err = GreaterEqual(&testType1{
 		String: "foo",
-	}, "string", "foo")
+	}, "string2", "foo")
 	require.Nil(t, err)
 	require.True(t, match)
 
 	match, err = GreaterEqual(&testType1{
 		String: "foo",
-	}, "string", "zig")
+	}, "string2", "zig")
 	require.Nil(t, err)
 	require.False(t, match)
 }
@@ -165,19 +165,19 @@ func TestGreaterEqualBool(t *testing.T) {
 
 	match, err := GreaterEqual(&testType1{
 		Bool: true,
-	}, "bool", "false")
+	}, "bool2", "false")
 	require.Nil(t, err)
 	require.True(t, match)
 
 	match, err = GreaterEqual(&testType1{
 		Bool: true,
-	}, "bool", "true")
+	}, "bool2", "true")
 	require.Nil(t, err)
 	require.True(t, match)
 
 	match, err = GreaterEqual(&testType1{
 		Bool: false,
-	}, "bool", "true")
+	}, "bool2", "true")
 	require.Nil(t, err)
 	require.False(t, match)
 }

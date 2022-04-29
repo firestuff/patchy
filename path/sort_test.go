@@ -195,7 +195,7 @@ func TestSortString(t *testing.T) {
 		},
 	}
 
-	err := Sort(objs, "string")
+	err := Sort(objs, "string2")
 	require.Nil(t, err)
 	require.Len(t, objs, 3)
 	require.Equal(t, []string{"bar", "foo", "zig"}, []string{objs[0].String, objs[1].String, objs[2].String})
@@ -216,7 +216,7 @@ func TestSortBool(t *testing.T) {
 		},
 	}
 
-	err := Sort(objs, "bool")
+	err := Sort(objs, "bool2")
 	require.Nil(t, err)
 	require.Len(t, objs, 3)
 	require.Equal(t, []bool{false, true, true}, []bool{objs[0].Bool, objs[1].Bool, objs[2].Bool})
