@@ -15,13 +15,7 @@ func op(obj any, path string, v1Str string, cb func(any, any) bool) (bool, error
 	}
 
 	if isSlice(v2) {
-		return anyTrue(v2, func(x any) bool {
-			if x == nil {
-				return false
-			}
-
-			return cb(v1, x)
-		}), nil
+		return anyTrue(v2, func(x any) bool { return cb(v1, x) }), nil
 	}
 
 	return cb(v1, v2), nil
