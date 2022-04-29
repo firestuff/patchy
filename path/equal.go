@@ -19,7 +19,7 @@ func Equal(obj any, path string, v1Str string) (bool, error) {
 	return equal(v1, v2), nil
 }
 
-func equal(v1 any, v2 any) bool {
+func equal(v1, v2 any) bool {
 	if v2 == nil {
 		return false
 	}

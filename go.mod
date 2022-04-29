@@ -8,7 +8,6 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/stretchr/testify v1.7.1
-	golang.org/x/exp v0.0.0-20220414153411-bcd21879b8fd
 )
 
 require (

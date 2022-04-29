@@ -1,130 +1,68 @@
 package path
 
-import "fmt"
 import "time"
 
 import "cloud.google.com/go/civil"
-import "golang.org/x/exp/constraints"
 
-func Less(obj any, path string, val1 string) (bool, error) {
-	val2, err := getAny(obj, path)
+func Less(obj any, path string, v1Str string) (bool, error) {
+	v2, err := getAny(obj, path)
 	if err != nil {
 		return false, err
 	}
-
-	if val2 == nil {
+	if v2 == nil {
 		return false, nil
 	}
 
-	ret, err := less(val1, val2)
-	if err != nil {
-		return false, fmt.Errorf("%s: %w", path, err)
-	}
-
-	return ret, nil
-}
-
-func less(str string, val any) (bool, error) {
-	s, err := parse(str, val)
+	v1, err := parse(v1Str, v2)
 	if err != nil {
 		return false, err
 	}
 
-	switch v := val.(type) {
+	return less(v1, v2), nil
+}
+
+func less(v1, v2 any) bool {
+	if v2 == nil {
+		return false
+	}
+
+	if isSlice(v2) {
+		return anyTrue(v2, func(x any) bool { return less(v1, x) })
+	}
+
+	switch v2t := v2.(type) {
 	case int:
-		return v < s.(int), nil
+		return v2t < v1.(int)
 
 	case int64:
-		return v < s.(int64), nil
+		return v2t < v1.(int64)
 
 	case uint:
-		return v < s.(uint), nil
+		return v2t < v1.(uint)
 
 	case uint64:
-		return v < s.(uint64), nil
+		return v2t < v1.(uint64)
 
 	case float32:
-		return v < s.(float32), nil
+		return v2t < v1.(float32)
 
 	case float64:
-		return v < s.(float64), nil
+		return v2t < v1.(float64)
 
 	case string:
-		return v < s.(string), nil
+		return v2t < v1.(string)
 
 	case bool:
-		return v == false && s.(bool) == true, nil
-
-	case []int:
-		return containsLess(v, s.(int)), nil
-
-	case []int64:
-		return containsLess(v, s.(int64)), nil
-
-	case []uint:
-		return containsLess(v, s.(uint)), nil
-
-	case []uint64:
-		return containsLess(v, s.(uint64)), nil
-
-	case []float32:
-		return containsLess(v, s.(float32)), nil
-
-	case []float64:
-		return containsLess(v, s.(float64)), nil
-
-	case []string:
-		return containsLess(v, s.(string)), nil
-
-	case []bool:
-		if s.(bool) != true {
-			return false, nil
-		}
-
-		for _, iter := range v {
-			if iter == false {
-				return true, nil
-			}
-		}
-
-		return false, nil
+		return v2t == false && v1.(bool) == true
 
 	case time.Time:
-		tm := s.(*timeVal)
-		return v.Truncate(tm.precision).Before(tm.time), nil
-
-	case []time.Time:
-		tm := s.(*timeVal)
-		for _, iter := range v {
-			if iter.Truncate(tm.precision).Before(tm.time) {
-				return true, nil
-			}
-		}
-
-		return false, nil
+		tm := v1.(*timeVal)
+		return v2t.Truncate(tm.precision).Before(tm.time)
 
 	case civil.Date:
-		return v.Before(s.(civil.Date)), nil
-
-	case []civil.Date:
-		for _, iter := range v {
-			if iter.Before(s.(civil.Date)) {
-				return true, nil
-			}
-		}
-
-		return false, nil
+		return v2t.Before(v1.(civil.Date))
 
 	default:
-		return false, fmt.Errorf("unsupported struct type (%T)", v)
+		panic(v2)
 	}
-}
-
-func containsLess[E constraints.Ordered](s []E, v E) bool {
-	for _, iter := range s {
-		if iter < v {
-			return true
-		}
-	}
-	return false
 }

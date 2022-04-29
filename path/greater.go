@@ -21,7 +21,7 @@ func Greater(obj any, path string, v1Str string) (bool, error) {
 	return greater(v1, v2), nil
 }
 
-func greater(v1 any, v2 any) bool {
+func greater(v1, v2 any) bool {
 	if v2 == nil {
 		return false
 	}
