@@ -28,7 +28,8 @@ type testType1 struct {
 	Date  civil.Date
 	Dates []civil.Date
 
-	TimeP *time.Time
+	TimeP  *time.Time
+	TimesP []*time.Time
 }
 
 type testType2 struct {

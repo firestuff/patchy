@@ -1,6 +1,7 @@
 package path
 
 import "fmt"
+import "reflect"
 import "strconv"
 import "time"
 
@@ -12,70 +13,50 @@ type timeVal struct {
 }
 
 func parse(str string, t any) (any, error) {
-	switch v := t.(type) {
-	case int:
-		return parseInt(str)
-
-	case []int:
-		return parseInt(str)
-
-	case int64:
-		return strconv.ParseInt(str, 10, 64)
-
-	case []int64:
-		return strconv.ParseInt(str, 10, 64)
-
-	case uint:
-		return parseUint(str)
-
-	case []uint:
-		return parseUint(str)
-
-	case uint64:
-		return strconv.ParseUint(str, 10, 64)
-
-	case []uint64:
-		return strconv.ParseUint(str, 10, 64)
-
-	case float32:
-		return parseFloat32(str)
-
-	case []float32:
-		return parseFloat32(str)
-
-	case float64:
-		return strconv.ParseFloat(str, 64)
-
-	case []float64:
-		return strconv.ParseFloat(str, 64)
-
-	case string:
-		return str, nil
-
-	case []string:
-		return str, nil
-
-	case bool:
-		return strconv.ParseBool(str)
-
-	case []bool:
-		return strconv.ParseBool(str)
-
-	case time.Time:
-		return parseTime(str)
-
-	case []time.Time:
-		return parseTime(str)
-
-	case civil.Date:
-		return civil.ParseDate(str)
-
-	case []civil.Date:
-		return civil.ParseDate(str)
-
-	default:
-		return nil, fmt.Errorf("unsupported struct type (%T)", v)
+	typ := reflect.TypeOf(t)
+	if typ.Kind() == reflect.Slice {
+		typ = typ.Elem()
 	}
+	if typ.Kind() == reflect.Pointer {
+		typ = typ.Elem()
+	}
+
+	switch typ.Kind() {
+	case reflect.Int:
+		return parseInt(str)
+
+	case reflect.Int64:
+		return strconv.ParseInt(str, 10, 64)
+
+	case reflect.Uint:
+		return parseUint(str)
+
+	case reflect.Uint64:
+		return strconv.ParseUint(str, 10, 64)
+
+	case reflect.Float32:
+		return parseFloat32(str)
+
+	case reflect.Float64:
+		return strconv.ParseFloat(str, 64)
+
+	case reflect.String:
+		return str, nil
+
+	case reflect.Bool:
+		return strconv.ParseBool(str)
+
+	case reflect.Struct:
+		switch typ {
+		case reflect.TypeOf(time.Time{}):
+			return parseTime(str)
+
+		case reflect.TypeOf(civil.Date{}):
+			return civil.ParseDate(str)
+		}
+	}
+
+	return nil, fmt.Errorf("unsupported struct type (%T)", t)
 }
 
 func parseInt(str string) (int, error) {

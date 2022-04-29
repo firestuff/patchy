@@ -12,7 +12,11 @@ func anyTrue(v any, cb func(any) bool) bool {
 	for i := 0; i < val.Len(); i++ {
 		sub := val.Index(i)
 
-		// TODO: Indirect
+		if sub.Kind() == reflect.Pointer && sub.IsNil() {
+			continue
+		}
+
+		sub = reflect.Indirect(sub)
 
 		if cb(sub.Interface()) {
 			return true
