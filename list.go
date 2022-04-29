@@ -31,6 +31,7 @@ var validOps = map[string]bool{
 	"gt":  true,
 	"gte": true,
 	"lt":  true,
+	"lte": true,
 }
 
 func parseListParams(params url.Values) (*listParams, error) {
@@ -179,6 +180,9 @@ func match(obj any, filters []filter) (bool, error) {
 
 		case "lt":
 			matches, err = path.Less(obj, filter.path, filter.val)
+
+		case "lte":
+			matches, err = path.LessEqual(obj, filter.path, filter.val)
 		}
 
 		if err != nil {
