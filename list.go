@@ -29,6 +29,7 @@ var opMatch = regexp.MustCompile(`^([^\[]+)\[(.+)\]$`)
 var validOps = map[string]bool{
 	"eq": true,
 	"gt": true,
+	"lt": true,
 }
 
 func parseListParams(params url.Values) (*listParams, error) {
@@ -171,6 +172,9 @@ func match(obj any, filters []filter) (bool, error) {
 
 		case "gt":
 			matches, err = path.Greater(obj, filter.path, filter.val)
+
+		case "lt":
+			matches, err = path.Less(obj, filter.path, filter.val)
 		}
 
 		if err != nil {
