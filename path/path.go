@@ -31,6 +31,7 @@ func getAnyRecursive(v reflect.Value, parts []string, prev []string) (any, error
 	part := parts[0]
 
 	sub := v.FieldByNameFunc(func(name string) bool {
+		// TODO: use the JSON StructTag instead of our own name conversion
 		return strings.ToLower(part) == strings.ToLower(name)
 	})
 	if !sub.IsValid() {
