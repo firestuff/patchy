@@ -107,13 +107,13 @@ func TestLessString(t *testing.T) {
 
 	match, err := Less(&testType1{
 		String: "foo",
-	}, "string", "zig")
+	}, "string2", "zig")
 	require.Nil(t, err)
 	require.True(t, match)
 
 	match, err = Less(&testType1{
 		String: "foo",
-	}, "string", "bar")
+	}, "string2", "bar")
 	require.Nil(t, err)
 	require.False(t, match)
 }
@@ -123,13 +123,13 @@ func TestLessBool(t *testing.T) {
 
 	match, err := Less(&testType1{
 		Bool: false,
-	}, "bool", "true")
+	}, "bool2", "true")
 	require.Nil(t, err)
 	require.True(t, match)
 
 	match, err = Less(&testType1{
 		Bool: true,
-	}, "bool", "false")
+	}, "bool2", "false")
 	require.Nil(t, err)
 	require.False(t, match)
 }

@@ -30,10 +30,7 @@ func getAnyRecursive(v reflect.Value, parts []string, prev []string) (any, error
 
 	part := parts[0]
 
-	sub := v.FieldByNameFunc(func(name string) bool {
-		// TODO: use the JSON StructTag instead of our own name conversion
-		return strings.ToLower(part) == strings.ToLower(name)
-	})
+	sub := getField(v, part)
 	if !sub.IsValid() {
 		return nil, fmt.Errorf("%s: invalid field name", errorPath(prev, part))
 	}
@@ -43,6 +40,31 @@ func getAnyRecursive(v reflect.Value, parts []string, prev []string) (any, error
 	newPrev = append(newPrev, part)
 
 	return getAnyRecursive(sub, parts[1:], newPrev)
+}
+
+func getField(v reflect.Value, name string) reflect.Value {
+	name = strings.ToLower(name)
+	typ := v.Type()
+
+	for i := 0; i < typ.NumField(); i++ {
+		field := typ.Field(i)
+		fieldName := field.Name
+
+		tag := field.Tag.Get("json")
+		if tag != "" {
+			if tag == "-" {
+				continue
+			}
+			parts := strings.SplitN(tag, ",", 2)
+			fieldName = parts[0]
+		}
+
+		if strings.ToLower(fieldName) == name {
+			return v.Field(i)
+		}
+	}
+
+	return reflect.Value{}
 }
 
 func errorPath(prev []string, part string) string {

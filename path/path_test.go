@@ -11,8 +11,8 @@ type testType1 struct {
 	UInt64  uint64
 	Float32 float32
 	Float64 float64
-	String  string
-	Bool    bool
+	String  string `json:"string2,omitempty"`
+	Bool    bool   `json:"bool2"`
 
 	Ints     []int
 	Int64s   []int64
