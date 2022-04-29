@@ -55,12 +55,12 @@ func TestEqualPointers(t *testing.T) {
 	tm1, err := time.Parse("2006-01-02T15:04:05Z", "2006-01-02T15:04:05Z")
 	require.Nil(t, err)
 
-	tm2, err := time.Parse("2006-01-02T15:04:05Z", "2006-01-10T15:04:06Z")
+	tm2, err := time.Parse("2006-01-02T15:04:05Z", "2006-01-10T15:04:05Z")
 	require.Nil(t, err)
 
 	match, err := Equal(&testType1{
-		TimesP: []*time.Time{&tm1, &tm2},
-	}, "timesp", "2006-01-02T15:04:05Z")
+		TimesP: []*time.Time{&tm1, nil, &tm2},
+	}, "timesp", "2006-01-10T15:04:05Z")
 	require.Nil(t, err)
 	require.True(t, match)
 
