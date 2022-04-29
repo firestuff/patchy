@@ -1,78 +1,39 @@
 package path
 
-import "fmt"
 import "time"
 
-import "cloud.google.com/go/civil"
-import "golang.org/x/exp/slices"
+func Equal(obj any, path string, v1Str string) (bool, error) {
+	v2, err := getAny(obj, path)
+	if err != nil {
+		return false, err
+	}
+	if v2 == nil {
+		return false, nil
+	}
 
-func Equal(obj any, path string, val1 string) (bool, error) {
-	val2, err := getAny(obj, path)
+	v1, err := parse(v1Str, v2)
 	if err != nil {
 		return false, err
 	}
 
-	if val2 == nil {
-		return false, nil
-	}
-
-	ret, err := equal(val1, val2)
-	if err != nil {
-		return false, fmt.Errorf("%s: %w", path, err)
-	}
-
-	return ret, nil
+	return equal(v1, v2), nil
 }
 
-func equal(str string, val any) (bool, error) {
-	s, err := parse(str, val)
-	if err != nil {
-		return false, err
+func equal(v1 any, v2 any) bool {
+	if v2 == nil {
+		return false
 	}
 
-	switch v := val.(type) {
-	case []int:
-		return slices.Contains(v, s.(int)), nil
+	if isSlice(v2) {
+		return anyTrue(v2, func(x any) bool { return equal(v1, x) })
+	}
 
-	case []int64:
-		return slices.Contains(v, s.(int64)), nil
-
-	case []uint:
-		return slices.Contains(v, s.(uint)), nil
-
-	case []uint64:
-		return slices.Contains(v, s.(uint64)), nil
-
-	case []float32:
-		return slices.Contains(v, s.(float32)), nil
-
-	case []float64:
-		return slices.Contains(v, s.(float64)), nil
-
-	case []string:
-		return slices.Contains(v, s.(string)), nil
-
-	case []bool:
-		return slices.Contains(v, s.(bool)), nil
-
+	switch v2t := v2.(type) {
 	case time.Time:
-		tm := s.(*timeVal)
-		return tm.time.Equal(v.Truncate(tm.precision)), nil
-
-	case []time.Time:
-		tm := s.(*timeVal)
-		for _, iter := range v {
-			if tm.time.Equal(iter.Truncate(tm.precision)) {
-				return true, nil
-			}
-		}
-
-		return false, nil
-
-	case []civil.Date:
-		return slices.Contains(v, s.(civil.Date)), nil
+		tm := v1.(*timeVal)
+		return tm.time.Equal(v2t.Truncate(tm.precision))
 
 	default:
-		return s == val, nil
+		return v1 == v2
 	}
 }
