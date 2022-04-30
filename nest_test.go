@@ -8,11 +8,13 @@ import (
 )
 
 type Outer struct {
+	patchy.Metadata
 	Text  string
 	Inner []string
 }
 
 type Inner struct {
+	patchy.Metadata
 	Text string
 }
 

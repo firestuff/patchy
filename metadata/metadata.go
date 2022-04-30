@@ -12,6 +12,10 @@ type Metadata struct {
 	Generation int64  `json:"generation"`
 }
 
+func HasMetadata(obj any) bool {
+	return getMetadataField(obj).IsValid()
+}
+
 func GetMetadata(obj any) *Metadata {
 	return getMetadataField(obj).Addr().Interface().(*Metadata)
 }
