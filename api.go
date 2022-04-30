@@ -71,6 +71,10 @@ func RegisterName[T any](api *API, t string) {
 
 	obj := new(T)
 
+	if !metadata.HasMetadata(obj) {
+		panic("struct missing patchy.Metadata field")
+	}
+
 	if _, has := any(obj).(mayCreate); has {
 		cfg.mayCreate = func(obj any, r *http.Request) error {
 			return obj.(mayCreate).MayCreate(r)
