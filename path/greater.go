@@ -38,6 +38,7 @@ func greater(v1, v2 any) bool {
 
 	case time.Time:
 		tm := v1.(*timeVal)
+
 		return v2t.Truncate(tm.precision).After(tm.time)
 
 	case civil.Date:

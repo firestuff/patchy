@@ -10,13 +10,13 @@ import (
 func (api *API) post(cfg *config, w http.ResponseWriter, r *http.Request) {
 	obj := cfg.factory()
 
-	err := readJson(r, obj)
+	err := readJSON(r, obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	metadata.GetMetadata(obj).Id = uuid.NewString()
+	metadata.GetMetadata(obj).ID = uuid.NewString()
 
 	if cfg.mayCreate != nil {
 		err = cfg.mayCreate(obj, r)
@@ -32,7 +32,7 @@ func (api *API) post(cfg *config, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = writeJson(w, obj)
+	err = writeJSON(w, obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

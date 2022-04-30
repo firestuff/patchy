@@ -15,7 +15,7 @@ func (api *API) put(cfg *config, w http.ResponseWriter, r *http.Request) {
 	obj := cfg.factory()
 
 	objMD := metadata.GetMetadata(obj)
-	objMD.Id = vars["id"]
+	objMD.ID = vars["id"]
 
 	cfg.mu.Lock()
 	defer cfg.mu.Unlock()
@@ -35,7 +35,7 @@ func (api *API) put(cfg *config, w http.ResponseWriter, r *http.Request) {
 
 	replace := cfg.factory()
 
-	err = readJson(r, replace)
+	err = readJSON(r, replace)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -44,7 +44,7 @@ func (api *API) put(cfg *config, w http.ResponseWriter, r *http.Request) {
 	// Metadata is immutable or server-owned
 	metadata.ClearMetadata(replace)
 	replaceMD := metadata.GetMetadata(replace)
-	replaceMD.Id = vars["id"]
+	replaceMD.ID = vars["id"]
 	replaceMD.Generation = objMD.Generation + 1
 
 	if cfg.mayReplace != nil {
@@ -61,7 +61,7 @@ func (api *API) put(cfg *config, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = writeJson(w, replace)
+	err = writeJSON(w, replace)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

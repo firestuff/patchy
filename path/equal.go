@@ -10,6 +10,7 @@ func equal(v1, v2 any) bool {
 	switch v2t := v2.(type) {
 	case time.Time:
 		tm := v1.(*timeVal)
+
 		return tm.time.Equal(v2t.Truncate(tm.precision))
 
 	default:

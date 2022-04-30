@@ -25,12 +25,12 @@ func ifMatch(obj any, w http.ResponseWriter, r *http.Request) bool {
 
 	switch {
 	case strings.HasPrefix(val, "etag:"):
-		if val == objMD.ETag {
-			return true
-		} else {
+		if val != objMD.ETag {
 			http.Error(w, "If-Match mismatch", http.StatusPreconditionFailed)
 			return false
 		}
+
+		return true
 
 	case strings.HasPrefix(val, "generation:"):
 		gen, err := strconv.ParseInt(strings.TrimPrefix(val, "generation:"), 10, 64)
@@ -39,12 +39,12 @@ func ifMatch(obj any, w http.ResponseWriter, r *http.Request) bool {
 			return false
 		}
 
-		if gen == objMD.Generation {
-			return true
-		} else {
+		if gen != objMD.Generation {
 			http.Error(w, "If-Match mismatch", http.StatusPreconditionFailed)
 			return false
 		}
+
+		return true
 
 	default:
 		http.Error(w, "Invalid If-Match (unknown type)", http.StatusBadRequest)

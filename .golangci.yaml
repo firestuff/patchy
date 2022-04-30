@@ -17,5 +17,6 @@ linters:
     - lll
     - maligned
     - nestif
+    - nlreturn
     - thelper
     - varnamelen

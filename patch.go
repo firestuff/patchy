@@ -15,7 +15,7 @@ func (api *API) patch(cfg *config, w http.ResponseWriter, r *http.Request) {
 	obj := cfg.factory()
 
 	objMD := metadata.GetMetadata(obj)
-	objMD.Id = vars["id"]
+	objMD.ID = vars["id"]
 
 	cfg.mu.Lock()
 	defer cfg.mu.Unlock()
@@ -35,7 +35,7 @@ func (api *API) patch(cfg *config, w http.ResponseWriter, r *http.Request) {
 
 	patch := cfg.factory()
 
-	err = readJson(r, patch)
+	err = readJSON(r, patch)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -52,7 +52,7 @@ func (api *API) patch(cfg *config, w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = Merge(obj, patch)
+	err = merge(obj, patch)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -66,7 +66,7 @@ func (api *API) patch(cfg *config, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = writeJson(w, obj)
+	err = writeJSON(w, obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

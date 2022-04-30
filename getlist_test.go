@@ -154,7 +154,7 @@ func TestGETList(t *testing.T) {
 
 		resp, err = c.R().
 			SetResult(&list2).
-			SetQueryParam("_after", list[0].Id).
+			SetQueryParam("_after", list[0].ID).
 			Get(fmt.Sprintf("%s/testtype", baseURL))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())

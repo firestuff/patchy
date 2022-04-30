@@ -46,11 +46,13 @@ func (p *Potency) Middleware(next http.Handler) http.Handler {
 		val := r.Header.Get("Idempotency-Key")
 		if val == "" {
 			next.ServeHTTP(w, r)
+
 			return
 		}
 
 		if len(val) < 2 || !strings.HasPrefix(val, `"`) || !strings.HasSuffix(val, `"`) {
 			http.Error(w, "Invalid Idempotency-Key", http.StatusBadRequest)
+
 			return
 		}
 
@@ -58,7 +60,7 @@ func (p *Potency) Middleware(next http.Handler) http.Handler {
 
 		saved := &savedResult{
 			Metadata: metadata.Metadata{
-				Id: key,
+				ID: key,
 			},
 		}
 
@@ -89,6 +91,7 @@ func (p *Potency) Middleware(next http.Handler) http.Handler {
 
 			w.WriteHeader(saved.StatusCode)
 			_, _ = w.Write(saved.Result)
+
 			return
 		}
 
@@ -110,7 +113,7 @@ func (p *Potency) Middleware(next http.Handler) http.Handler {
 
 		save := &savedResult{
 			Metadata: metadata.Metadata{
-				Id: key,
+				ID: key,
 			},
 
 			Method: r.Method,

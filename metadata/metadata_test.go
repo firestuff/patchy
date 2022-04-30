@@ -1,13 +1,14 @@
-package metadata
+package metadata_test
 
 import (
 	"testing"
 
+	"github.com/firestuff/patchy/metadata"
 	"github.com/stretchr/testify/require"
 )
 
 type TestType struct {
-	Metadata
+	metadata.Metadata
 	Text string
 }
 
@@ -17,13 +18,13 @@ func TestMetadata(t *testing.T) {
 	tt := &TestType{}
 
 	// Verify promoted field
-	tt.Id = "abc123"
+	tt.ID = "abc123"
 
-	m := GetMetadata(tt)
+	m := metadata.GetMetadata(tt)
 	require.NotNil(t, m)
-	require.Equal(t, "abc123", m.Id)
-	require.Equal(t, "6ca13d52ca70c883e0f0bb101e425a89e8624de51db2d2392593af6a84118090", m.GetSafeId())
+	require.Equal(t, "abc123", m.ID)
+	require.Equal(t, "6ca13d52ca70c883e0f0bb101e425a89e8624de51db2d2392593af6a84118090", m.GetSafeID())
 
-	ClearMetadata(tt)
-	require.Empty(t, tt.Id)
+	metadata.ClearMetadata(tt)
+	require.Empty(t, tt.ID)
 }

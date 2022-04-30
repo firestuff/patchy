@@ -5,6 +5,7 @@ func op(obj any, path string, v1Str string, cb func(any, any) bool) (bool, error
 	if err != nil {
 		return false, err
 	}
+
 	if v2 == nil {
 		return false, nil
 	}

@@ -15,13 +15,14 @@ func TestStoreBus(t *testing.T) {
 
 	dir, err := os.MkdirTemp("", "")
 	require.Nil(t, err)
+
 	defer os.RemoveAll(dir)
 
 	sb := storebus.NewStoreBus(store.NewFileStore(dir))
 
 	err = sb.Write("storeBusTest", &storeBusTest{
 		Metadata: metadata.Metadata{
-			Id: "id1",
+			ID: "id1",
 		},
 		Opaque: "foo",
 	})
@@ -29,7 +30,7 @@ func TestStoreBus(t *testing.T) {
 
 	out1 := &storeBusTest{
 		Metadata: metadata.Metadata{
-			Id: "id1",
+			ID: "id1",
 		},
 	}
 
@@ -42,7 +43,7 @@ func TestStoreBus(t *testing.T) {
 
 	err = sb.Write("storeBusTest", &storeBusTest{
 		Metadata: metadata.Metadata{
-			Id: "id1",
+			ID: "id1",
 		},
 		Opaque: "bar",
 	})
@@ -58,6 +59,7 @@ func TestStoreBusDelete(t *testing.T) {
 
 	dir, err := os.MkdirTemp("", "")
 	require.Nil(t, err)
+
 	defer os.RemoveAll(dir)
 
 	sb := storebus.NewStoreBus(store.NewFileStore(dir))
@@ -66,7 +68,7 @@ func TestStoreBusDelete(t *testing.T) {
 
 	err = sb.Write("storeBusTest", &storeBusTest{
 		Metadata: metadata.Metadata{
-			Id: "id1",
+			ID: "id1",
 		},
 		Opaque: "foo",
 	})

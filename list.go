@@ -132,7 +132,7 @@ func (api *API) list(cfg *config, r *http.Request, params *listParams) ([]any, e
 		}
 
 		if params.after != "" {
-			if metadata.GetMetadata(obj).Id == params.after {
+			if metadata.GetMetadata(obj).ID == params.after {
 				params.after = ""
 			}
 

@@ -28,7 +28,7 @@ func TestDELETE(t *testing.T) {
 		resp, err = c.R().
 			SetDoNotParseResponse(true).
 			SetHeader("Accept", "text/event-stream").
-			Get(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+			Get(fmt.Sprintf("%s/testtype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		body := resp.RawBody()
@@ -43,7 +43,7 @@ func TestDELETE(t *testing.T) {
 		require.Equal(t, "foo", initial.Text)
 
 		resp, err = c.R().
-			Delete(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+			Delete(fmt.Sprintf("%s/testtype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
@@ -57,7 +57,7 @@ func TestDELETE(t *testing.T) {
 
 		resp, err = c.R().
 			SetResult(read).
-			Get(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+			Get(fmt.Sprintf("%s/testtype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.True(t, resp.IsError())
 	})

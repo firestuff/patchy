@@ -24,7 +24,7 @@ func (api *API) getList(cfg *config, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = writeJsonList(w, list)
+	err = writeJSONList(w, list)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

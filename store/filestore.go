@@ -15,14 +15,14 @@ type FileStore struct {
 	root string
 }
 
-func NewFileStore(root string) Storer {
+func NewFileStore(root string) *FileStore {
 	return &FileStore{
 		root: root,
 	}
 }
 
 func (s *FileStore) Write(t string, obj any) error {
-	id := metadata.GetMetadata(obj).GetSafeId()
+	id := metadata.GetMetadata(obj).GetSafeID()
 	dir := filepath.Join(s.root, t, id[:4])
 
 	err := os.MkdirAll(dir, 0o700)
@@ -58,14 +58,16 @@ func (s *FileStore) Write(t string, obj any) error {
 }
 
 func (s *FileStore) Delete(t string, id string) error {
-	safeId := metadata.GetSafeId(id)
-	dir := filepath.Join(s.root, t, safeId[:4])
-	return os.Remove(filepath.Join(dir, safeId))
+	safeID := metadata.GetSafeID(id)
+	dir := filepath.Join(s.root, t, safeID[:4])
+
+	return os.Remove(filepath.Join(dir, safeID))
 }
 
 func (s *FileStore) Read(t string, obj any) error {
-	id := metadata.GetMetadata(obj).GetSafeId()
+	id := metadata.GetMetadata(obj).GetSafeID()
 	dir := filepath.Join(s.root, t, id[:4])
+
 	return s.read(filepath.Join(dir, id), obj)
 }
 

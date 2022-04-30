@@ -30,55 +30,55 @@ func (*flagType) MayCreate(r *http.Request) error {
 	flagMu.Lock()
 	defer flagMu.Unlock()
 
-	if mayCreateFlag {
-		return nil
-	} else {
+	if !mayCreateFlag {
 		return fmt.Errorf("may not create")
 	}
+
+	return nil
 }
 
 func (*flagType) MayReplace(replace *flagType, r *http.Request) error {
 	flagMu.Lock()
 	defer flagMu.Unlock()
 
-	if mayReplaceFlag {
-		return nil
-	} else {
+	if !mayReplaceFlag {
 		return fmt.Errorf("may not replace")
 	}
+
+	return nil
 }
 
 func (*flagType) MayUpdate(patch *flagType, r *http.Request) error {
 	flagMu.Lock()
 	defer flagMu.Unlock()
 
-	if mayUpdateFlag {
-		return nil
-	} else {
+	if !mayUpdateFlag {
 		return fmt.Errorf("may not update")
 	}
+
+	return nil
 }
 
 func (*flagType) MayDelete(r *http.Request) error {
 	flagMu.Lock()
 	defer flagMu.Unlock()
 
-	if mayDeleteFlag {
-		return nil
-	} else {
+	if !mayDeleteFlag {
 		return fmt.Errorf("may not delete")
 	}
+
+	return nil
 }
 
 func (*flagType) MayRead(r *http.Request) error {
 	flagMu.Lock()
 	defer flagMu.Unlock()
 
-	if mayReadFlag {
-		return nil
-	} else {
+	if !mayReadFlag {
 		return fmt.Errorf("may not read")
 	}
+
+	return nil
 }
 
 func TestMayCreate(t *testing.T) { // nolint:paralleltest
@@ -97,7 +97,7 @@ func TestMayCreate(t *testing.T) { // nolint:paralleltest
 			Post(fmt.Sprintf("%s/flagtype", baseURL))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
-		require.NotEmpty(t, created.Id)
+		require.NotEmpty(t, created.ID)
 
 		flagMu.Lock()
 		mayCreateFlag = false
@@ -138,7 +138,7 @@ func TestMayReplace(t *testing.T) { // nolint:paralleltest
 		resp, err = c.R().
 			SetBody(&flagType{}).
 			SetResult(replaced).
-			Put(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
+			Put(fmt.Sprintf("%s/flagtype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
@@ -149,7 +149,7 @@ func TestMayReplace(t *testing.T) { // nolint:paralleltest
 		resp, err = c.R().
 			SetBody(&flagType{}).
 			SetResult(replaced).
-			Put(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
+			Put(fmt.Sprintf("%s/flagtype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.True(t, resp.IsError())
 	})
@@ -181,7 +181,7 @@ func TestMayUpdate(t *testing.T) { // nolint:paralleltest
 		resp, err = c.R().
 			SetBody(&flagType{}).
 			SetResult(updated).
-			Patch(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
+			Patch(fmt.Sprintf("%s/flagtype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
@@ -192,7 +192,7 @@ func TestMayUpdate(t *testing.T) { // nolint:paralleltest
 		resp, err = c.R().
 			SetBody(&flagType{}).
 			SetResult(updated).
-			Patch(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
+			Patch(fmt.Sprintf("%s/flagtype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.True(t, resp.IsError())
 	})
@@ -220,7 +220,7 @@ func TestMayDelete(t *testing.T) { // nolint:paralleltest
 		flagMu.Unlock()
 
 		resp, err = c.R().
-			Delete(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
+			Delete(fmt.Sprintf("%s/flagtype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.True(t, resp.IsError())
 
@@ -229,7 +229,7 @@ func TestMayDelete(t *testing.T) { // nolint:paralleltest
 		flagMu.Unlock()
 
 		resp, err = c.R().
-			Delete(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
+			Delete(fmt.Sprintf("%s/flagtype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 	})
@@ -260,14 +260,14 @@ func TestMayRead(t *testing.T) { // nolint:paralleltest
 
 		resp, err = c.R().
 			SetResult(read).
-			Get(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
+			Get(fmt.Sprintf("%s/flagtype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
 		resp, err = c.R().
 			SetDoNotParseResponse(true).
 			SetHeader("Accept", "text/event-stream").
-			Get(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
+			Get(fmt.Sprintf("%s/flagtype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		resp.RawBody().Close()
@@ -278,14 +278,14 @@ func TestMayRead(t *testing.T) { // nolint:paralleltest
 
 		resp, err = c.R().
 			SetResult(read).
-			Get(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
+			Get(fmt.Sprintf("%s/flagtype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.True(t, resp.IsError())
 
 		resp, err = c.R().
 			SetDoNotParseResponse(true).
 			SetHeader("Accept", "text/event-stream").
-			Get(fmt.Sprintf("%s/flagtype/%s", baseURL, created.Id))
+			Get(fmt.Sprintf("%s/flagtype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.True(t, resp.IsError())
 	})
