@@ -1,11 +1,13 @@
 package patchy
 
-import "bufio"
-import "fmt"
-import "testing"
+import (
+	"bufio"
+	"fmt"
+	"testing"
 
-import "github.com/go-resty/resty/v2"
-import "github.com/stretchr/testify/require"
+	"github.com/go-resty/resty/v2"
+	"github.com/stretchr/testify/require"
+)
 
 func TestStreamList(t *testing.T) {
 	t.Parallel()

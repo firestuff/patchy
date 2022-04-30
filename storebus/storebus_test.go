@@ -1,12 +1,13 @@
 package storebus
 
-import "os"
-import "testing"
+import (
+	"os"
+	"testing"
 
-import "github.com/stretchr/testify/require"
-
-import "github.com/firestuff/patchy/metadata"
-import "github.com/firestuff/patchy/store"
+	"github.com/firestuff/patchy/metadata"
+	"github.com/firestuff/patchy/store"
+	"github.com/stretchr/testify/require"
+)
 
 func TestStoreBus(t *testing.T) {
 	t.Parallel()

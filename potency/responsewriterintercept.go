@@ -1,7 +1,9 @@
 package potency
 
-import "bytes"
-import "net/http"
+import (
+	"bytes"
+	"net/http"
+)
 
 type responseWriterIntercept struct {
 	dest       http.ResponseWriter

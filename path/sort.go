@@ -1,11 +1,13 @@
 package path
 
-import "fmt"
-import "reflect"
-import "sort"
-import "time"
+import (
+	"fmt"
+	"reflect"
+	"sort"
+	"time"
 
-import "cloud.google.com/go/civil"
+	"cloud.google.com/go/civil"
+)
 
 func Sort(objs any, path string) error {
 	as := newAnySlice(objs, path)

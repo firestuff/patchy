@@ -1,8 +1,10 @@
 package metadata
 
-import "testing"
+import (
+	"testing"
 
-import "github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/require"
+)
 
 type TestType struct {
 	Metadata

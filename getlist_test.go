@@ -1,10 +1,12 @@
 package patchy
 
-import "fmt"
-import "testing"
+import (
+	"fmt"
+	"testing"
 
-import "github.com/go-resty/resty/v2"
-import "github.com/stretchr/testify/require"
+	"github.com/go-resty/resty/v2"
+	"github.com/stretchr/testify/require"
+)
 
 func TestGETList(t *testing.T) {
 	t.Parallel()

@@ -1,8 +1,10 @@
 package patchy
 
-import "encoding/json"
-import "fmt"
-import "net/http"
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+)
 
 var emptyEvent = map[string]string{}
 

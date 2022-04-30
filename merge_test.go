@@ -1,8 +1,10 @@
 package patchy
 
-import "testing"
+import (
+	"testing"
 
-import "github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/require"
+)
 
 type MergeTestType struct {
 	A string
@@ -17,6 +19,8 @@ type NestedType struct {
 }
 
 func TestMerge(t *testing.T) {
+	t.Parallel()
+
 	to := &MergeTestType{
 		A: "foo",
 		B: 42,

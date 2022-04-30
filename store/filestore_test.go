@@ -1,11 +1,12 @@
 package store
 
-import "os"
-import "testing"
+import (
+	"os"
+	"testing"
 
-import "github.com/stretchr/testify/require"
-
-import "github.com/firestuff/patchy/metadata"
+	"github.com/firestuff/patchy/metadata"
+	"github.com/stretchr/testify/require"
+)
 
 func TestFileStore(t *testing.T) {
 	t.Parallel()

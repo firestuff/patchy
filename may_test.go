@@ -1,22 +1,26 @@
 package patchy
 
-import "fmt"
-import "net/http"
-import "sync"
-import "testing"
+import (
+	"fmt"
+	"net/http"
+	"sync"
+	"testing"
 
-import "github.com/go-resty/resty/v2"
-import "github.com/stretchr/testify/require"
+	"github.com/go-resty/resty/v2"
+	"github.com/stretchr/testify/require"
+)
 
 type flagType struct {
 	Metadata
 }
 
-var mayCreateFlag bool
-var mayReplaceFlag bool
-var mayUpdateFlag bool
-var mayDeleteFlag bool
-var mayReadFlag bool
+var (
+	mayCreateFlag  bool
+	mayReplaceFlag bool
+	mayUpdateFlag  bool
+	mayDeleteFlag  bool
+	mayReadFlag    bool
+)
 
 var flagMu sync.Mutex
 

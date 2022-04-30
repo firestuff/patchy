@@ -1,8 +1,10 @@
 package path
 
-import "time"
+import (
+	"time"
 
-import "cloud.google.com/go/civil"
+	"cloud.google.com/go/civil"
+)
 
 func GreaterEqual(obj any, path string, v1Str string) (bool, error) {
 	return op(obj, path, v1Str, greaterEqual)

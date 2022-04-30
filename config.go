@@ -1,7 +1,9 @@
 package patchy
 
-import "net/http"
-import "sync"
+import (
+	"net/http"
+	"sync"
+)
 
 type config struct {
 	typeName string

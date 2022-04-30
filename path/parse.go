@@ -1,11 +1,13 @@
 package path
 
-import "fmt"
-import "reflect"
-import "strconv"
-import "time"
+import (
+	"fmt"
+	"reflect"
+	"strconv"
+	"time"
 
-import "cloud.google.com/go/civil"
+	"cloud.google.com/go/civil"
+)
 
 type timeVal struct {
 	time      time.Time

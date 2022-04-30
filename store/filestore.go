@@ -1,13 +1,15 @@
 package store
 
-import "encoding/json"
-import "fmt"
-import "io/fs"
-import "os"
-import "path/filepath"
-import "strings"
+import (
+	"encoding/json"
+	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"strings"
 
-import "github.com/firestuff/patchy/metadata"
+	"github.com/firestuff/patchy/metadata"
+)
 
 type FileStore struct {
 	root string
@@ -23,7 +25,7 @@ func (s *FileStore) Write(t string, obj any) error {
 	id := metadata.GetMetadata(obj).GetSafeId()
 	dir := filepath.Join(s.root, t, id[:4])
 
-	err := os.MkdirAll(dir, 0700)
+	err := os.MkdirAll(dir, 0o700)
 	if err != nil {
 		return err
 	}

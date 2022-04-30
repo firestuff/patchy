@@ -1,12 +1,14 @@
 package storebus
 
-import "crypto/sha256"
-import "encoding/json"
-import "fmt"
+import (
+	"crypto/sha256"
+	"encoding/json"
+	"fmt"
 
-import "github.com/firestuff/patchy/bus"
-import "github.com/firestuff/patchy/metadata"
-import "github.com/firestuff/patchy/store"
+	"github.com/firestuff/patchy/bus"
+	"github.com/firestuff/patchy/metadata"
+	"github.com/firestuff/patchy/store"
+)
 
 type StoreBus struct {
 	store store.Storer

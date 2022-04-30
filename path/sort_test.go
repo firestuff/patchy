@@ -1,26 +1,28 @@
 package path
 
-import "testing"
-import "time"
+import (
+	"testing"
+	"time"
 
-import "cloud.google.com/go/civil"
-import "github.com/stretchr/testify/require"
+	"cloud.google.com/go/civil"
+	"github.com/stretchr/testify/require"
+)
 
 func TestSortStruct(t *testing.T) {
 	t.Parallel()
 
 	objs := []*testType2{
-		&testType2{
+		{
 			Tt1: testType1{
 				Int: 2,
 			},
 		},
-		&testType2{
+		{
 			Tt1: testType1{
 				Int: 1,
 			},
 		},
-		&testType2{
+		{
 			Tt1: testType1{
 				Int: 3,
 			},
@@ -37,13 +39,13 @@ func TestSortReverse(t *testing.T) {
 	t.Parallel()
 
 	objs := []*testType1{
-		&testType1{
+		{
 			Int: 3,
 		},
-		&testType1{
+		{
 			Int: 1,
 		},
-		&testType1{
+		{
 			Int: 2,
 		},
 	}
@@ -58,13 +60,13 @@ func TestSortInt(t *testing.T) {
 	t.Parallel()
 
 	objs := []*testType1{
-		&testType1{
+		{
 			Int: 3,
 		},
-		&testType1{
+		{
 			Int: 1,
 		},
-		&testType1{
+		{
 			Int: 2,
 		},
 	}
@@ -79,13 +81,13 @@ func TestSortInt64(t *testing.T) {
 	t.Parallel()
 
 	objs := []*testType1{
-		&testType1{
+		{
 			Int64: 3,
 		},
-		&testType1{
+		{
 			Int64: 1,
 		},
-		&testType1{
+		{
 			Int64: 2,
 		},
 	}
@@ -100,13 +102,13 @@ func TestSortUint(t *testing.T) {
 	t.Parallel()
 
 	objs := []*testType1{
-		&testType1{
+		{
 			UInt: 3,
 		},
-		&testType1{
+		{
 			UInt: 1,
 		},
-		&testType1{
+		{
 			UInt: 2,
 		},
 	}
@@ -121,13 +123,13 @@ func TestSortUint64(t *testing.T) {
 	t.Parallel()
 
 	objs := []*testType1{
-		&testType1{
+		{
 			UInt64: 3,
 		},
-		&testType1{
+		{
 			UInt64: 1,
 		},
-		&testType1{
+		{
 			UInt64: 2,
 		},
 	}
@@ -142,13 +144,13 @@ func TestSortFloat32(t *testing.T) {
 	t.Parallel()
 
 	objs := []*testType1{
-		&testType1{
+		{
 			Float32: 3.3,
 		},
-		&testType1{
+		{
 			Float32: 1.1,
 		},
-		&testType1{
+		{
 			Float32: 2.2,
 		},
 	}
@@ -163,13 +165,13 @@ func TestSortFloat64(t *testing.T) {
 	t.Parallel()
 
 	objs := []*testType1{
-		&testType1{
+		{
 			Float64: 3.3,
 		},
-		&testType1{
+		{
 			Float64: 1.1,
 		},
-		&testType1{
+		{
 			Float64: 2.2,
 		},
 	}
@@ -184,13 +186,13 @@ func TestSortString(t *testing.T) {
 	t.Parallel()
 
 	objs := []*testType1{
-		&testType1{
+		{
 			String: "zig",
 		},
-		&testType1{
+		{
 			String: "bar",
 		},
-		&testType1{
+		{
 			String: "foo",
 		},
 	}
@@ -205,13 +207,13 @@ func TestSortBool(t *testing.T) {
 	t.Parallel()
 
 	objs := []*testType1{
-		&testType1{
+		{
 			Bool: true,
 		},
-		&testType1{
+		{
 			Bool: false,
 		},
-		&testType1{
+		{
 			Bool: true,
 		},
 	}
@@ -233,13 +235,13 @@ func TestSortTime(t *testing.T) {
 	require.Nil(t, err)
 
 	objs := []*testType1{
-		&testType1{
+		{
 			Time: t3,
 		},
-		&testType1{
+		{
 			Time: t1,
 		},
-		&testType1{
+		{
 			Time: t2,
 		},
 	}
@@ -261,13 +263,13 @@ func TestSortDate(t *testing.T) {
 	require.Nil(t, err)
 
 	objs := []*testType1{
-		&testType1{
+		{
 			Date: d3,
 		},
-		&testType1{
+		{
 			Date: d1,
 		},
-		&testType1{
+		{
 			Date: d2,
 		},
 	}

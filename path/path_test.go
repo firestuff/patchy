@@ -1,8 +1,10 @@
 package path
 
-import "time"
+import (
+	"time"
 
-import "cloud.google.com/go/civil"
+	"cloud.google.com/go/civil"
+)
 
 type testType1 struct {
 	Int     int

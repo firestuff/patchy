@@ -1,16 +1,17 @@
 package patchy
 
-import "fmt"
-import "net/http"
-import "reflect"
-import "strings"
+import (
+	"fmt"
+	"net/http"
+	"reflect"
+	"strings"
 
-import "github.com/gorilla/mux"
-
-import "github.com/firestuff/patchy/metadata"
-import "github.com/firestuff/patchy/potency"
-import "github.com/firestuff/patchy/store"
-import "github.com/firestuff/patchy/storebus"
+	"github.com/firestuff/patchy/metadata"
+	"github.com/firestuff/patchy/potency"
+	"github.com/firestuff/patchy/store"
+	"github.com/firestuff/patchy/storebus"
+	"github.com/gorilla/mux"
+)
 
 type API struct {
 	router  *mux.Router

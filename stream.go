@@ -1,12 +1,13 @@
 package patchy
 
-import "net/http"
-import "os"
-import "time"
+import (
+	"net/http"
+	"os"
+	"time"
 
-import "github.com/gorilla/mux"
-
-import "github.com/firestuff/patchy/metadata"
+	"github.com/firestuff/patchy/metadata"
+	"github.com/gorilla/mux"
+)
 
 func (api *API) stream(cfg *config, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)

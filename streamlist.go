@@ -1,10 +1,12 @@
 package patchy
 
-import "net/http"
-import "net/url"
-import "time"
+import (
+	"net/http"
+	"net/url"
+	"time"
 
-import "github.com/firestuff/patchy/metadata"
+	"github.com/firestuff/patchy/metadata"
+)
 
 func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) {
 	_, ok := w.(http.Flusher)
