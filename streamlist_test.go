@@ -85,7 +85,7 @@ func TestStreamList(t *testing.T) {
 				Text: "zag",
 			}).
 			SetResult(created3).
-			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created3.Id))
+			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created3.ID))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
@@ -97,7 +97,7 @@ func TestStreamList(t *testing.T) {
 		require.ElementsMatch(t, []string{"foo", "bar", "zag"}, []string{list[0].Text, list[1].Text, list[2].Text})
 
 		resp, err = c.R().
-			Delete(fmt.Sprintf("%s/testtype/%s", baseURL, created3.Id))
+			Delete(fmt.Sprintf("%s/testtype/%s", baseURL, created3.ID))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
@@ -187,25 +187,25 @@ func TestStreamListDiff(t *testing.T) {
 				Text: "zig",
 			}).
 			SetResult(created2).
-			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created2.Id))
+			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created2.ID))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
 		eventType, err = readEvent(scan, &obj1)
 		require.Nil(t, err)
 		require.Equal(t, "update", eventType)
-		require.Equal(t, created2.Id, obj1.Id)
+		require.Equal(t, created2.ID, obj1.ID)
 		require.Equal(t, "zig", obj1.Text)
 
 		resp, err = c.R().
-			Delete(fmt.Sprintf("%s/testtype/%s", baseURL, created1.Id))
+			Delete(fmt.Sprintf("%s/testtype/%s", baseURL, created1.ID))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
 		eventType, err = readEvent(scan, &obj1)
 		require.Nil(t, err)
 		require.Equal(t, "remove", eventType)
-		require.Equal(t, created1.Id, obj1.Id)
+		require.Equal(t, created1.ID, obj1.ID)
 		require.Equal(t, "foo", obj1.Text)
 	})
 }

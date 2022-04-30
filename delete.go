@@ -14,7 +14,7 @@ func (api *API) delete(cfg *config, w http.ResponseWriter, r *http.Request) {
 
 	obj := cfg.factory()
 
-	metadata.GetMetadata(obj).Id = vars["id"]
+	metadata.GetMetadata(obj).ID = vars["id"]
 
 	cfg.mu.Lock()
 	defer cfg.mu.Unlock()

@@ -64,11 +64,11 @@ func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Reque
 	ticker := time.NewTicker(5 * time.Second)
 
 	for {
-		changedId := ""
+		changedID := ""
 
 		select {
 		case u := <-updated:
-			changedId = metadata.GetMetadata(u).Id
+			changedID = metadata.GetMetadata(u).ID
 
 		case <-deleted:
 
@@ -90,7 +90,7 @@ func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Reque
 			return
 		}
 
-		if listMatches(prev, list, changedId) {
+		if listMatches(prev, list, changedID) {
 			continue
 		}
 
@@ -121,17 +121,17 @@ func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Reque
 			return
 		}
 
-		live[metadata.GetMetadata(obj).Id] = obj
+		live[metadata.GetMetadata(obj).ID] = obj
 	}
 
 	ticker := time.NewTicker(5 * time.Second)
 
 	for {
-		changedId := ""
+		changedID := ""
 
 		select {
 		case u := <-updated:
-			changedId = metadata.GetMetadata(u).Id
+			changedID = metadata.GetMetadata(u).ID
 
 		case <-deleted:
 
@@ -158,10 +158,10 @@ func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Reque
 		for _, obj := range list {
 			objMD := metadata.GetMetadata(obj)
 
-			_, found := live[objMD.Id]
+			_, found := live[objMD.ID]
 			if found {
 				// In both old and new lists, but flagged as changed by subscription chan
-				if objMD.Id == changedId {
+				if objMD.ID == changedID {
 					err = writeEvent(w, "update", obj)
 					if err != nil {
 						return
@@ -175,8 +175,8 @@ func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Reque
 				}
 			}
 
-			cur[objMD.Id] = obj
-			live[objMD.Id] = obj
+			cur[objMD.ID] = obj
+			live[objMD.ID] = obj
 		}
 
 		for id, old := range live {
@@ -196,22 +196,22 @@ func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Reque
 	}
 }
 
-func listMatches(l1 []any, l2 []any, changedId string) bool {
+func listMatches(l1 []any, l2 []any, changedID string) bool {
 	if len(l1) != len(l2) {
 		return false
 	}
 
 	for i, o1 := range l1 {
-		o1Id := metadata.GetMetadata(o1).Id
+		o1ID := metadata.GetMetadata(o1).ID
 
-		if changedId != "" && o1Id == changedId {
+		if changedID != "" && o1ID == changedID {
 			return false
 		}
 
 		o2 := l2[i]
-		o2Id := metadata.GetMetadata(o2).Id
+		o2ID := metadata.GetMetadata(o2).ID
 
-		if o1Id != o2Id {
+		if o1ID != o2ID {
 			return false
 		}
 	}

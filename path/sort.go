@@ -12,12 +12,14 @@ import (
 func Sort(objs any, path string) error {
 	as := newAnySlice(objs, path)
 	sort.Sort(as)
+
 	return as.Error()
 }
 
 func SortReverse(objs any, path string) error {
 	as := newAnySlice(objs, path)
 	sort.Sort(sort.Reverse(as))
+
 	return as.Error()
 }
 
@@ -27,6 +29,8 @@ type anySlice struct {
 	swapper func(i, j int)
 	err     error
 }
+
+var errUnsupportedSortType = fmt.Errorf("unsupported _sort type")
 
 func newAnySlice(objs any, path string) *anySlice {
 	return &anySlice{
@@ -95,7 +99,7 @@ func (as *anySlice) Less(i, j int) bool {
 		return t1.Before(v2.(civil.Date))
 
 	default:
-		as.err = fmt.Errorf("unsupported sort type (%T)", t1)
+		as.err = fmt.Errorf("%T: %w", t1, errUnsupportedSortType)
 		return i < j
 	}
 }
@@ -107,7 +111,7 @@ func (as *anySlice) Swap(i, j int) {
 func (as *anySlice) Error() error {
 	if as.err == nil {
 		return nil
-	} else {
-		return fmt.Errorf("%s: %w", as.path, as.err)
 	}
+
+	return fmt.Errorf("%s: %w", as.path, as.err)
 }

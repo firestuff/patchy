@@ -6,9 +6,15 @@ import (
 	"strings"
 )
 
+var (
+	errNotAStruct       = fmt.Errorf("not a struct")
+	errUnknownFieldName = fmt.Errorf("unknown field name")
+)
+
 func getAny(obj any, path string) (any, error) {
 	parts := strings.Split(path, ".")
 	v := reflect.ValueOf(obj)
+
 	return getAnyRecursive(v, parts, []string{})
 }
 
@@ -27,14 +33,14 @@ func getAnyRecursive(v reflect.Value, parts []string, prev []string) (any, error
 	}
 
 	if v.Kind() != reflect.Struct {
-		return nil, fmt.Errorf("%s: not a struct", strings.Join(prev, "."))
+		return nil, fmt.Errorf("%s: %w", strings.Join(prev, "."), errNotAStruct)
 	}
 
 	part := parts[0]
 
 	sub := getField(v, part)
 	if !sub.IsValid() {
-		return nil, fmt.Errorf("%s: invalid field name", errorPath(prev, part))
+		return nil, fmt.Errorf("%s: %w", errorPath(prev, part), errUnknownFieldName)
 	}
 
 	newPrev := []string{}
@@ -57,6 +63,7 @@ func getField(v reflect.Value, name string) reflect.Value {
 			if tag == "-" {
 				continue
 			}
+
 			parts := strings.SplitN(tag, ",", 2)
 			fieldName = parts[0]
 		}
@@ -72,7 +79,7 @@ func getField(v reflect.Value, name string) reflect.Value {
 func errorPath(prev []string, part string) string {
 	if len(prev) == 0 {
 		return part
-	} else {
-		return fmt.Sprintf("%s.%s", strings.Join(prev, "."), part)
 	}
+
+	return fmt.Sprintf("%s.%s", strings.Join(prev, "."), part)
 }

@@ -1,8 +1,9 @@
-package bus
+package bus_test
 
 import (
 	"testing"
 
+	"github.com/firestuff/patchy/bus"
 	"github.com/firestuff/patchy/metadata"
 	"github.com/stretchr/testify/require"
 )
@@ -10,12 +11,12 @@ import (
 func TestBus(t *testing.T) {
 	t.Parallel()
 
-	bus := NewBus()
+	bus := bus.NewBus()
 
 	// Announce with no subscribers
 	bus.Announce("busTest1", &busTest{
 		Metadata: metadata.Metadata{
-			Id: "id-nosub",
+			ID: "id-nosub",
 		},
 	})
 
@@ -31,15 +32,15 @@ func TestBus(t *testing.T) {
 	// Overlapping IDs but not types
 	bus.Announce("busTest1", &busTest{
 		Metadata: metadata.Metadata{
-			Id: "id-overlap",
+			ID: "id-overlap",
 		},
 	})
 
 	msg := <-ch1a
-	require.Equal(t, "id-overlap", msg.(*busTest).Id)
+	require.Equal(t, "id-overlap", msg.(*busTest).ID)
 
 	msg = <-ch1
-	require.Equal(t, "id-overlap", msg.(*busTest).Id)
+	require.Equal(t, "id-overlap", msg.(*busTest).ID)
 
 	select {
 	case msg := <-ch2a:
@@ -51,7 +52,7 @@ func TestBus(t *testing.T) {
 
 	bus.Announce("busTest2", &busTest{
 		Metadata: metadata.Metadata{
-			Id: "id-overlap",
+			ID: "id-overlap",
 		},
 	})
 
@@ -64,31 +65,31 @@ func TestBus(t *testing.T) {
 	}
 
 	msg = <-ch2a
-	require.Equal(t, "id-overlap", msg.(*busTest).Id)
+	require.Equal(t, "id-overlap", msg.(*busTest).ID)
 
 	msg = <-ch2
-	require.Equal(t, "id-overlap", msg.(*busTest).Id)
+	require.Equal(t, "id-overlap", msg.(*busTest).ID)
 
 	bus.Announce("busTest2", &busTest{
 		Metadata: metadata.Metadata{
-			Id: "id-dupe",
+			ID: "id-dupe",
 		},
 	})
 
 	msg = <-ch2b
-	require.Equal(t, "id-dupe", msg.(*busTest).Id)
+	require.Equal(t, "id-dupe", msg.(*busTest).ID)
 
 	msg = <-ch2c
-	require.Equal(t, "id-dupe", msg.(*busTest).Id)
+	require.Equal(t, "id-dupe", msg.(*busTest).ID)
 
 	msg = <-ch2
-	require.Equal(t, "id-dupe", msg.(*busTest).Id)
+	require.Equal(t, "id-dupe", msg.(*busTest).ID)
 }
 
 func TestBusDelete(t *testing.T) {
 	t.Parallel()
 
-	bus := NewBus()
+	bus := bus.NewBus()
 
 	keyChan := bus.SubscribeKey("busTest", "id1")
 
@@ -96,15 +97,15 @@ func TestBusDelete(t *testing.T) {
 
 	bus.Announce("busTest", &busTest{
 		Metadata: metadata.Metadata{
-			Id: "id1",
+			ID: "id1",
 		},
 	})
 
 	msg := <-keyChan
-	require.Equal(t, "id1", msg.(*busTest).Id)
+	require.Equal(t, "id1", msg.(*busTest).ID)
 
 	msg = <-typeChan
-	require.Equal(t, "id1", msg.(*busTest).Id)
+	require.Equal(t, "id1", msg.(*busTest).ID)
 
 	bus.Delete("busTest", "id1")
 

@@ -21,6 +21,7 @@ func newBodyIntercept(source io.ReadCloser) *bodyIntercept {
 func (bi *bodyIntercept) Read(p []byte) (int, error) {
 	numBytes, err := bi.source.Read(p)
 	bi.sha256.Write(p[:numBytes])
+
 	return numBytes, err
 }
 

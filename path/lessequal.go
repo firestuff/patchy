@@ -39,6 +39,7 @@ func lessEqual(v1, v2 any) bool {
 	case time.Time:
 		tm := v1.(*timeVal)
 		trunc := v2t.Truncate(tm.precision)
+
 		return trunc.Equal(tm.time) || trunc.Before(tm.time)
 
 	case civil.Date:

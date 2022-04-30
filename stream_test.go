@@ -28,7 +28,7 @@ func TestStream(t *testing.T) {
 		resp, err = c.R().
 			SetDoNotParseResponse(true).
 			SetHeader("Accept", "text/event-stream").
-			Get(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+			Get(fmt.Sprintf("%s/testtype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
@@ -56,7 +56,7 @@ func TestStream(t *testing.T) {
 				Text: "bar",
 			}).
 			SetResult(updated).
-			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 

@@ -14,16 +14,20 @@ type timeVal struct {
 	precision time.Duration
 }
 
+var errUnsupportedType = fmt.Errorf("unsupported type")
+
 func parse(str string, t any) (any, error) {
 	typ := reflect.TypeOf(t)
+
 	if typ.Kind() == reflect.Slice {
 		typ = typ.Elem()
 	}
+
 	if typ.Kind() == reflect.Pointer {
 		typ = typ.Elem()
 	}
 
-	switch typ.Kind() {
+	switch typ.Kind() { // nolint: exhaustive
 	case reflect.Int:
 		return parseInt(str)
 
@@ -58,21 +62,24 @@ func parse(str string, t any) (any, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("unsupported struct type (%T)", t)
+	return nil, fmt.Errorf("%T: %w", t, errUnsupportedType)
 }
 
 func parseInt(str string) (int, error) {
 	val, err := strconv.ParseInt(str, 10, strconv.IntSize)
+
 	return int(val), err
 }
 
 func parseUint(str string) (uint, error) {
 	val, err := strconv.ParseUint(str, 10, strconv.IntSize)
+
 	return uint(val), err
 }
 
 func parseFloat32(str string) (float32, error) {
 	val, err := strconv.ParseFloat(str, 32)
+
 	return float32(val), err
 }
 
@@ -85,6 +92,7 @@ func parseTime(str string) (*timeVal, error) {
 		if err != nil {
 			continue
 		}
+
 		return &timeVal{
 			time:      tm,
 			precision: 1 * time.Second,
@@ -93,7 +101,7 @@ func parseTime(str string) (*timeVal, error) {
 
 	i, err := strconv.ParseInt(str, 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("unknown time format")
+		return nil, fmt.Errorf("unknown time format: %w", err)
 	}
 
 	// UNIX Seconds: 2969-05-03
@@ -104,10 +112,10 @@ func parseTime(str string) (*timeVal, error) {
 			time:      time.UnixMilli(i),
 			precision: 1 * time.Millisecond,
 		}, nil
-	} else {
-		return &timeVal{
-			time:      time.Unix(i, 0),
-			precision: 1 * time.Second,
-		}, nil
 	}
+
+	return &timeVal{
+		time:      time.Unix(i, 0),
+		precision: 1 * time.Second,
+	}, nil
 }

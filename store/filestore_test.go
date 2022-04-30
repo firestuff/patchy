@@ -1,10 +1,11 @@
-package store
+package store_test
 
 import (
 	"os"
 	"testing"
 
 	"github.com/firestuff/patchy/metadata"
+	"github.com/firestuff/patchy/store"
 	"github.com/stretchr/testify/require"
 )
 
@@ -13,13 +14,14 @@ func TestFileStore(t *testing.T) {
 
 	dir, err := os.MkdirTemp("", "")
 	require.Nil(t, err)
+
 	defer os.RemoveAll(dir)
 
-	store := NewFileStore(dir)
+	store := store.NewFileStore(dir)
 
 	err = store.Write("storeTest", &storeTest{
 		Metadata: metadata.Metadata{
-			Id: "id1",
+			ID: "id1",
 		},
 		Opaque: "foo",
 	})
@@ -27,7 +29,7 @@ func TestFileStore(t *testing.T) {
 
 	err = store.Write("storeTest", &storeTest{
 		Metadata: metadata.Metadata{
-			Id: "id2",
+			ID: "id2",
 		},
 		Opaque: "bar",
 	})
@@ -35,7 +37,7 @@ func TestFileStore(t *testing.T) {
 
 	out1 := &storeTest{
 		Metadata: metadata.Metadata{
-			Id: "id1",
+			ID: "id1",
 		},
 	}
 
@@ -45,7 +47,7 @@ func TestFileStore(t *testing.T) {
 
 	out2 := &storeTest{
 		Metadata: metadata.Metadata{
-			Id: "id2",
+			ID: "id2",
 		},
 	}
 
@@ -59,13 +61,14 @@ func TestFileStoreDelete(t *testing.T) {
 
 	dir, err := os.MkdirTemp("", "")
 	require.Nil(t, err)
+
 	defer os.RemoveAll(dir)
 
-	store := NewFileStore(dir)
+	store := store.NewFileStore(dir)
 
 	err = store.Write("storeTest", &storeTest{
 		Metadata: metadata.Metadata{
-			Id: "id1",
+			ID: "id1",
 		},
 		Opaque: "foo",
 	})
@@ -73,7 +76,7 @@ func TestFileStoreDelete(t *testing.T) {
 
 	out1 := &storeTest{
 		Metadata: metadata.Metadata{
-			Id: "id1",
+			ID: "id1",
 		},
 	}
 
@@ -86,7 +89,7 @@ func TestFileStoreDelete(t *testing.T) {
 
 	err = store.Read("storeTest", &storeTest{
 		Metadata: metadata.Metadata{
-			Id: "id1",
+			ID: "id1",
 		},
 	})
 	require.NotNil(t, err)
@@ -97,13 +100,14 @@ func TestFileStoreList(t *testing.T) {
 
 	dir, err := os.MkdirTemp("", "")
 	require.Nil(t, err)
+
 	defer os.RemoveAll(dir)
 
-	store := NewFileStore(dir)
+	store := store.NewFileStore(dir)
 
 	err = store.Write("storeTest", &storeTest{
 		Metadata: metadata.Metadata{
-			Id: "id1",
+			ID: "id1",
 		},
 		Opaque: "foo",
 	})
@@ -111,7 +115,7 @@ func TestFileStoreList(t *testing.T) {
 
 	err = store.Write("storeTest", &storeTest{
 		Metadata: metadata.Metadata{
-			Id: "id2",
+			ID: "id2",
 		},
 		Opaque: "bar",
 	})

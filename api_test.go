@@ -21,6 +21,7 @@ import (
 func withAPI(t *testing.T, cb func(*testing.T, *patchy.API, string, *resty.Client)) {
 	dir, err := os.MkdirTemp("", "")
 	require.Nil(t, err)
+
 	defer os.RemoveAll(dir)
 
 	api, err := patchy.NewFileStoreAPI(dir)

@@ -69,6 +69,7 @@ func (sb *StoreBus) GetBus() *bus.Bus {
 func updateHash(obj any) error {
 	m := *metadata.GetMetadata(obj)
 	metadata.ClearMetadata(obj)
+
 	defer metadata.SetMetadata(obj, &m)
 
 	hash := sha256.New()

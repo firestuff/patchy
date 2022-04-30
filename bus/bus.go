@@ -107,7 +107,7 @@ func (b *Bus) SubscribeType(t string) (chan any, chan string) {
 }
 
 func getObjKey(t string, obj any) string {
-	return getKey(t, metadata.GetMetadata(obj).Id)
+	return getKey(t, metadata.GetMetadata(obj).ID)
 }
 
 func getKey(t string, id string) string {

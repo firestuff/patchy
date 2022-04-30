@@ -92,6 +92,7 @@ func TestPOST(t *testing.T) {
 func withServer(t *testing.T, cb func(*testing.T, string, *resty.Client)) {
 	dir, err := os.MkdirTemp("", "")
 	require.Nil(t, err)
+
 	defer os.RemoveAll(dir)
 
 	store := store.NewFileStore(dir)

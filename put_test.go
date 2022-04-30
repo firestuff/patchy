@@ -33,23 +33,23 @@ func TestPUT(t *testing.T) {
 				Text: "bar",
 			}).
 			SetResult(replaced).
-			Put(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+			Put(fmt.Sprintf("%s/testtype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Equal(t, "bar", replaced.Text)
-		require.Equal(t, created.Id, replaced.Id)
+		require.Equal(t, created.ID, replaced.ID)
 		require.Equal(t, int64(1), replaced.Generation)
 
 		read := &testType{}
 
 		resp, err = c.R().
 			SetResult(read).
-			Get(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+			Get(fmt.Sprintf("%s/testtype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Equal(t, "bar", read.Text)
 		require.Equal(t, int64(0), read.Num)
-		require.Equal(t, created.Id, read.Id)
+		require.Equal(t, created.ID, read.ID)
 		require.Equal(t, int64(1), read.Generation)
 	})
 }
@@ -81,7 +81,7 @@ func TestPUTIfMatch(t *testing.T) {
 				Text: "bar",
 			}).
 			SetResult(replaced).
-			Put(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+			Put(fmt.Sprintf("%s/testtype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Equal(t, int64(1), replaced.Generation)
@@ -95,7 +95,7 @@ func TestPUTIfMatch(t *testing.T) {
 			SetBody(&testType{
 				Text: "zig",
 			}).
-			Put(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+			Put(fmt.Sprintf("%s/testtype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.True(t, resp.IsError())
 		require.Equal(t, 400, resp.StatusCode())
@@ -105,7 +105,7 @@ func TestPUTIfMatch(t *testing.T) {
 			SetBody(&testType{
 				Text: "zig",
 			}).
-			Put(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+			Put(fmt.Sprintf("%s/testtype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.True(t, resp.IsError())
 		require.Equal(t, 412, resp.StatusCode())
@@ -116,7 +116,7 @@ func TestPUTIfMatch(t *testing.T) {
 				Text: "zig",
 			}).
 			SetResult(replaced).
-			Put(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+			Put(fmt.Sprintf("%s/testtype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Equal(t, int64(2), replaced.Generation)
@@ -127,7 +127,7 @@ func TestPUTIfMatch(t *testing.T) {
 			SetBody(&testType{
 				Text: "zag",
 			}).
-			Put(fmt.Sprintf("%s/testtype/%s", baseURL, created.Id))
+			Put(fmt.Sprintf("%s/testtype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.True(t, resp.IsError())
 		require.Equal(t, 412, resp.StatusCode())

@@ -14,7 +14,7 @@ func (api *API) get(cfg *config, w http.ResponseWriter, r *http.Request) {
 
 	obj := cfg.factory()
 
-	metadata.GetMetadata(obj).Id = vars["id"]
+	metadata.GetMetadata(obj).ID = vars["id"]
 
 	err := api.sb.Read(cfg.typeName, obj)
 	if errors.Is(err, os.ErrNotExist) {
@@ -33,7 +33,7 @@ func (api *API) get(cfg *config, w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = writeJson(w, obj)
+	err = writeJSON(w, obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
