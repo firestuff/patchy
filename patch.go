@@ -1,11 +1,12 @@
 package patchy
 
-import "net/http"
-import "os"
+import (
+	"net/http"
+	"os"
 
-import "github.com/gorilla/mux"
-
-import "github.com/firestuff/patchy/metadata"
+	"github.com/firestuff/patchy/metadata"
+	"github.com/gorilla/mux"
+)
 
 func (api *API) patch(cfg *config, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)

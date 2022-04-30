@@ -1,15 +1,17 @@
 package potency
 
-import "crypto/sha256"
-import "encoding/hex"
-import "fmt"
-import "io"
-import "net/http"
-import "strings"
-import "sync"
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
+	"io"
+	"net/http"
+	"strings"
+	"sync"
 
-import "github.com/firestuff/patchy/metadata"
-import "github.com/firestuff/patchy/store"
+	"github.com/firestuff/patchy/metadata"
+	"github.com/firestuff/patchy/store"
+)
 
 type Potency struct {
 	store store.Storer

@@ -1,10 +1,11 @@
 package patchy
 
-import "net/http"
+import (
+	"net/http"
 
-import "github.com/google/uuid"
-
-import "github.com/firestuff/patchy/metadata"
+	"github.com/firestuff/patchy/metadata"
+	"github.com/google/uuid"
+)
 
 func (api *API) post(cfg *config, w http.ResponseWriter, r *http.Request) {
 	obj := cfg.factory()

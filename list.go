@@ -1,15 +1,17 @@
 package patchy
 
-import "fmt"
-import "math"
-import "net/http"
-import "net/url"
-import "regexp"
-import "strconv"
-import "strings"
+import (
+	"fmt"
+	"math"
+	"net/http"
+	"net/url"
+	"regexp"
+	"strconv"
+	"strings"
 
-import "github.com/firestuff/patchy/metadata"
-import "github.com/firestuff/patchy/path"
+	"github.com/firestuff/patchy/metadata"
+	"github.com/firestuff/patchy/path"
+)
 
 type listParams struct {
 	limit   int64
@@ -25,14 +27,16 @@ type filter struct {
 	val  string
 }
 
-var opMatch = regexp.MustCompile(`^([^\[]+)\[(.+)\]$`)
-var validOps = map[string]bool{
-	"eq":  true,
-	"gt":  true,
-	"gte": true,
-	"lt":  true,
-	"lte": true,
-}
+var (
+	opMatch  = regexp.MustCompile(`^([^\[]+)\[(.+)\]$`)
+	validOps = map[string]bool{
+		"eq":  true,
+		"gt":  true,
+		"gte": true,
+		"lt":  true,
+		"lte": true,
+	}
+)
 
 func parseListParams(params url.Values) (*listParams, error) {
 	ret := &listParams{

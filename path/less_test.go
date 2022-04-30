@@ -1,10 +1,12 @@
 package path
 
-import "testing"
-import "time"
+import (
+	"testing"
+	"time"
 
-import "cloud.google.com/go/civil"
-import "github.com/stretchr/testify/require"
+	"cloud.google.com/go/civil"
+	"github.com/stretchr/testify/require"
+)
 
 func TestLessInt(t *testing.T) {
 	t.Parallel()

@@ -1,19 +1,21 @@
 package patchy
 
-import "bufio"
-import "bytes"
-import "context"
-import "encoding/json"
-import "fmt"
-import "io"
-import "net"
-import "net/http"
-import "os"
-import "strings"
-import "testing"
+import (
+	"bufio"
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net"
+	"net/http"
+	"os"
+	"strings"
+	"testing"
 
-import "github.com/go-resty/resty/v2"
-import "github.com/stretchr/testify/require"
+	"github.com/go-resty/resty/v2"
+	"github.com/stretchr/testify/require"
+)
 
 func withAPI(t *testing.T, cb func(*testing.T, *API, string, *resty.Client)) {
 	dir, err := os.MkdirTemp("", "")

@@ -1,10 +1,12 @@
 package patchy
 
-import "encoding/json"
-import "fmt"
-import "net/http"
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
 
-import "github.com/firestuff/patchy/metadata"
+	"github.com/firestuff/patchy/metadata"
+)
 
 func readJson(r *http.Request, obj any) error {
 	dec := json.NewDecoder(r.Body)

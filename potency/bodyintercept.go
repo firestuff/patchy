@@ -1,8 +1,10 @@
 package potency
 
-import "crypto/sha256"
-import "hash"
-import "io"
+import (
+	"crypto/sha256"
+	"hash"
+	"io"
+)
 
 type bodyIntercept struct {
 	source io.ReadCloser

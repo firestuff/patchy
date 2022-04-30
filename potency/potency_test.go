@@ -1,19 +1,20 @@
 package potency
 
-import "context"
-import "fmt"
-import "io/ioutil"
-import "net"
-import "net/http"
-import "os"
-import "testing"
+import (
+	"context"
+	"fmt"
+	"io/ioutil"
+	"net"
+	"net/http"
+	"os"
+	"testing"
 
-import "github.com/google/uuid"
-import "github.com/gorilla/mux"
-import "github.com/go-resty/resty/v2"
-import "github.com/stretchr/testify/require"
-
-import "github.com/firestuff/patchy/store"
+	"github.com/firestuff/patchy/store"
+	"github.com/go-resty/resty/v2"
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/require"
+)
 
 func TestGET(t *testing.T) {
 	t.Parallel()

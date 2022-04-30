@@ -1,8 +1,10 @@
 package metadata
 
-import "crypto/sha256"
-import "encoding/hex"
-import "reflect"
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"reflect"
+)
 
 type Metadata struct {
 	Id         string `json:"id"`

@@ -1,7 +1,9 @@
 package patchy
 
-import "net/http"
-import "net/url"
+import (
+	"net/http"
+	"net/url"
+)
 
 func (api *API) getList(cfg *config, w http.ResponseWriter, r *http.Request) {
 	params, err := url.ParseQuery(r.URL.RawQuery)

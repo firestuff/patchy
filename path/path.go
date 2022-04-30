@@ -1,8 +1,10 @@
 package path
 
-import "fmt"
-import "reflect"
-import "strings"
+import (
+	"fmt"
+	"reflect"
+	"strings"
+)
 
 func getAny(obj any, path string) (any, error) {
 	parts := strings.Split(path, ".")

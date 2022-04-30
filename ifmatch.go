@@ -1,10 +1,12 @@
 package patchy
 
-import "net/http"
-import "strconv"
-import "strings"
+import (
+	"net/http"
+	"strconv"
+	"strings"
 
-import "github.com/firestuff/patchy/metadata"
+	"github.com/firestuff/patchy/metadata"
+)
 
 func ifMatch(obj any, w http.ResponseWriter, r *http.Request) bool {
 	match := r.Header.Get("If-Match")

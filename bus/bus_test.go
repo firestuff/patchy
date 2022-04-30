@@ -1,10 +1,11 @@
 package bus
 
-import "testing"
+import (
+	"testing"
 
-import "github.com/stretchr/testify/require"
-
-import "github.com/firestuff/patchy/metadata"
+	"github.com/firestuff/patchy/metadata"
+	"github.com/stretchr/testify/require"
+)
 
 func TestBus(t *testing.T) {
 	t.Parallel()

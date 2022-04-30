@@ -1,9 +1,11 @@
 package bus
 
-import "fmt"
-import "sync"
+import (
+	"fmt"
+	"sync"
 
-import "github.com/firestuff/patchy/metadata"
+	"github.com/firestuff/patchy/metadata"
+)
 
 type Bus struct {
 	mu        sync.Mutex
