@@ -54,35 +54,31 @@ func (api *API) stream(cfg *config, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	closeChan := w.(http.CloseNotifier).CloseNotify()
 	objChan := api.sb.SubscribeKey(cfg.typeName, vars["id"])
 	ticker := time.NewTicker(5 * time.Second)
 
 	cfg.mu.RUnlock()
 
-	connected := true
-	for connected {
+	for {
 		select {
 
-		case <-closeChan:
-			connected = false
+		case <-r.Context().Done():
+			return
 
 		case msg, ok := <-objChan:
 			if ok {
 				err = writeEvent(w, "update", msg)
 				if err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
 			} else {
 				writeEvent(w, "delete", emptyEvent)
-				connected = false
+				return
 			}
 
 		case <-ticker.C:
 			err = writeEvent(w, "heartbeat", emptyEvent)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 		}

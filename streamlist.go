@@ -60,11 +60,9 @@ func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	closeChan := w.(http.CloseNotifier).CloseNotify()
 	ticker := time.NewTicker(5 * time.Second)
 
-	connected := true
-	for connected {
+	for {
 		changedId := ""
 
 		select {
@@ -76,14 +74,12 @@ func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Reque
 		case <-ticker.C:
 			err = writeEvent(w, "heartbeat", emptyEvent)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 			continue
 
-		case <-closeChan:
-			connected = false
-			continue
+		case <-r.Context().Done():
+			return
 		}
 
 		list, err := api.list(cfg, r, parsed)
@@ -98,7 +94,6 @@ func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Reque
 
 		err = writeEvent(w, "list", list)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -127,11 +122,9 @@ func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Reque
 		live[metadata.GetMetadata(obj).Id] = obj
 	}
 
-	closeChan := w.(http.CloseNotifier).CloseNotify()
 	ticker := time.NewTicker(5 * time.Second)
 
-	connected := true
-	for connected {
+	for {
 		changedId := ""
 
 		select {
@@ -143,14 +136,12 @@ func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Reque
 		case <-ticker.C:
 			err = writeEvent(w, "heartbeat", emptyEvent)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 			continue
 
-		case <-closeChan:
-			connected = false
-			continue
+		case <-r.Context().Done():
+			return
 		}
 
 		list, err := api.list(cfg, r, parsed)
@@ -170,7 +161,6 @@ func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Reque
 				if objMD.Id == changedId {
 					err = writeEvent(w, "update", obj)
 					if err != nil {
-						http.Error(w, err.Error(), http.StatusInternalServerError)
 						return
 					}
 				}
@@ -178,7 +168,6 @@ func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Reque
 				// In the new list but not the old
 				err = writeEvent(w, "add", obj)
 				if err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
 			}
@@ -196,7 +185,6 @@ func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Reque
 			// In the old list but not the new
 			err = writeEvent(w, "remove", old)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 

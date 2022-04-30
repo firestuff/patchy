@@ -32,7 +32,7 @@ func greaterEqual(v1, v2 any) bool {
 		return v2t >= v1.(string)
 
 	case bool:
-		return v2t == true || v2t == v1.(bool)
+		return v2t || v2t == v1.(bool)
 
 	case time.Time:
 		tm := v1.(*timeVal)

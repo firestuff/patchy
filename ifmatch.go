@@ -1,6 +1,5 @@
 package patchy
 
-import "fmt"
 import "net/http"
 import "strconv"
 import "strings"
@@ -27,7 +26,7 @@ func ifMatch(obj any, w http.ResponseWriter, r *http.Request) bool {
 		if val == objMD.ETag {
 			return true
 		} else {
-			http.Error(w, fmt.Sprintf("If-Match mismatch"), http.StatusPreconditionFailed)
+			http.Error(w, "If-Match mismatch", http.StatusPreconditionFailed)
 			return false
 		}
 
@@ -41,7 +40,7 @@ func ifMatch(obj any, w http.ResponseWriter, r *http.Request) bool {
 		if gen == objMD.Generation {
 			return true
 		} else {
-			http.Error(w, fmt.Sprintf("If-Match mismatch"), http.StatusPreconditionFailed)
+			http.Error(w, "If-Match mismatch", http.StatusPreconditionFailed)
 			return false
 		}
 

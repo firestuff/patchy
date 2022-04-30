@@ -42,6 +42,7 @@ func TestStream(t *testing.T) {
 
 		// Heartbeat (after 5 seconds)
 		eventType, err = readEvent(scan, nil)
+		require.Nil(t, err)
 		require.Equal(t, "heartbeat", eventType)
 
 		updated := &testType{}
@@ -57,6 +58,7 @@ func TestStream(t *testing.T) {
 		require.False(t, resp.IsError())
 
 		eventType, err = readEvent(scan, updated)
+		require.Nil(t, err)
 		require.Equal(t, "update", eventType)
 		require.Equal(t, "bar", updated.Text)
 	})
