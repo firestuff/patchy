@@ -32,6 +32,8 @@ type savedResult struct {
 	Result     []byte      `json:"result"`
 }
 
+var errConflict = fmt.Errorf("conflict")
+
 func NewPotency(store store.Storer) *Potency {
 	return &Potency{
 		store:      store,
@@ -130,7 +132,7 @@ func (p *Potency) lockKey(key string) error {
 	defer p.mu.Unlock()
 
 	if p.inProgress[key] {
-		return fmt.Errorf("Conflict")
+		return errConflict
 	}
 
 	p.inProgress[key] = true

@@ -23,13 +23,11 @@ func NewStoreBus(st store.Storer) *StoreBus {
 }
 
 func (sb *StoreBus) Write(t string, obj any) error {
-	err := updateHash(obj)
-	if err != nil {
+	if err := updateHash(obj); err != nil {
 		return err
 	}
 
-	err = sb.store.Write(t, obj)
-	if err != nil {
+	if err := sb.store.Write(t, obj); err != nil {
 		return err
 	}
 
@@ -39,8 +37,7 @@ func (sb *StoreBus) Write(t string, obj any) error {
 }
 
 func (sb *StoreBus) Delete(t string, id string) error {
-	err := sb.store.Delete(t, id)
-	if err != nil {
+	if err := sb.store.Delete(t, id); err != nil {
 		return err
 	}
 
@@ -65,10 +62,6 @@ func (sb *StoreBus) SubscribeType(t string) (chan any, chan string) {
 	return sb.bus.SubscribeType(t)
 }
 
-func (sb *StoreBus) GetStore() store.Storer {
-	return sb.store
-}
-
 func (sb *StoreBus) GetBus() *bus.Bus {
 	return sb.bus
 }
@@ -81,8 +74,7 @@ func updateHash(obj any) error {
 	hash := sha256.New()
 	enc := json.NewEncoder(hash)
 
-	err := enc.Encode(obj)
-	if err != nil {
+	if err := enc.Encode(obj); err != nil {
 		return err
 	}
 

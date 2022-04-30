@@ -9,8 +9,7 @@ import (
 )
 
 func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) {
-	_, ok := w.(http.Flusher)
-	if !ok {
+	if _, ok := w.(http.Flusher); !ok {
 		http.Error(w, "Streaming not supported", http.StatusBadRequest)
 		return
 	}
@@ -78,6 +77,7 @@ func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Reque
 			if err != nil {
 				return
 			}
+
 			continue
 
 		case <-r.Context().Done():
@@ -140,6 +140,7 @@ func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Reque
 			if err != nil {
 				return
 			}
+
 			continue
 
 		case <-r.Context().Done():

@@ -1,8 +1,9 @@
-package patchy
+package patchy_test
 
 import (
 	"testing"
 
+	"github.com/firestuff/patchy"
 	"github.com/stretchr/testify/require"
 )
 
@@ -33,14 +34,14 @@ func TestMerge(t *testing.T) {
 		},
 	}
 
-	err := merge(to, &MergeTestType{
+	err := patchy.Merge(to, &MergeTestType{
 		A: "bar",
 	})
 	require.Nil(t, err)
 	require.Equal(t, "bar", to.A)
 	require.Equal(t, int64(42), to.B)
 
-	err = merge(to, &MergeTestType{
+	err = patchy.Merge(to, &MergeTestType{
 		B: 46,
 		C: []string{"ooh", "aah"},
 		D: NestedType{

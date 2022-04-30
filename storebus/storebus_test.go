@@ -1,4 +1,4 @@
-package storebus
+package storebus_test
 
 import (
 	"os"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/firestuff/patchy/metadata"
 	"github.com/firestuff/patchy/store"
+	"github.com/firestuff/patchy/storebus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -16,7 +17,7 @@ func TestStoreBus(t *testing.T) {
 	require.Nil(t, err)
 	defer os.RemoveAll(dir)
 
-	sb := NewStoreBus(store.NewFileStore(dir))
+	sb := storebus.NewStoreBus(store.NewFileStore(dir))
 
 	err = sb.Write("storeBusTest", &storeBusTest{
 		Metadata: metadata.Metadata{
@@ -59,7 +60,7 @@ func TestStoreBusDelete(t *testing.T) {
 	require.Nil(t, err)
 	defer os.RemoveAll(dir)
 
-	sb := NewStoreBus(store.NewFileStore(dir))
+	sb := storebus.NewStoreBus(store.NewFileStore(dir))
 
 	ch := sb.SubscribeKey("storeBusTest", "id1")
 
