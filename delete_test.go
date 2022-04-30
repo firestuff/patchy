@@ -1,10 +1,11 @@
-package patchy
+package patchy_test
 
 import (
 	"bufio"
 	"fmt"
 	"testing"
 
+	"github.com/firestuff/patchy"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/require"
 )
@@ -12,7 +13,7 @@ import (
 func TestDELETE(t *testing.T) {
 	t.Parallel()
 
-	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
+	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
 		created := &testType{}
 
 		resp, err := c.R().

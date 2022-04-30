@@ -36,6 +36,8 @@ var (
 		"lt":  true,
 		"lte": true,
 	}
+	errInvalidFilterOp = fmt.Errorf("invalid filter operator")
+	errInvalidSort     = fmt.Errorf("invalid _sort")
 )
 
 func parseListParams(params url.Values) (*listParams, error) {
@@ -47,26 +49,25 @@ func parseListParams(params url.Values) (*listParams, error) {
 
 	var err error
 
-	limit := params.Get("_limit")
-	if limit != "" {
+	if limit := params.Get("_limit"); limit != "" {
 		ret.limit, err = strconv.ParseInt(limit, 10, 64)
 		if err != nil {
 			return nil, err
 		}
+
 		params.Del("_limit")
 	}
 
-	offset := params.Get("_offset")
-	if offset != "" {
+	if offset := params.Get("_offset"); offset != "" {
 		ret.offset, err = strconv.ParseInt(offset, 10, 64)
 		if err != nil {
 			return nil, err
 		}
+
 		params.Del("_offset")
 	}
 
-	ret.after = params.Get("_after")
-	if ret.after != "" {
+	if ret.after = params.Get("_after"); ret.after != "" {
 		params.Del("_after")
 	}
 
@@ -74,8 +75,9 @@ func parseListParams(params url.Values) (*listParams, error) {
 	for i := len(sorts) - 1; i >= 0; i-- {
 		srt := sorts[i]
 		if len(srt) == 0 {
-			return nil, fmt.Errorf("invalid _sort: %s", srt)
+			return nil, fmt.Errorf("%s: %w", srt, errInvalidSort)
 		}
+
 		ret.sorts = append(ret.sorts, srt)
 	}
 	params.Del("_sort")
@@ -95,7 +97,7 @@ func parseListParams(params url.Values) (*listParams, error) {
 			}
 
 			if _, valid := validOps[f.op]; !valid {
-				return nil, fmt.Errorf("invalid filter operator: %s", f.op)
+				return nil, fmt.Errorf("%s: %w", f.op, errInvalidFilterOp)
 			}
 
 			ret.filters = append(ret.filters, f)
@@ -124,6 +126,7 @@ func (api *API) list(cfg *config, r *http.Request, params *listParams) ([]any, e
 		if err != nil {
 			return nil, err
 		}
+
 		if !matches {
 			continue
 		}
@@ -132,11 +135,13 @@ func (api *API) list(cfg *config, r *http.Request, params *listParams) ([]any, e
 			if metadata.GetMetadata(obj).Id == params.after {
 				params.after = ""
 			}
+
 			continue
 		}
 
 		if params.offset > 0 {
 			params.offset--
+
 			continue
 		}
 
@@ -159,6 +164,7 @@ func (api *API) list(cfg *config, r *http.Request, params *listParams) ([]any, e
 		default:
 			err = path.Sort(ret, srt)
 		}
+
 		if err != nil {
 			return nil, err
 		}
@@ -170,6 +176,7 @@ func (api *API) list(cfg *config, r *http.Request, params *listParams) ([]any, e
 func match(obj any, filters []filter) (bool, error) {
 	for _, filter := range filters {
 		var matches bool
+
 		var err error
 
 		switch filter.op {
@@ -192,6 +199,7 @@ func match(obj any, filters []filter) (bool, error) {
 		if err != nil {
 			return false, err
 		}
+
 		if !matches {
 			return false, nil
 		}

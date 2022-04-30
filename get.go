@@ -1,6 +1,7 @@
 package patchy
 
 import (
+	"errors"
 	"net/http"
 	"os"
 
@@ -16,7 +17,7 @@ func (api *API) get(cfg *config, w http.ResponseWriter, r *http.Request) {
 	metadata.GetMetadata(obj).Id = vars["id"]
 
 	err := api.sb.Read(cfg.typeName, obj)
-	if err == os.ErrNotExist {
+	if errors.Is(err, os.ErrNotExist) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	} else if err != nil {

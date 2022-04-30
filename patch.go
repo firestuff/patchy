@@ -1,6 +1,7 @@
 package patchy
 
 import (
+	"errors"
 	"net/http"
 	"os"
 
@@ -20,7 +21,7 @@ func (api *API) patch(cfg *config, w http.ResponseWriter, r *http.Request) {
 	defer cfg.mu.Unlock()
 
 	err := api.sb.Read(cfg.typeName, obj)
-	if err == os.ErrNotExist {
+	if errors.Is(err, os.ErrNotExist) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	} else if err != nil {
@@ -51,7 +52,7 @@ func (api *API) patch(cfg *config, w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = merge(obj, patch)
+	err = Merge(obj, patch)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

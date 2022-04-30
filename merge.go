@@ -2,7 +2,7 @@ package patchy
 
 import "reflect"
 
-func merge(to any, from any) error {
+func Merge(to any, from any) error {
 	t := maybeIndirect(to)
 	f := maybeIndirect(from)
 

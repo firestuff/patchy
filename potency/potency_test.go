@@ -1,4 +1,4 @@
-package potency
+package potency_test
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/firestuff/patchy/potency"
 	"github.com/firestuff/patchy/store"
 	"github.com/go-resty/resty/v2"
 	"github.com/google/uuid"
@@ -94,7 +95,7 @@ func withServer(t *testing.T, cb func(*testing.T, string, *resty.Client)) {
 	defer os.RemoveAll(dir)
 
 	store := store.NewFileStore(dir)
-	p := NewPotency(store)
+	p := potency.NewPotency(store)
 
 	listener, err := net.Listen("tcp", "[::]:0")
 	require.Nil(t, err)

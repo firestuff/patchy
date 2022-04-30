@@ -11,7 +11,7 @@ var emptyEvent = map[string]string{}
 func writeEvent(w http.ResponseWriter, event string, obj any) error {
 	data, err := json.Marshal(obj)
 	if err != nil {
-		return fmt.Errorf("failed to encode JSON: %s", err)
+		return fmt.Errorf("failed to encode JSON: %w", err)
 	}
 
 	fmt.Fprintf(w, "event: %s\ndata: %s\n\n", event, data)

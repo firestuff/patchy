@@ -1,4 +1,4 @@
-package patchy
+package patchy_test
 
 import (
 	"bufio"
@@ -13,19 +13,20 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/firestuff/patchy"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/require"
 )
 
-func withAPI(t *testing.T, cb func(*testing.T, *API, string, *resty.Client)) {
+func withAPI(t *testing.T, cb func(*testing.T, *patchy.API, string, *resty.Client)) {
 	dir, err := os.MkdirTemp("", "")
 	require.Nil(t, err)
 	defer os.RemoveAll(dir)
 
-	api, err := NewFileStoreAPI(dir)
+	api, err := patchy.NewFileStoreAPI(dir)
 	require.Nil(t, err)
 
-	Register[testType](api)
+	patchy.Register[testType](api)
 
 	mux := http.NewServeMux()
 	// Test that prefix stripping works
@@ -61,7 +62,6 @@ func readEvent(scan *bufio.Scanner, out any) (string, error) {
 		line := scan.Text()
 
 		switch {
-
 		case strings.HasPrefix(line, ":"):
 			continue
 
@@ -79,7 +79,6 @@ func readEvent(scan *bufio.Scanner, out any) (string, error) {
 			}
 
 			return eventType, err
-
 		}
 	}
 
@@ -87,7 +86,7 @@ func readEvent(scan *bufio.Scanner, out any) (string, error) {
 }
 
 type testType struct {
-	Metadata
+	patchy.Metadata
 	Text string `json:"text"`
 	Num  int64  `json:"num"`
 }

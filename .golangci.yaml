@@ -1,0 +1,21 @@
+linters:
+  enable-all: true
+  disable:
+    # maybe enable these
+    - wrapcheck
+    # leave these disabled
+    - cyclop
+    - dupl
+    - exhaustivestruct
+    - forcetypeassert
+    - funlen
+    - gochecknoglobals
+    - gocognit
+    - goconst
+    - godox
+    - gomnd
+    - lll
+    - maligned
+    - nestif
+    - thelper
+    - varnamelen

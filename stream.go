@@ -1,6 +1,7 @@
 package patchy
 
 import (
+	"errors"
 	"net/http"
 	"os"
 	"time"
@@ -12,8 +13,7 @@ import (
 func (api *API) stream(cfg *config, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	_, ok := w.(http.Flusher)
-	if !ok {
+	if _, ok := w.(http.Flusher); !ok {
 		http.Error(w, "Streaming not supported", http.StatusBadRequest)
 		return
 	}
@@ -29,7 +29,7 @@ func (api *API) stream(cfg *config, w http.ResponseWriter, r *http.Request) {
 	// THIS LOCK REQUIRES MANUAL UNLOCKING IN ALL BRANCHES
 
 	err := api.sb.Read(cfg.typeName, obj)
-	if err == os.ErrNotExist {
+	if errors.Is(err, os.ErrNotExist) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		cfg.mu.RUnlock()
 		return
@@ -62,7 +62,6 @@ func (api *API) stream(cfg *config, w http.ResponseWriter, r *http.Request) {
 
 	for {
 		select {
-
 		case <-r.Context().Done():
 			return
 

@@ -1,4 +1,5 @@
-package patchy
+// nolint:goerr113
+package patchy_test
 
 import (
 	"fmt"
@@ -6,12 +7,13 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/firestuff/patchy"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/require"
 )
 
 type flagType struct {
-	Metadata
+	patchy.Metadata
 }
 
 var (
@@ -79,9 +81,9 @@ func (*flagType) MayRead(r *http.Request) error {
 	}
 }
 
-func TestMayCreate(t *testing.T) {
-	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
-		Register[flagType](api)
+func TestMayCreate(t *testing.T) { // nolint:paralleltest
+	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
+		patchy.Register[flagType](api)
 
 		created := &flagType{}
 
@@ -110,9 +112,9 @@ func TestMayCreate(t *testing.T) {
 	})
 }
 
-func TestMayReplace(t *testing.T) {
-	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
-		Register[flagType](api)
+func TestMayReplace(t *testing.T) { // nolint:paralleltest
+	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
+		patchy.Register[flagType](api)
 
 		created := &flagType{}
 
@@ -153,9 +155,9 @@ func TestMayReplace(t *testing.T) {
 	})
 }
 
-func TestMayUpdate(t *testing.T) {
-	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
-		Register[flagType](api)
+func TestMayUpdate(t *testing.T) { // nolint:paralleltest
+	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
+		patchy.Register[flagType](api)
 
 		created := &flagType{}
 
@@ -196,9 +198,9 @@ func TestMayUpdate(t *testing.T) {
 	})
 }
 
-func TestMayDelete(t *testing.T) {
-	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
-		Register[flagType](api)
+func TestMayDelete(t *testing.T) { // nolint:paralleltest
+	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
+		patchy.Register[flagType](api)
 
 		created := &flagType{}
 
@@ -233,9 +235,9 @@ func TestMayDelete(t *testing.T) {
 	})
 }
 
-func TestMayRead(t *testing.T) {
-	withAPI(t, func(t *testing.T, api *API, baseURL string, c *resty.Client) {
-		Register[flagType](api)
+func TestMayRead(t *testing.T) { // nolint:paralleltest
+	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
+		patchy.Register[flagType](api)
 
 		created := &flagType{}
 
