@@ -23,6 +23,7 @@ linters:
     - cyclop
     - dupl
     - exhaustivestruct
+    - forbidigo
     - forcetypeassert
     - funlen
     - gochecknoglobals

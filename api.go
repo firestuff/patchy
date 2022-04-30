@@ -14,9 +14,10 @@ import (
 )
 
 type API struct {
-	router  *mux.Router
-	sb      *storebus.StoreBus
-	potency *potency.Potency
+	router   *mux.Router
+	sb       *storebus.StoreBus
+	potency  *potency.Potency
+	registry map[string]*config
 }
 
 type Metadata = metadata.Metadata
@@ -27,8 +28,9 @@ func NewFileStoreAPI(root string) (*API, error) {
 
 func NewAPI(st store.Storer) (*API, error) {
 	api := &API{
-		router: mux.NewRouter(),
-		sb:     storebus.NewStoreBus(st),
+		router:   mux.NewRouter(),
+		sb:       storebus.NewStoreBus(st),
+		registry: map[string]*config{},
 	}
 
 	api.potency = potency.NewPotency(st)
@@ -43,9 +45,35 @@ func Register[T any](api *API) {
 	RegisterName[T](api, strings.ToLower(t.Name()))
 }
 
-func RegisterName[T any](api *API, t string) {
-	cfg := newConfig[T](t)
-	api.registerHandlers(fmt.Sprintf("/%s", t), cfg)
+func RegisterName[T any](api *API, typeName string) {
+	cfg := newConfig[T](typeName)
+	api.registry[cfg.typeName] = cfg
+	api.registerHandlers(fmt.Sprintf("/%s", cfg.typeName), cfg)
+
+	obj := new(T)
+	typ := reflect.TypeOf(*obj)
+
+	for i := 0; i < typ.NumField(); i++ {
+		f := typ.Field(i)
+
+		if f.Type.Kind() != reflect.Slice {
+			continue
+		}
+
+		if f.Type.Elem().Kind() != reflect.String {
+			continue
+		}
+
+		// TODO: Support f.Tag override
+		fName := strings.ToLower(f.Name)
+
+		fCfg, found := api.registry[fName]
+		if !found {
+			continue
+		}
+
+		fmt.Printf("%+v %+v\n", f, fCfg)
+	}
 }
 
 func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {

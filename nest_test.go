@@ -18,7 +18,16 @@ type Inner struct {
 	Text string
 }
 
-func TestNested(t *testing.T) {
+func TestNestedInnerFirst(t *testing.T) {
+	t.Parallel()
+
+	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
+		patchy.Register[Inner](api)
+		patchy.Register[Outer](api)
+	})
+}
+
+func TestNestedOuterFirst(t *testing.T) {
 	t.Parallel()
 
 	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
