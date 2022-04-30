@@ -72,7 +72,7 @@ func (api *API) stream(cfg *config, w http.ResponseWriter, r *http.Request) {
 					return
 				}
 			} else {
-				writeEvent(w, "delete", emptyEvent)
+				_ = writeEvent(w, "delete", emptyEvent)
 				return
 			}
 

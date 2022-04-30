@@ -36,7 +36,9 @@ func withAPI(t *testing.T, cb func(*testing.T, *API, string, *resty.Client)) {
 		Handler: mux,
 	}
 
-	go srv.Serve(listener)
+	go func() {
+		_ = srv.Serve(listener)
+	}()
 
 	baseURL := fmt.Sprintf("http://[::1]:%d/api", listener.Addr().(*net.TCPAddr).Port)
 
@@ -45,7 +47,8 @@ func withAPI(t *testing.T, cb func(*testing.T, *API, string, *resty.Client)) {
 
 	cb(t, api, baseURL, c)
 
-	srv.Shutdown(context.Background())
+	err = srv.Shutdown(context.Background())
+	require.Nil(t, err)
 }
 
 func readEvent(scan *bufio.Scanner, out any) (string, error) {

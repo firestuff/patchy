@@ -84,7 +84,7 @@ func (p *Potency) Middleware(next http.Handler) http.Handler {
 			// TODO: Ability to verify specified headers match (e.g. authentication token) before returning
 
 			w.WriteHeader(saved.StatusCode)
-			w.Write(saved.Result)
+			_, _ = w.Write(saved.Result)
 			return
 		}
 
@@ -118,7 +118,8 @@ func (p *Potency) Middleware(next http.Handler) http.Handler {
 			Result:     rwi.buf.Bytes(),
 		}
 
-		p.store.Write("idempotency-key", save)
+		// Can't really do anything with the error
+		_ = p.store.Write("idempotency-key", save)
 	})
 }
 

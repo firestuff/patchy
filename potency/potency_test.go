@@ -101,15 +101,20 @@ func withServer(t *testing.T, cb func(*testing.T, string, *resty.Client)) {
 	router := mux.NewRouter()
 	router.Use(p.Middleware)
 	router.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ioutil.ReadAll(r.Body)
-		w.Write([]byte(uuid.NewString()))
+		_, err := ioutil.ReadAll(r.Body)
+		require.Nil(t, err)
+
+		_, err = w.Write([]byte(uuid.NewString()))
+		require.Nil(t, err)
 	})
 
 	srv := &http.Server{
 		Handler: router,
 	}
 
-	go srv.Serve(listener)
+	go func() {
+		_ = srv.Serve(listener)
+	}()
 
 	url := fmt.Sprintf("http://[::1]:%d/", listener.Addr().(*net.TCPAddr).Port)
 
@@ -118,5 +123,6 @@ func withServer(t *testing.T, cb func(*testing.T, string, *resty.Client)) {
 
 	cb(t, url, c)
 
-	srv.Shutdown(context.Background())
+	err = srv.Shutdown(context.Background())
+	require.Nil(t, err)
 }

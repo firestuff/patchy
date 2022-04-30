@@ -38,12 +38,13 @@ func TestStoreBus(t *testing.T) {
 
 	ch := sb.SubscribeKey("storeBusTest", "id1")
 
-	sb.Write("storeBusTest", &storeBusTest{
+	err = sb.Write("storeBusTest", &storeBusTest{
 		Metadata: metadata.Metadata{
 			Id: "id1",
 		},
 		Opaque: "bar",
 	})
+	require.Nil(t, err)
 
 	out3 := (<-ch).(*storeBusTest)
 	require.Equal(t, "bar", out3.Opaque)
@@ -61,17 +62,19 @@ func TestStoreBusDelete(t *testing.T) {
 
 	ch := sb.SubscribeKey("storeBusTest", "id1")
 
-	sb.Write("storeBusTest", &storeBusTest{
+	err = sb.Write("storeBusTest", &storeBusTest{
 		Metadata: metadata.Metadata{
 			Id: "id1",
 		},
 		Opaque: "foo",
 	})
+	require.Nil(t, err)
 
 	out := (<-ch).(*storeBusTest)
 	require.Equal(t, "foo", out.Opaque)
 
-	sb.Delete("storeBusTest", "id1")
+	err = sb.Delete("storeBusTest", "id1")
+	require.Nil(t, err)
 
 	_, ok := <-ch
 	require.False(t, ok)
