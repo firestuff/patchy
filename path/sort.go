@@ -84,7 +84,7 @@ func (as *anySlice) Less(i, j int) bool {
 		return t1 < v2.(string)
 
 	case bool:
-		return t1 == false && v2.(bool) == true
+		return !t1 && v2.(bool)
 
 	case time.Time:
 		return t1.Before(v2.(time.Time))

@@ -107,7 +107,7 @@ func TestBusDelete(t *testing.T) {
 
 	bus.Delete("busTest", "id1")
 
-	msg, ok := <-keyChan
+	_, ok := <-keyChan
 	require.False(t, ok)
 
 	id := <-delChan

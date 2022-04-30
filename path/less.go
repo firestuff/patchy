@@ -32,7 +32,7 @@ func less(v1, v2 any) bool {
 		return v2t < v1.(string)
 
 	case bool:
-		return v2t == false && v1.(bool) == true
+		return !v2t && v1.(bool)
 
 	case time.Time:
 		tm := v1.(*timeVal)

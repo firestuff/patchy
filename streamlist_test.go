@@ -56,6 +56,7 @@ func TestStreamList(t *testing.T) {
 
 		// Heartbeat (after 5 seconds)
 		eventType, err = readEvent(scan, nil)
+		require.Nil(t, err)
 		require.Equal(t, "heartbeat", eventType)
 
 		created3 := &testType{}

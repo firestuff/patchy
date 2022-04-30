@@ -45,6 +45,7 @@ func TestDELETE(t *testing.T) {
 		require.False(t, resp.IsError())
 
 		eventType, err = readEvent(scan, nil)
+		require.Nil(t, err)
 		require.Equal(t, "delete", eventType)
 
 		body.Close()
