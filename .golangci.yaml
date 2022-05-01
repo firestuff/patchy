@@ -20,6 +20,7 @@ linters:
     # maybe enable these
     - wrapcheck
     # leave these disabled
+    - containedctx
     - cyclop
     - dupl
     - exhaustivestruct
