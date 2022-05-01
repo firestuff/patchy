@@ -1,14 +1,19 @@
 package view
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 type EphemeralView[T any] struct {
+	ctx    context.Context
 	ch     chan T
 	closed bool
 }
 
-func NewEphemeralView[T any](data T) *EphemeralView[T] {
+func NewEphemeralView[T any](ctx context.Context, data T) *EphemeralView[T] {
 	v := &EphemeralView[T]{
+		ctx:    ctx,
 		ch:     make(chan T, 100),
 		closed: false,
 	}
@@ -24,22 +29,17 @@ func (v *EphemeralView[T]) Chan() chan T {
 	return v.ch
 }
 
-func (v *EphemeralView[T]) Close() {
-	if v.closed {
-		return
-	}
-
-	close(v.ch)
-	v.closed = true
-}
-
 func (v *EphemeralView[T]) Update(data T) error {
 	select {
+	case <-v.ctx.Done():
+		close(v.ch)
+		return v.ctx.Err()
+
 	case v.ch <- data:
 		return nil
 
 	default:
-		v.Close()
+		close(v.ch)
 		return errChannelOverrun
 	}
 }

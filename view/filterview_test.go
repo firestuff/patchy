@@ -1,6 +1,7 @@
 package view_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/firestuff/patchy/view"
@@ -10,7 +11,9 @@ import (
 func TestFilterView(t *testing.T) {
 	t.Parallel()
 
-	ev := view.NewEphemeralView([]string{"foo", "bar"})
+	ctx, cancel := context.WithCancel(context.Background())
+
+	ev := view.NewEphemeralView(ctx, []string{"foo", "bar"})
 
 	fv := view.NewFilterView[[]string](ev, func(in []string) (out []string) {
 		for _, s := range in {
@@ -30,8 +33,14 @@ func TestFilterView(t *testing.T) {
 	msg = <-fv.Chan()
 	require.Equal(t, []string{"foo", "zig"}, msg)
 
-	ev.Close()
+	cancel()
 
-	_, ok := <-fv.Chan()
-	require.False(t, ok)
+	for {
+		err := ev.Update([]string{"zig", "zag"})
+
+		if _, ok := <-fv.Chan(); !ok {
+			require.NotNil(t, err)
+			break
+		}
+	}
 }

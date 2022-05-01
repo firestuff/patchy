@@ -1,6 +1,7 @@
 package view_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/firestuff/patchy/view"
@@ -10,8 +11,9 @@ import (
 func TestEphemeralView(t *testing.T) {
 	t.Parallel()
 
-	v := view.NewEphemeralView([]string{"foo", "bar"})
-	defer v.Close()
+	ctx, cancel := context.WithCancel(context.Background())
+
+	v := view.NewEphemeralView(ctx, []string{"foo", "bar"})
 
 	msg := <-v.Chan()
 	require.Equal(t, []string{"foo", "bar"}, msg)
@@ -20,4 +22,15 @@ func TestEphemeralView(t *testing.T) {
 
 	msg = <-v.Chan()
 	require.Equal(t, []string{"foo", "bar", "zig"}, msg)
+
+	cancel()
+
+	for {
+		err := v.Update([]string{"zig", "zag"})
+
+		if _, ok := <-v.Chan(); !ok {
+			require.NotNil(t, err)
+			break
+		}
+	}
 }
