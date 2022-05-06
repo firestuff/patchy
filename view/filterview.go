@@ -4,7 +4,7 @@ type FilterView[T any] struct {
 	ch chan T
 }
 
-func NewFilterView[T any](input View[T], filter func(T) T) *FilterView[T] {
+func NewFilterView[T any](input ReadView[T], filter func(T) T) *FilterView[T] {
 	v := &FilterView[T]{
 		ch: make(chan T, 100),
 	}
