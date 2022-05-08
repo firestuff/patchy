@@ -28,18 +28,12 @@ func TestStoreBus(t *testing.T) {
 	})
 	require.Nil(t, err)
 
-	out1 := &storeBusTest{
-		Metadata: metadata.Metadata{
-			ID: "id1",
-		},
-	}
-
-	err = sb.Read("storeBusTest", out1)
+	ev1, err := sb.Read("storeBusTest", "id1", newStoreBusTest)
 	require.Nil(t, err)
+
+	out1 := (<-ev1.Chan()).(*storeBusTest)
 	require.Equal(t, "foo", out1.Opaque)
 	require.Equal(t, "etag:2c8edc6414452b8dee7826bd55e585f850ac47a0dcfc357dc1fcaaa3164cdfa2", out1.ETag)
-
-	ch := sb.SubscribeKey("storeBusTest", "id1")
 
 	err = sb.Write("storeBusTest", &storeBusTest{
 		Metadata: metadata.Metadata{
@@ -49,7 +43,7 @@ func TestStoreBus(t *testing.T) {
 	})
 	require.Nil(t, err)
 
-	out3 := (<-ch).(*storeBusTest)
+	out3 := (<-ev1.Chan()).(*storeBusTest)
 	require.Equal(t, "bar", out3.Opaque)
 	require.Equal(t, "etag:906fda69e9893280ca9294bd04eb276794da9a8904fc0b671c69175f08cc03c6", out3.ETag)
 }
@@ -64,7 +58,11 @@ func TestStoreBusDelete(t *testing.T) {
 
 	sb := storebus.NewStoreBus(store.NewFileStore(dir))
 
-	ch := sb.SubscribeKey("storeBusTest", "id1")
+	ev1, err := sb.Read("storeBusTest", "id1", newStoreBusTest)
+	require.Nil(t, err)
+
+	preout := <-ev1.Chan()
+	require.Nil(t, preout)
 
 	err = sb.Write("storeBusTest", &storeBusTest{
 		Metadata: metadata.Metadata{
@@ -74,17 +72,21 @@ func TestStoreBusDelete(t *testing.T) {
 	})
 	require.Nil(t, err)
 
-	out := (<-ch).(*storeBusTest)
+	out := (<-ev1.Chan()).(*storeBusTest)
 	require.Equal(t, "foo", out.Opaque)
 
 	err = sb.Delete("storeBusTest", "id1")
 	require.Nil(t, err)
 
-	_, ok := <-ch
+	_, ok := <-ev1.Chan()
 	require.False(t, ok)
 }
 
 type storeBusTest struct {
 	metadata.Metadata
 	Opaque string
+}
+
+func newStoreBusTest() any {
+	return &storeBusTest{}
 }

@@ -58,14 +58,15 @@ func (p *Potency) Middleware(next http.Handler) http.Handler {
 
 		key := val[1 : len(val)-1]
 
-		saved := &savedResult{
-			Metadata: metadata.Metadata{
-				ID: key,
-			},
+		rd, err := p.store.Read("idempotency-key", key, func() any { return &savedResult{} })
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
-		err := p.store.Read("idempotency-key", saved)
-		if err == nil {
+		if rd != nil {
+			saved := rd.(*savedResult)
+
 			if r.Method != saved.Method {
 				http.Error(w, "Idempotency-Key method mismatch", http.StatusBadRequest)
 				return

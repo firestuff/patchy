@@ -1,9 +1,7 @@
 package patchy
 
 import (
-	"errors"
 	"net/http"
-	"os"
 
 	"github.com/firestuff/patchy/metadata"
 	"github.com/gorilla/mux"
@@ -12,20 +10,18 @@ import (
 func (api *API) patch(cfg *config, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	obj := cfg.factory()
-
-	objMD := metadata.GetMetadata(obj)
-	objMD.ID = vars["id"]
-
 	cfg.mu.Lock()
 	defer cfg.mu.Unlock()
 
-	err := api.sb.Read(cfg.typeName, obj)
-	if errors.Is(err, os.ErrNotExist) {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	} else if err != nil {
+	v, err := api.sb.Read(cfg.typeName, vars["id"], cfg.factory)
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	obj := <-v.Chan()
+	if obj == nil {
+		http.Error(w, "not found", http.StatusNotFound)
 		return
 	}
 

@@ -18,7 +18,7 @@ type config struct {
 	mayDelete  func(any, *http.Request) error
 	mayRead    func(any, *http.Request) error
 
-	mu sync.RWMutex
+	mu sync.Mutex
 }
 
 type mayCreate interface {

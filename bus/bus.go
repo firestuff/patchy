@@ -5,18 +5,19 @@ import (
 	"sync"
 
 	"github.com/firestuff/patchy/metadata"
+	"github.com/firestuff/patchy/view"
 )
 
 type Bus struct {
 	mu        sync.Mutex
-	keyChans  map[string][]chan any
+	keyViews  map[string][]*view.EphemeralView[any]
 	typeChans map[string][]chan any
 	delChans  map[string][]chan string
 }
 
 func NewBus() *Bus {
 	return &Bus{
-		keyChans:  map[string][]chan any{},
+		keyViews:  map[string][]*view.EphemeralView[any]{},
 		typeChans: map[string][]chan any{},
 		delChans:  map[string][]chan string{},
 	}
@@ -28,20 +29,20 @@ func (b *Bus) Announce(t string, obj any) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	keyChans := b.keyChans[key]
-	newKeyChans := []chan any{}
+	keyViews := b.keyViews[key]
+	newKeyViews := []*view.EphemeralView[any]{}
 
-	for _, ch := range keyChans {
-		select {
-		case ch <- obj:
-			newKeyChans = append(newKeyChans, ch)
-		default:
-			close(ch)
+	for _, ev := range keyViews {
+		err := ev.Update(obj)
+		if err != nil {
+			continue
 		}
+
+		newKeyViews = append(newKeyViews, ev)
 	}
 
-	if len(keyChans) != len(newKeyChans) {
-		b.keyChans[key] = newKeyChans
+	if len(keyViews) != len(newKeyViews) {
+		b.keyViews[key] = newKeyViews
 	}
 
 	typeChans := b.typeChans[t]
@@ -67,30 +68,24 @@ func (b *Bus) Delete(t string, id string) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	keyChans := b.keyChans[key]
-	for _, ch := range keyChans {
-		close(ch)
+	for _, ev := range b.keyViews[key] {
+		ev.Close()
 	}
 
-	delete(b.keyChans, key)
+	delete(b.keyViews, key)
 
-	delChans := b.delChans[t]
-	for _, ch := range delChans {
+	for _, ch := range b.delChans[t] {
 		ch <- id
 	}
 }
 
-func (b *Bus) SubscribeKey(t string, id string) chan any {
+func (b *Bus) SubscribeKey(t string, id string, ev *view.EphemeralView[any]) {
 	key := getKey(t, id)
 
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	ch := make(chan any, 100)
-
-	b.keyChans[key] = append(b.keyChans[key], ch)
-
-	return ch
+	b.keyViews[key] = append(b.keyViews[key], ev)
 }
 
 func (b *Bus) SubscribeType(t string) (chan any, chan string) {

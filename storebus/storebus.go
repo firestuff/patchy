@@ -1,18 +1,22 @@
 package storebus
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	"github.com/firestuff/patchy/bus"
 	"github.com/firestuff/patchy/metadata"
 	"github.com/firestuff/patchy/store"
+	"github.com/firestuff/patchy/view"
 )
 
 type StoreBus struct {
 	store store.Storer
 	bus   *bus.Bus
+	mu    sync.RWMutex
 }
 
 func NewStoreBus(st store.Storer) *StoreBus {
@@ -23,6 +27,9 @@ func NewStoreBus(st store.Storer) *StoreBus {
 }
 
 func (sb *StoreBus) Write(t string, obj any) error {
+	sb.mu.Lock()
+	defer sb.mu.Unlock()
+
 	if err := updateHash(obj); err != nil {
 		return err
 	}
@@ -37,6 +44,9 @@ func (sb *StoreBus) Write(t string, obj any) error {
 }
 
 func (sb *StoreBus) Delete(t string, id string) error {
+	sb.mu.Lock()
+	defer sb.mu.Unlock()
+
 	if err := sb.store.Delete(t, id); err != nil {
 		return err
 	}
@@ -46,24 +56,30 @@ func (sb *StoreBus) Delete(t string, id string) error {
 	return nil
 }
 
-func (sb *StoreBus) Read(t string, obj any) error {
-	return sb.store.Read(t, obj)
+func (sb *StoreBus) Read(t string, id string, factory func() any) (*view.EphemeralView[any], error) {
+	sb.mu.RLock()
+	defer sb.mu.RUnlock()
+
+	obj, err := sb.store.Read(t, id, factory)
+	if err != nil {
+		return nil, err
+	}
+
+	ev := view.NewEphemeralView[any](context.TODO(), obj)
+
+	sb.bus.SubscribeKey(t, id, ev)
+
+	return ev, nil
 }
 
 func (sb *StoreBus) List(t string, factory func() any) ([]any, error) {
+	// TODO: RLock
+	// TODO: Combine with SubscribeType
 	return sb.store.List(t, factory)
-}
-
-func (sb *StoreBus) SubscribeKey(t string, id string) chan any {
-	return sb.bus.SubscribeKey(t, id)
 }
 
 func (sb *StoreBus) SubscribeType(t string) (chan any, chan string) {
 	return sb.bus.SubscribeType(t)
-}
-
-func (sb *StoreBus) GetBus() *bus.Bus {
-	return sb.bus
 }
 
 func updateHash(obj any) error {
