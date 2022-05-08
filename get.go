@@ -9,7 +9,7 @@ import (
 func (api *API) get(cfg *config, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	v, err := api.sb.Read(cfg.typeName, vars["id"], cfg.factory)
+	v, err := api.sb.Read(r.Context(), cfg.typeName, vars["id"], cfg.factory)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

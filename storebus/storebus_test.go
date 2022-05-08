@@ -1,6 +1,7 @@
 package storebus_test
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -28,7 +29,7 @@ func TestStoreBus(t *testing.T) {
 	})
 	require.Nil(t, err)
 
-	ev1, err := sb.Read("storeBusTest", "id1", newStoreBusTest)
+	ev1, err := sb.Read(context.TODO(), "storeBusTest", "id1", newStoreBusTest)
 	require.Nil(t, err)
 
 	out1 := (<-ev1.Chan()).(*storeBusTest)
@@ -58,7 +59,7 @@ func TestStoreBusDelete(t *testing.T) {
 
 	sb := storebus.NewStoreBus(store.NewFileStore(dir))
 
-	ev1, err := sb.Read("storeBusTest", "id1", newStoreBusTest)
+	ev1, err := sb.Read(context.TODO(), "storeBusTest", "id1", newStoreBusTest)
 	require.Nil(t, err)
 
 	preout := <-ev1.Chan()
