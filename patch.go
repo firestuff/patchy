@@ -13,7 +13,7 @@ func (api *API) patch(cfg *config, w http.ResponseWriter, r *http.Request) {
 	cfg.mu.Lock()
 	defer cfg.mu.Unlock()
 
-	v, err := api.sb.Read(cfg.typeName, vars["id"], cfg.factory)
+	v, err := api.sb.Read(r.Context(), cfg.typeName, vars["id"], cfg.factory)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

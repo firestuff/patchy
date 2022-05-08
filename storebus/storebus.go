@@ -56,7 +56,7 @@ func (sb *StoreBus) Delete(t string, id string) error {
 	return nil
 }
 
-func (sb *StoreBus) Read(t string, id string, factory func() any) (*view.EphemeralView[any], error) {
+func (sb *StoreBus) Read(ctx context.Context, t string, id string, factory func() any) (*view.EphemeralView[any], error) {
 	sb.mu.RLock()
 	defer sb.mu.RUnlock()
 
@@ -65,7 +65,7 @@ func (sb *StoreBus) Read(t string, id string, factory func() any) (*view.Ephemer
 		return nil, err
 	}
 
-	ev := view.NewEphemeralView[any](context.TODO(), obj)
+	ev := view.NewEphemeralView[any](ctx, obj)
 
 	sb.bus.SubscribeKey(t, id, ev)
 
