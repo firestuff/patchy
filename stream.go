@@ -1,12 +1,9 @@
 package patchy
 
 import (
-	"errors"
 	"net/http"
-	"os"
 	"time"
 
-	"github.com/firestuff/patchy/metadata"
 	"github.com/gorilla/mux"
 )
 
@@ -21,23 +18,15 @@ func (api *API) stream(cfg *config, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 
-	obj := cfg.factory()
-
-	metadata.GetMetadata(obj).ID = vars["id"]
-
-	cfg.mu.RLock()
-	// THIS LOCK REQUIRES MANUAL UNLOCKING IN ALL BRANCHES
-
-	err := api.sb.Read(cfg.typeName, obj)
-	if errors.Is(err, os.ErrNotExist) {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		cfg.mu.RUnlock()
-
-		return
-	} else if err != nil {
+	v, err := api.sb.Read(cfg.typeName, vars["id"], cfg.factory)
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		cfg.mu.RUnlock()
+		return
+	}
 
+	obj := <-v.Chan()
+	if obj == nil {
+		http.Error(w, "not found", http.StatusNotFound)
 		return
 	}
 
@@ -45,8 +34,6 @@ func (api *API) stream(cfg *config, w http.ResponseWriter, r *http.Request) {
 		err = cfg.mayRead(obj, r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
-			cfg.mu.RUnlock()
-
 			return
 		}
 	}
@@ -54,22 +41,17 @@ func (api *API) stream(cfg *config, w http.ResponseWriter, r *http.Request) {
 	err = writeEvent(w, "initial", obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		cfg.mu.RUnlock()
-
 		return
 	}
 
-	objChan := api.sb.SubscribeKey(cfg.typeName, vars["id"])
 	ticker := time.NewTicker(5 * time.Second)
-
-	cfg.mu.RUnlock()
 
 	for {
 		select {
 		case <-r.Context().Done():
 			return
 
-		case msg, ok := <-objChan:
+		case msg, ok := <-v.Chan():
 			if ok {
 				err = writeEvent(w, "update", msg)
 				if err != nil {

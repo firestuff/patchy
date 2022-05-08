@@ -49,3 +49,7 @@ func (v *EphemeralView[T]) MustUpdate(data T) {
 		panic(err)
 	}
 }
+
+func (v *EphemeralView[T]) Close() {
+	close(v.ch)
+}

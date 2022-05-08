@@ -35,25 +35,13 @@ func TestFileStore(t *testing.T) {
 	})
 	require.Nil(t, err)
 
-	out1 := &storeTest{
-		Metadata: metadata.Metadata{
-			ID: "id1",
-		},
-	}
-
-	err = store.Read("storeTest", out1)
+	out1, err := store.Read("storeTest", "id1", newStoreTest)
 	require.Nil(t, err)
-	require.Equal(t, "foo", out1.Opaque)
+	require.Equal(t, "foo", out1.(*storeTest).Opaque)
 
-	out2 := &storeTest{
-		Metadata: metadata.Metadata{
-			ID: "id2",
-		},
-	}
-
-	err = store.Read("storeTest", out2)
+	out2, err := store.Read("storeTest", "id2", newStoreTest)
 	require.Nil(t, err)
-	require.Equal(t, "bar", out2.Opaque)
+	require.Equal(t, "bar", out2.(*storeTest).Opaque)
 }
 
 func TestFileStoreDelete(t *testing.T) {
@@ -74,25 +62,16 @@ func TestFileStoreDelete(t *testing.T) {
 	})
 	require.Nil(t, err)
 
-	out1 := &storeTest{
-		Metadata: metadata.Metadata{
-			ID: "id1",
-		},
-	}
-
-	err = store.Read("storeTest", out1)
+	out1, err := store.Read("storeTest", "id1", newStoreTest)
 	require.Nil(t, err)
-	require.Equal(t, "foo", out1.Opaque)
+	require.Equal(t, "foo", out1.(*storeTest).Opaque)
 
 	err = store.Delete("storeTest", "id1")
 	require.Nil(t, err)
 
-	err = store.Read("storeTest", &storeTest{
-		Metadata: metadata.Metadata{
-			ID: "id1",
-		},
-	})
-	require.NotNil(t, err)
+	out2, err := store.Read("storeTest", "id1", newStoreTest)
+	require.Nil(t, err)
+	require.Nil(t, out2)
 }
 
 func TestFileStoreList(t *testing.T) {
@@ -130,4 +109,8 @@ func TestFileStoreList(t *testing.T) {
 type storeTest struct {
 	metadata.Metadata
 	Opaque string
+}
+
+func newStoreTest() any {
+	return &storeTest{}
 }
