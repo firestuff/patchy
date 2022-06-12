@@ -22,22 +22,28 @@ func TestBus(t *testing.T) {
 		},
 	})
 
-	ev1a := view.NewEphemeralView[any](context.TODO(), nil)
+	ev1a, err := view.NewEphemeralView[any](context.TODO(), nil)
+	require.Nil(t, err)
 	<-ev1a.Chan()
 
-	ev2a := view.NewEphemeralView[any](context.TODO(), nil)
+	ev2a, err := view.NewEphemeralView[any](context.TODO(), nil)
+	require.Nil(t, err)
 	<-ev2a.Chan()
 
-	ev2b := view.NewEphemeralView[any](context.TODO(), nil)
+	ev2b, err := view.NewEphemeralView[any](context.TODO(), nil)
+	require.Nil(t, err)
 	<-ev2b.Chan()
 
-	ev2c := view.NewEphemeralView[any](context.TODO(), nil)
+	ev2c, err := view.NewEphemeralView[any](context.TODO(), nil)
+	require.Nil(t, err)
 	<-ev2c.Chan()
 
-	ev1 := view.NewEphemeralView[any](context.TODO(), nil)
+	ev1, err := view.NewEphemeralView[any](context.TODO(), nil)
+	require.Nil(t, err)
 	<-ev1.Chan()
 
-	ev2 := view.NewEphemeralView[any](context.TODO(), nil)
+	ev2, err := view.NewEphemeralView[any](context.TODO(), nil)
+	require.Nil(t, err)
 	<-ev2.Chan()
 
 	// Complex subscription layout
@@ -111,7 +117,8 @@ func TestBusDelete(t *testing.T) {
 
 	bus := bus.NewBus()
 
-	ev := view.NewEphemeralView[any](context.TODO(), nil)
+	ev, err := view.NewEphemeralView[any](context.TODO(), nil)
+	require.Nil(t, err)
 	<-ev.Chan()
 	bus.SubscribeKey("busTest", "id1", ev)
 

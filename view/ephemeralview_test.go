@@ -13,7 +13,8 @@ func TestEphemeralView(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	v := view.NewEphemeralView(ctx, []string{"foo", "bar"})
+	v, err := view.NewEphemeralView(ctx, []string{"foo", "bar"})
+	require.Nil(t, err)
 
 	msg := <-v.Chan()
 	require.Equal(t, []string{"foo", "bar"}, msg)
