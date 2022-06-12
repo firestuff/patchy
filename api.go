@@ -67,12 +67,9 @@ func RegisterName[T any](api *API, typeName string) {
 		// TODO: Support f.Tag override
 		fName := strings.ToLower(f.Name)
 
-		fCfg, found := api.registry[fName]
-		if !found {
+		if _, found := api.registry[fName]; !found {
 			continue
 		}
-
-		fmt.Printf("%+v %+v\n", f, fCfg)
 	}
 }
 

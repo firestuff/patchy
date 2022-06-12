@@ -35,6 +35,17 @@ func TestGETList(t *testing.T) {
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
+		created3 := &testType{}
+
+		resp, err = c.R().
+			SetBody(&testType{
+				Text: "zig",
+			}).
+			SetResult(created3).
+			Post(fmt.Sprintf("%s/testtype", baseURL))
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
+
 		list := []testType{}
 
 		resp, err = c.R().
@@ -42,8 +53,8 @@ func TestGETList(t *testing.T) {
 			Get(fmt.Sprintf("%s/testtype", baseURL))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
-		require.Len(t, list, 2)
-		require.ElementsMatch(t, []string{"foo", "bar"}, []string{list[0].Text, list[1].Text})
+		require.Len(t, list, 3)
+		require.ElementsMatch(t, []string{"foo", "bar", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
 
 		resp, err = c.R().
 			SetResult(&list).
@@ -72,12 +83,12 @@ func TestGETList(t *testing.T) {
 
 		resp, err = c.R().
 			SetResult(&list).
-			SetQueryParam("text[gt]", "bar").
+			SetQueryParam("text[gt]", "foo").
 			Get(fmt.Sprintf("%s/testtype", baseURL))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Len(t, list, 1)
-		require.ElementsMatch(t, []string{"foo"}, []string{list[0].Text})
+		require.ElementsMatch(t, []string{"zig"}, []string{list[0].Text})
 
 		resp, err = c.R().
 			SetResult(&list).
@@ -85,8 +96,8 @@ func TestGETList(t *testing.T) {
 			Get(fmt.Sprintf("%s/testtype", baseURL))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
-		require.Len(t, list, 1)
-		require.ElementsMatch(t, []string{"foo"}, []string{list[0].Text})
+		require.Len(t, list, 2)
+		require.ElementsMatch(t, []string{"foo", "zig"}, []string{list[0].Text, list[1].Text})
 
 		resp, err = c.R().
 			SetResult(&list).
@@ -94,8 +105,8 @@ func TestGETList(t *testing.T) {
 			Get(fmt.Sprintf("%s/testtype", baseURL))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
-		require.Len(t, list, 1)
-		require.ElementsMatch(t, []string{"foo"}, []string{list[0].Text})
+		require.Len(t, list, 2)
+		require.ElementsMatch(t, []string{"foo", "zig"}, []string{list[0].Text, list[1].Text})
 
 		resp, err = c.R().
 			SetResult(&list).
@@ -108,21 +119,12 @@ func TestGETList(t *testing.T) {
 
 		resp, err = c.R().
 			SetResult(&list).
-			SetQueryParam("text[lte]", "bar").
-			Get(fmt.Sprintf("%s/testtype", baseURL))
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Len(t, list, 1)
-		require.ElementsMatch(t, []string{"bar"}, []string{list[0].Text})
-
-		resp, err = c.R().
-			SetResult(&list).
-			SetQueryParam("_limit", "2").
+			SetQueryParam("text[lte]", "foo").
 			Get(fmt.Sprintf("%s/testtype", baseURL))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Len(t, list, 2)
-		require.ElementsMatch(t, []string{"foo", "bar"}, []string{list[0].Text, list[1].Text})
+		require.ElementsMatch(t, []string{"bar", "foo"}, []string{list[0].Text, list[1].Text})
 
 		resp, err = c.R().
 			SetResult(&list).
@@ -131,7 +133,7 @@ func TestGETList(t *testing.T) {
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Len(t, list, 1)
-		require.True(t, list[0].Text == "foo" || list[0].Text == "bar")
+		require.True(t, list[0].Text == "bar" || list[0].Text == "foo" || list[0].Text == "zig")
 
 		resp, err = c.R().
 			SetResult(&list).
@@ -139,8 +141,8 @@ func TestGETList(t *testing.T) {
 			Get(fmt.Sprintf("%s/testtype", baseURL))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
-		require.Len(t, list, 2)
-		require.ElementsMatch(t, []string{"foo", "bar"}, []string{list[0].Text, list[1].Text})
+		require.Len(t, list, 3)
+		require.ElementsMatch(t, []string{"bar", "foo", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
 
 		resp, err = c.R().
 			SetResult(&list).
@@ -148,16 +150,15 @@ func TestGETList(t *testing.T) {
 			Get(fmt.Sprintf("%s/testtype", baseURL))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
-		require.Len(t, list, 1)
-		require.True(t, list[0].Text == "foo" || list[0].Text == "bar")
+		require.Len(t, list, 2)
 
 		resp, err = c.R().
 			SetResult(&list).
 			Get(fmt.Sprintf("%s/testtype", baseURL))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
-		require.Len(t, list, 2)
-		require.ElementsMatch(t, []string{"foo", "bar"}, []string{list[0].Text, list[1].Text})
+		require.Len(t, list, 3)
+		require.ElementsMatch(t, []string{"bar", "foo", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
 
 		list2 := []testType{}
 
@@ -167,8 +168,8 @@ func TestGETList(t *testing.T) {
 			Get(fmt.Sprintf("%s/testtype", baseURL))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
-		require.Len(t, list2, 1)
-		require.Equal(t, list[1].Text, list2[0].Text)
+		require.Len(t, list2, 2)
+		require.ElementsMatch(t, []string{list[1].Text, list[2].Text}, []string{list2[0].Text, list2[1].Text})
 
 		resp, err = c.R().
 			SetResult(&list).
@@ -176,8 +177,8 @@ func TestGETList(t *testing.T) {
 			Get(fmt.Sprintf("%s/testtype", baseURL))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
-		require.Len(t, list, 2)
-		require.Equal(t, []string{"bar", "foo"}, []string{list[0].Text, list[1].Text})
+		require.Len(t, list, 3)
+		require.Equal(t, []string{"bar", "foo", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
 
 		resp, err = c.R().
 			SetResult(&list).
@@ -185,8 +186,8 @@ func TestGETList(t *testing.T) {
 			Get(fmt.Sprintf("%s/testtype", baseURL))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
-		require.Len(t, list, 2)
-		require.Equal(t, []string{"bar", "foo"}, []string{list[0].Text, list[1].Text})
+		require.Len(t, list, 3)
+		require.Equal(t, []string{"bar", "foo", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
 
 		resp, err = c.R().
 			SetResult(&list).
@@ -194,7 +195,27 @@ func TestGETList(t *testing.T) {
 			Get(fmt.Sprintf("%s/testtype", baseURL))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
+		require.Len(t, list, 3)
+		require.Equal(t, []string{"zig", "foo", "bar"}, []string{list[0].Text, list[1].Text, list[2].Text})
+
+		resp, err = c.R().
+			SetResult(&list).
+			SetQueryParam("_sort", "+text").
+			SetQueryParam("_offset", "1").
+			Get(fmt.Sprintf("%s/testtype", baseURL))
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
 		require.Len(t, list, 2)
-		require.Equal(t, []string{"foo", "bar"}, []string{list[0].Text, list[1].Text})
+		require.Equal(t, []string{"foo", "zig"}, []string{list[0].Text, list[1].Text})
+
+		resp, err = c.R().
+			SetResult(&list).
+			SetQueryParam("_sort", "text").
+			SetQueryParam("_limit", "2").
+			Get(fmt.Sprintf("%s/testtype", baseURL))
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
+		require.Len(t, list, 2)
+		require.ElementsMatch(t, []string{"bar", "foo"}, []string{list[0].Text, list[1].Text})
 	})
 }
