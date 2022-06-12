@@ -13,7 +13,8 @@ func TestFilterView(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	ev := view.NewEphemeralView(ctx, []string{"foo", "bar"})
+	ev, err := view.NewEphemeralView(ctx, []string{"foo", "bar"})
+	require.Nil(t, err)
 
 	fv := view.NewFilterView[[]string](ev, func(in []string) (out []string) {
 		for _, s := range in {

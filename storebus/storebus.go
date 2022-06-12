@@ -65,7 +65,10 @@ func (sb *StoreBus) Read(ctx context.Context, t string, id string, factory func(
 		return nil, err
 	}
 
-	ev := view.NewEphemeralView[any](ctx, obj)
+	ev, err := view.NewEphemeralView[any](ctx, obj)
+	if err != nil {
+		return nil, err
+	}
 
 	sb.bus.SubscribeKey(t, id, ev)
 
