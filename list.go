@@ -114,7 +114,7 @@ func (api *API) list(cfg *config, r *http.Request, params *listParams) ([]any, e
 		return nil, err
 	}
 
-	ret := []any{}
+	inter := []any{}
 
 	for _, obj := range list {
 		if cfg.mayRead != nil {
@@ -132,6 +132,29 @@ func (api *API) list(cfg *config, r *http.Request, params *listParams) ([]any, e
 			continue
 		}
 
+		inter = append(inter, obj)
+	}
+
+	for _, srt := range params.sorts {
+		switch {
+		case strings.HasPrefix(srt, "+"):
+			err = path.Sort(inter, strings.TrimPrefix(srt, "+"))
+
+		case strings.HasPrefix(srt, "-"):
+			err = path.SortReverse(inter, strings.TrimPrefix(srt, "-"))
+
+		default:
+			err = path.Sort(inter, srt)
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	ret := []any{}
+
+	for _, obj := range inter {
 		if params.after != "" {
 			if metadata.GetMetadata(obj).ID == params.after {
 				params.after = ""
@@ -152,23 +175,6 @@ func (api *API) list(cfg *config, r *http.Request, params *listParams) ([]any, e
 		}
 
 		ret = append(ret, obj)
-	}
-
-	for _, srt := range params.sorts {
-		switch {
-		case strings.HasPrefix(srt, "+"):
-			err = path.Sort(ret, strings.TrimPrefix(srt, "+"))
-
-		case strings.HasPrefix(srt, "-"):
-			err = path.SortReverse(ret, strings.TrimPrefix(srt, "-"))
-
-		default:
-			err = path.Sort(ret, srt)
-		}
-
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	return ret, nil
