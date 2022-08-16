@@ -12,17 +12,21 @@ type EphemeralView[T any] struct {
 }
 
 func NewEphemeralView[T any](ctx context.Context, data T) (*EphemeralView[T], error) {
-	v := &EphemeralView[T]{
-		ctx:    ctx,
-		ch:     make(chan T, 100),
-		closed: false,
-	}
+	v := NewEphemeralViewEmpty[T](ctx)
 
 	if err := v.Update(data); err != nil {
 		return nil, err
 	}
 
 	return v, nil
+}
+
+func NewEphemeralViewEmpty[T any](ctx context.Context) *EphemeralView[T] {
+	return &EphemeralView[T]{
+		ctx:    ctx,
+		ch:     make(chan T, 100),
+		closed: false,
+	}
 }
 
 var errChannelOverrun = fmt.Errorf("channel overrun")
