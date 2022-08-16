@@ -11,15 +11,13 @@ import (
 type Bus struct {
 	mu        sync.Mutex
 	keyViews  map[string][]*view.EphemeralView[any]
-	typeChans map[string][]chan any
-	delChans  map[string][]chan string
+	typeViews map[string][]*view.EphemeralView[any]
 }
 
 func NewBus() *Bus {
 	return &Bus{
 		keyViews:  map[string][]*view.EphemeralView[any]{},
-		typeChans: map[string][]chan any{},
-		delChans:  map[string][]chan string{},
+		typeViews: map[string][]*view.EphemeralView[any]{},
 	}
 }
 
@@ -29,37 +27,8 @@ func (b *Bus) Announce(t string, obj any) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	keyViews := b.keyViews[key]
-	newKeyViews := []*view.EphemeralView[any]{}
-
-	for _, ev := range keyViews {
-		err := ev.Update(obj)
-		if err != nil {
-			continue
-		}
-
-		newKeyViews = append(newKeyViews, ev)
-	}
-
-	if len(keyViews) != len(newKeyViews) {
-		b.keyViews[key] = newKeyViews
-	}
-
-	typeChans := b.typeChans[t]
-	newTypeChans := []chan any{}
-
-	for _, ch := range typeChans {
-		select {
-		case ch <- obj:
-			newTypeChans = append(newTypeChans, ch)
-		default:
-			close(ch)
-		}
-	}
-
-	if len(typeChans) != len(newTypeChans) {
-		b.typeChans[key] = newTypeChans
-	}
+	b.keyViews[key] = announce(obj, b.keyViews[key])
+	b.typeViews[t] = announce(obj, b.typeViews[t])
 }
 
 func (b *Bus) Delete(t string, id string) {
@@ -72,11 +41,7 @@ func (b *Bus) Delete(t string, id string) {
 		ev.Close()
 	}
 
-	delete(b.keyViews, key)
-
-	for _, ch := range b.delChans[t] {
-		ch <- id
-	}
+	b.typeViews[t] = announce(id, b.typeViews[t])
 }
 
 func (b *Bus) SubscribeKey(t string, id string, ev *view.EphemeralView[any]) {
@@ -88,17 +53,11 @@ func (b *Bus) SubscribeKey(t string, id string, ev *view.EphemeralView[any]) {
 	b.keyViews[key] = append(b.keyViews[key], ev)
 }
 
-func (b *Bus) SubscribeType(t string) (chan any, chan string) {
+func (b *Bus) SubscribeType(t string, ev *view.EphemeralView[any]) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	typeChan := make(chan any, 100)
-	b.typeChans[t] = append(b.typeChans[t], typeChan)
-
-	delChan := make(chan string, 100)
-	b.delChans[t] = append(b.delChans[t], delChan)
-
-	return typeChan, delChan
+	b.typeViews[t] = append(b.typeViews[t], ev)
 }
 
 func getObjKey(t string, obj any) string {
@@ -107,4 +66,19 @@ func getObjKey(t string, obj any) string {
 
 func getKey(t string, id string) string {
 	return fmt.Sprintf("%s:%s", t, id)
+}
+
+func announce(obj any, views []*view.EphemeralView[any]) []*view.EphemeralView[any] {
+	ret := []*view.EphemeralView[any]{}
+
+	for _, ev := range views {
+		err := ev.Update(obj)
+		if err != nil {
+			continue
+		}
+
+		ret = append(ret, ev)
+	}
+
+	return ret
 }

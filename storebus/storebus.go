@@ -75,14 +75,24 @@ func (sb *StoreBus) Read(ctx context.Context, t string, id string, factory func(
 	return ev, nil
 }
 
-func (sb *StoreBus) List(t string, factory func() any) ([]any, error) {
-	// TODO: RLock
-	// TODO: Combine with SubscribeType
-	return sb.store.List(t, factory)
-}
+func (sb *StoreBus) List(ctx context.Context, t string, factory func() any) (*view.EphemeralView[[]any], error) {
+	sb.mu.RLock()
+	defer sb.mu.RUnlock()
 
-func (sb *StoreBus) SubscribeType(t string) (chan any, chan string) {
-	return sb.bus.SubscribeType(t)
+	l, err := sb.store.List(t, factory)
+	if err != nil {
+		return nil, err
+	}
+
+	ret, err := view.NewEphemeralView[[]any](ctx, l)
+	if err != nil {
+		return nil, err
+	}
+
+	ev := view.NewEphemeralViewEmpty[any](ctx)
+	sb.bus.SubscribeType(t, ev)
+
+	return ev, nil
 }
 
 func updateHash(obj any) error {
