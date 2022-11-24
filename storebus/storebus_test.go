@@ -32,9 +32,17 @@ func TestStoreBus(t *testing.T) {
 	ev1, err := sb.Read(context.TODO(), "storeBusTest", "id1", newStoreBusTest)
 	require.Nil(t, err)
 
+	ev2, err := sb.List(context.TODO(), "storeBusTest", newStoreBusTest)
+	require.Nil(t, err)
+
 	out1 := (<-ev1.Chan()).(*storeBusTest)
 	require.Equal(t, "foo", out1.Opaque)
 	require.Equal(t, "etag:2c8edc6414452b8dee7826bd55e585f850ac47a0dcfc357dc1fcaaa3164cdfa2", out1.ETag)
+
+	l1 := <-ev2.Chan()
+	require.Len(t, l1, 1)
+	require.Equal(t, "foo", l1[0].(*storeBusTest).Opaque)
+	require.Equal(t, "etag:2c8edc6414452b8dee7826bd55e585f850ac47a0dcfc357dc1fcaaa3164cdfa2", l1[0].(*storeBusTest).ETag)
 
 	err = sb.Write("storeBusTest", &storeBusTest{
 		Metadata: metadata.Metadata{
@@ -44,9 +52,36 @@ func TestStoreBus(t *testing.T) {
 	})
 	require.Nil(t, err)
 
-	out3 := (<-ev1.Chan()).(*storeBusTest)
-	require.Equal(t, "bar", out3.Opaque)
-	require.Equal(t, "etag:906fda69e9893280ca9294bd04eb276794da9a8904fc0b671c69175f08cc03c6", out3.ETag)
+	out2 := (<-ev1.Chan()).(*storeBusTest)
+	require.Equal(t, "bar", out2.Opaque)
+	require.Equal(t, "etag:906fda69e9893280ca9294bd04eb276794da9a8904fc0b671c69175f08cc03c6", out2.ETag)
+
+	l2 := <-ev2.Chan()
+	require.Len(t, l2, 1)
+	require.Equal(t, "bar", l2[0].(*storeBusTest).Opaque)
+	require.Equal(t, "etag:906fda69e9893280ca9294bd04eb276794da9a8904fc0b671c69175f08cc03c6", l2[0].(*storeBusTest).ETag)
+
+	err = sb.Write("storeBusTest", &storeBusTest{
+		Metadata: metadata.Metadata{
+			ID: "id2",
+		},
+		Opaque: "zig",
+	})
+	require.Nil(t, err)
+
+	l3 := <-ev2.Chan()
+	require.Len(t, l3, 2)
+	require.ElementsMatch(
+		t,
+		[]string{
+			l3[0].(*storeBusTest).Opaque,
+			l3[1].(*storeBusTest).Opaque,
+		},
+		[]string{
+			"bar",
+			"zig",
+		},
+	)
 }
 
 func TestStoreBusDelete(t *testing.T) {

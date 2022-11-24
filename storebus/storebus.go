@@ -92,7 +92,24 @@ func (sb *StoreBus) List(ctx context.Context, t string, factory func() any) (*vi
 	ev := view.NewEphemeralViewEmpty[any](ctx)
 	sb.bus.SubscribeType(t, ev)
 
-	return ev, nil
+	go func() {
+		for range ev.Chan() {
+			// List() results are always at least (but not exactly) as new as the write that triggered it
+			l, err := sb.store.List(t, factory)
+			if err != nil {
+				break
+			}
+
+			err = ret.Update(l)
+			if err != nil {
+				break
+			}
+		}
+
+		ret.Close()
+	}()
+
+	return ret, nil
 }
 
 func updateHash(obj any) error {
