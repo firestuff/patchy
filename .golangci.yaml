@@ -1,21 +1,10 @@
 linters:
   enable-all: true
   disable:
-    # re-enable when working in go1.18
-    - bodyclose
+    # re-enable when working
     - contextcheck
-    - gosimple
-    - interfacer
-    - nilerr
-    - noctx
     - rowserrcheck
     - sqlclosecheck
-    - staticcheck
-    - structcheck
-    - stylecheck
-    - tparallel
-    - unparam
-    - unused
     - wastedassign
     # maybe enable these
     - wrapcheck
@@ -36,12 +25,14 @@ linters:
     - golint
     - gomnd
     - ifshort
+    - interfacer
     - lll
     - maligned
     - nestif
     - nlreturn
     - nosnakecase
     - scopelint
+    - structcheck
     - thelper
     - varcheck
     - varnamelen
