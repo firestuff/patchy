@@ -16,14 +16,16 @@ func TestFilterView(t *testing.T) {
 	ev, err := view.NewEphemeralView(ctx, []string{"foo", "bar"})
 	require.Nil(t, err)
 
-	fv := view.NewFilterView[[]string](ev, func(in []string) (out []string) {
+	fv := view.NewFilterView[[]string](ev, func(in []string) ([]string, error) {
+		ret := []string{}
+
 		for _, s := range in {
 			if s != "bar" {
-				out = append(out, s)
+				ret = append(ret, s)
 			}
 		}
 
-		return
+		return ret, nil
 	})
 
 	msg := <-fv.Chan()
