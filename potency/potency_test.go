@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/firestuff/patchy/potency"
 	"github.com/firestuff/patchy/store"
@@ -112,7 +113,8 @@ func withServer(t *testing.T, cb func(*testing.T, string, *resty.Client)) {
 	})
 
 	srv := &http.Server{
-		Handler: router,
+		Handler:           router,
+		ReadHeaderTimeout: 1 * time.Second,
 	}
 
 	go func() {

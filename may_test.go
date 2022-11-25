@@ -1,4 +1,4 @@
-// nolint:goerr113
+//nolint:goerr113
 package patchy_test
 
 import (
@@ -81,7 +81,7 @@ func (*flagType) MayRead(r *http.Request) error {
 	return nil
 }
 
-func TestMayCreate(t *testing.T) { // nolint:paralleltest
+func TestMayCreate(t *testing.T) { //nolint:paralleltest
 	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
 		patchy.Register[flagType](api)
 
@@ -112,7 +112,7 @@ func TestMayCreate(t *testing.T) { // nolint:paralleltest
 	})
 }
 
-func TestMayReplace(t *testing.T) { // nolint:paralleltest
+func TestMayReplace(t *testing.T) { //nolint:paralleltest
 	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
 		patchy.Register[flagType](api)
 
@@ -155,7 +155,7 @@ func TestMayReplace(t *testing.T) { // nolint:paralleltest
 	})
 }
 
-func TestMayUpdate(t *testing.T) { // nolint:paralleltest
+func TestMayUpdate(t *testing.T) { //nolint:paralleltest
 	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
 		patchy.Register[flagType](api)
 
@@ -198,7 +198,7 @@ func TestMayUpdate(t *testing.T) { // nolint:paralleltest
 	})
 }
 
-func TestMayDelete(t *testing.T) { // nolint:paralleltest
+func TestMayDelete(t *testing.T) { //nolint:paralleltest
 	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
 		patchy.Register[flagType](api)
 
@@ -235,7 +235,7 @@ func TestMayDelete(t *testing.T) { // nolint:paralleltest
 	})
 }
 
-func TestMayRead(t *testing.T) { // nolint:paralleltest
+func TestMayRead(t *testing.T) { //nolint:paralleltest
 	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
 		patchy.Register[flagType](api)
 
