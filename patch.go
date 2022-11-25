@@ -48,11 +48,7 @@ func (api *API) patch(cfg *config, w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = merge(obj, patch)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	merge(obj, patch)
 
 	metadata.GetMetadata(obj).Generation++
 

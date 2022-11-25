@@ -2,7 +2,7 @@ package patchy
 
 import "reflect"
 
-func merge(to any, from any) error {
+func merge(to any, from any) {
 	t := maybeIndirect(to)
 	f := maybeIndirect(from)
 
@@ -16,8 +16,6 @@ func merge(to any, from any) error {
 
 		tf.Set(ff)
 	}
-
-	return nil
 }
 
 func maybeIndirect(obj any) reflect.Value {

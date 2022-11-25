@@ -34,14 +34,13 @@ func TestMerge(t *testing.T) {
 		},
 	}
 
-	err := merge(to, &MergeTestType{
+	merge(to, &MergeTestType{
 		A: "bar",
 	})
-	require.Nil(t, err)
 	require.Equal(t, "bar", to.A)
 	require.Equal(t, int64(42), to.B)
 
-	err = merge(to, &MergeTestType{
+	merge(to, &MergeTestType{
 		B: 46,
 		C: []string{"ooh", "aah"},
 		D: NestedType{
@@ -51,7 +50,6 @@ func TestMerge(t *testing.T) {
 			F: []int64{49, 50},
 		},
 	})
-	require.Nil(t, err)
 	require.Equal(t, "bar", to.A)
 	require.Equal(t, int64(46), to.B)
 	require.Equal(t, []string{"ooh", "aah"}, to.C)

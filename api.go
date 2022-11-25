@@ -46,31 +46,10 @@ func Register[T any](api *API) {
 }
 
 func RegisterName[T any](api *API, typeName string) {
+	// TODO: Support nested types
 	cfg := newConfig[T](typeName)
 	api.registry[cfg.typeName] = cfg
 	api.registerHandlers(fmt.Sprintf("/%s", cfg.typeName), cfg)
-
-	obj := new(T)
-	typ := reflect.TypeOf(*obj)
-
-	for i := 0; i < typ.NumField(); i++ {
-		f := typ.Field(i)
-
-		if f.Type.Kind() != reflect.Slice {
-			continue
-		}
-
-		if f.Type.Elem().Kind() != reflect.String {
-			continue
-		}
-
-		// TODO: Support f.Tag override
-		fName := strings.ToLower(f.Name)
-
-		if _, found := api.registry[fName]; !found {
-			continue
-		}
-	}
 }
 
 func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
