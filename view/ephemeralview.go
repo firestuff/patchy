@@ -31,7 +31,7 @@ func NewEphemeralViewEmpty[T any](ctx context.Context) *EphemeralView[T] {
 
 var errChannelOverrun = fmt.Errorf("channel overrun")
 
-func (v *EphemeralView[T]) Chan() chan T {
+func (v *EphemeralView[T]) Chan() <-chan T {
 	return v.ch
 }
 

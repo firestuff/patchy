@@ -25,6 +25,6 @@ func NewFilterView[T any](input ReadView[T], filter func(T) T) *FilterView[T] {
 	return v
 }
 
-func (v *FilterView[T]) Chan() chan T {
+func (v *FilterView[T]) Chan() <-chan T {
 	return v.ch
 }
