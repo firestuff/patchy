@@ -19,6 +19,7 @@ import (
 )
 
 func withAPI(t *testing.T, cb func(*testing.T, *patchy.API, string, *resty.Client)) {
+	// TODO: Add goroutine leak detection: https://github.com/uber-go/goleak
 	dir, err := os.MkdirTemp("", "")
 	require.Nil(t, err)
 

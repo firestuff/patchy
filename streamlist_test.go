@@ -131,6 +131,7 @@ func TestStreamList(t *testing.T) {
 }
 
 func TestStreamListDiff(t *testing.T) {
+	// TODO: Test filter/sort in diff mode
 	t.Parallel()
 
 	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
