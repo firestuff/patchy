@@ -11,6 +11,7 @@ import (
 
 	"github.com/firestuff/patchy/metadata"
 	"github.com/firestuff/patchy/path"
+	"github.com/firestuff/patchy/view"
 )
 
 type listParams struct {
@@ -108,83 +109,85 @@ func parseListParams(params url.Values) (*listParams, error) {
 	return ret, nil
 }
 
-func (api *API) list(cfg *config, r *http.Request, params *listParams) ([]any, error) {
+func (api *API) list(cfg *config, r *http.Request, params *listParams) (view.ReadView[[]any], error) {
 	v, err := api.sb.List(r.Context(), cfg.typeName, cfg.factory)
 	if err != nil {
 		return nil, err
 	}
 
-	return filterList(cfg, r, params, <-v.Chan())
+	return filterList(cfg, r, params, v), nil
 }
 
-func filterList(cfg *config, r *http.Request, params *listParams, list []any) ([]any, error) {
-	// TODO: Replace filterList() with FilterViews
-	inter := []any{}
+func filterList(cfg *config, r *http.Request, params *listParams, in view.ReadView[[]any]) *view.FilterView[[]any] {
+	// TODO: Stack FilterViews instead of using one giant one
+	return view.NewFilterView[[]any](in, func(list []any) ([]any, error) {
+		inter := []any{}
 
-	for _, obj := range list {
-		if cfg.mayRead != nil {
-			if cfg.mayRead(obj, r) != nil {
+		for _, obj := range list {
+			if cfg.mayRead != nil {
+				if cfg.mayRead(obj, r) != nil {
+					continue
+				}
+			}
+
+			matches, err := match(obj, params.filters)
+			if err != nil {
+				return nil, err
+			}
+
+			if !matches {
 				continue
 			}
+
+			inter = append(inter, obj)
 		}
 
-		matches, err := match(obj, params.filters)
-		if err != nil {
-			return nil, err
-		}
+		for _, srt := range params.sorts {
+			var err error
 
-		if !matches {
-			continue
-		}
+			switch {
+			case strings.HasPrefix(srt, "+"):
+				err = path.Sort(inter, strings.TrimPrefix(srt, "+"))
 
-		inter = append(inter, obj)
-	}
+			case strings.HasPrefix(srt, "-"):
+				err = path.SortReverse(inter, strings.TrimPrefix(srt, "-"))
 
-	for _, srt := range params.sorts {
-		var err error
-
-		switch {
-		case strings.HasPrefix(srt, "+"):
-			err = path.Sort(inter, strings.TrimPrefix(srt, "+"))
-
-		case strings.HasPrefix(srt, "-"):
-			err = path.SortReverse(inter, strings.TrimPrefix(srt, "-"))
-
-		default:
-			err = path.Sort(inter, srt)
-		}
-
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	ret := []any{}
-
-	for _, obj := range inter {
-		if params.after != "" {
-			if metadata.GetMetadata(obj).ID == params.after {
-				params.after = ""
+			default:
+				err = path.Sort(inter, srt)
 			}
 
-			continue
+			if err != nil {
+				return nil, err
+			}
 		}
 
-		if params.offset > 0 {
-			params.offset--
+		ret := []any{}
 
-			continue
+		for _, obj := range inter {
+			if params.after != "" {
+				if metadata.GetMetadata(obj).ID == params.after {
+					params.after = ""
+				}
+
+				continue
+			}
+
+			if params.offset > 0 {
+				params.offset--
+
+				continue
+			}
+
+			params.limit--
+			if params.limit < 0 {
+				break
+			}
+
+			ret = append(ret, obj)
 		}
 
-		params.limit--
-		if params.limit < 0 {
-			break
-		}
-
-		ret = append(ret, obj)
-	}
-
-	return ret, nil
+		return ret, nil
+	})
 }
 
 func match(obj any, filters []filter) (bool, error) {

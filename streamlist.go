@@ -47,7 +47,7 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 }
 
 func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Request, params *listParams) {
-	v, err := api.sb.List(r.Context(), cfg.typeName, cfg.factory)
+	v, err := api.list(cfg, r, params)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -69,12 +69,7 @@ func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Reque
 			continue
 
 		case list := <-v.Chan():
-			list2, err := filterList(cfg, r, params, list)
-			if err != nil {
-				return
-			}
-
-			err = writeEvent(w, "list", list2)
+			err = writeEvent(w, "list", list)
 			if err != nil {
 				return
 			}
@@ -83,7 +78,7 @@ func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Reque
 }
 
 func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Request, params *listParams) {
-	v, err := api.sb.List(r.Context(), cfg.typeName, cfg.factory)
+	v, err := api.list(cfg, r, params)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -107,14 +102,9 @@ func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Reque
 			return
 
 		case list := <-v.Chan():
-			list2, err := filterList(cfg, r, params, list)
-			if err != nil {
-				return
-			}
-
 			cur := map[string]any{}
 
-			for _, obj := range list2 {
+			for _, obj := range list {
 				objMD := metadata.GetMetadata(obj)
 
 				lastObj, found := last[objMD.ID]
