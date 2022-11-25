@@ -77,6 +77,8 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	api.router.ServeHTTP(w, r)
 }
 
+// TODO: Add standard HTTP error handling that returns JSON
+
 func (api *API) registerHandlers(base string, cfg *config) {
 	api.router.HandleFunc(
 		base,
