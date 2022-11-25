@@ -109,11 +109,16 @@ func parseListParams(params url.Values) (*listParams, error) {
 }
 
 func (api *API) list(cfg *config, r *http.Request, params *listParams) ([]any, error) {
-	list, err := api.sb.List(cfg.typeName, cfg.factory)
+	v, err := api.sb.List(r.Context(), cfg.typeName, cfg.factory)
 	if err != nil {
 		return nil, err
 	}
 
+	return filterList(cfg, r, params, <-v.Chan())
+}
+
+func filterList(cfg *config, r *http.Request, params *listParams, list []any) ([]any, error) {
+	// TODO: Replace filterList() with FilterViews
 	inter := []any{}
 
 	for _, obj := range list {
@@ -136,6 +141,8 @@ func (api *API) list(cfg *config, r *http.Request, params *listParams) ([]any, e
 	}
 
 	for _, srt := range params.sorts {
+		var err error
+
 		switch {
 		case strings.HasPrefix(srt, "+"):
 			err = path.Sort(inter, strings.TrimPrefix(srt, "+"))
