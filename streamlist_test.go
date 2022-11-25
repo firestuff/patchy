@@ -131,7 +131,6 @@ func TestStreamList(t *testing.T) {
 }
 
 func TestStreamListDiff(t *testing.T) {
-	// TODO: Test filter/sort in diff mode
 	t.Parallel()
 
 	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
@@ -170,6 +169,21 @@ func TestStreamListDiff(t *testing.T) {
 
 		scan := bufio.NewScanner(body)
 
+		resp2, err := c.R().
+			SetDoNotParseResponse(true).
+			SetHeader("Accept", "text/event-stream").
+			SetQueryParam("_stream", "diff").
+			SetQueryParam("_sort", "text").
+			SetQueryParam("_limit", "1").
+			Get(fmt.Sprintf("%s/testtype", baseURL))
+		require.Nil(t, err)
+		require.False(t, resp2.IsError())
+
+		body2 := resp2.RawBody()
+		defer body2.Close()
+
+		scan2 := bufio.NewScanner(body2)
+
 		obj1 := testType{}
 
 		eventType, err := readEvent(scan, &obj1)
@@ -182,6 +196,11 @@ func TestStreamListDiff(t *testing.T) {
 		require.Nil(t, err)
 		require.Equal(t, "add", eventType)
 		require.ElementsMatch(t, []string{"foo", "bar"}, []string{obj1.Text, obj2.Text})
+
+		eventType, err = readEvent(scan2, &obj1)
+		require.Nil(t, err)
+		require.Equal(t, "add", eventType)
+		require.Equal(t, "bar", obj1.Text)
 
 		resp, err = c.R().
 			SetBody(&testType{
@@ -198,12 +217,36 @@ func TestStreamListDiff(t *testing.T) {
 		require.Equal(t, created2.ID, obj1.ID)
 		require.Equal(t, "zig", obj1.Text)
 
+		eventType, err = readEvent(scan2, &obj1)
+		require.Nil(t, err)
+		require.Equal(t, "add", eventType)
+		require.Equal(t, created1.ID, obj1.ID)
+		require.Equal(t, "foo", obj1.Text)
+
+		eventType, err = readEvent(scan2, &obj1)
+		require.Nil(t, err)
+		require.Equal(t, "remove", eventType)
+		require.Equal(t, created2.ID, obj1.ID)
+		require.Equal(t, "bar", obj1.Text)
+
 		resp, err = c.R().
 			Delete(fmt.Sprintf("%s/testtype/%s", baseURL, created1.ID))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
 		eventType, err = readEvent(scan, &obj1)
+		require.Nil(t, err)
+		require.Equal(t, "remove", eventType)
+		require.Equal(t, created1.ID, obj1.ID)
+		require.Equal(t, "foo", obj1.Text)
+
+		eventType, err = readEvent(scan2, &obj1)
+		require.Nil(t, err)
+		require.Equal(t, "add", eventType)
+		require.Equal(t, created2.ID, obj1.ID)
+		require.Equal(t, "zig", obj1.Text)
+
+		eventType, err = readEvent(scan2, &obj1)
 		require.Nil(t, err)
 		require.Equal(t, "remove", eventType)
 		require.Equal(t, created1.ID, obj1.ID)

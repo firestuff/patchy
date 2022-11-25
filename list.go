@@ -163,23 +163,27 @@ func filterList(cfg *config, r *http.Request, params *listParams, in view.ReadVi
 
 		ret := []any{}
 
+		after := params.after
+		offset := params.offset
+		limit := params.limit
+
 		for _, obj := range inter {
-			if params.after != "" {
-				if metadata.GetMetadata(obj).ID == params.after {
-					params.after = ""
+			if after != "" {
+				if metadata.GetMetadata(obj).ID == after {
+					after = ""
 				}
 
 				continue
 			}
 
-			if params.offset > 0 {
-				params.offset--
+			if offset > 0 {
+				offset--
 
 				continue
 			}
 
-			params.limit--
-			if params.limit < 0 {
+			limit--
+			if limit < 0 {
 				break
 			}
 
