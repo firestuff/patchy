@@ -22,8 +22,10 @@ linters:
     # leave these disabled
     - containedctx
     - cyclop
+    - deadcode
     - dupl
     - exhaustivestruct
+    - exhaustruct
     - forbidigo
     - forcetypeassert
     - funlen
@@ -33,10 +35,13 @@ linters:
     - godox
     - golint
     - gomnd
+    - ifshort
     - lll
     - maligned
     - nestif
     - nlreturn
+    - nosnakecase
     - scopelint
     - thelper
+    - varcheck
     - varnamelen

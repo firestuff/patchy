@@ -12,6 +12,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/firestuff/patchy"
 	"github.com/go-resty/resty/v2"
@@ -38,7 +39,8 @@ func withAPI(t *testing.T, cb func(*testing.T, *patchy.API, string, *resty.Clien
 	require.Nil(t, err)
 
 	srv := &http.Server{
-		Handler: mux,
+		Handler:           mux,
+		ReadHeaderTimeout: 1 * time.Second,
 	}
 
 	go func() {
