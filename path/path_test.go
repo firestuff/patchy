@@ -15,6 +15,7 @@ type testType1 struct {
 	Float64 float64
 	String  string `json:"string2,omitempty"`
 	Bool    bool   `json:"bool2"`
+	BoolP   *bool
 
 	Ints     []int
 	Int64s   []int64

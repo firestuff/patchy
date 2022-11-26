@@ -21,11 +21,10 @@ func getAny(obj any, path string) (any, error) {
 func getAnyRecursive(v reflect.Value, parts []string, prev []string) (any, error) {
 	if v.Kind() == reflect.Pointer {
 		if v.IsNil() {
-			// Not an error, just a lack of a result
-			return nil, nil
+			v = reflect.Zero(v.Type().Elem())
+		} else {
+			v = reflect.Indirect(v)
 		}
-
-		v = reflect.Indirect(v)
 	}
 
 	if len(parts) == 0 {

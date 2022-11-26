@@ -200,6 +200,18 @@ func TestEqualBool(t *testing.T) {
 	}, "bool2", "false")
 	require.Nil(t, err)
 	require.False(t, match)
+
+	boolp := true
+
+	match, err = path.Equal(&testType1{
+		BoolP: &boolp,
+	}, "boolp", "true")
+	require.Nil(t, err)
+	require.True(t, match)
+
+	match, err = path.Equal(&testType1{}, "boolp", "false")
+	require.Nil(t, err)
+	require.True(t, match)
 }
 
 func TestEqualInts(t *testing.T) {
