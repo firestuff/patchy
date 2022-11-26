@@ -102,7 +102,8 @@ func (sb *StoreBus) List(ctx context.Context, t string, factory func() any) (*vi
 
 			err = ret.Update(l)
 			if err != nil {
-				break
+				// Update() closes the channel on failure
+				return
 			}
 		}
 
