@@ -75,6 +75,51 @@ func getField(v reflect.Value, name string) reflect.Value {
 	return reflect.Value{}
 }
 
+func Set(obj any, path string, val string) error {
+	parts := strings.Split(path, ".")
+	v := reflect.ValueOf(obj)
+
+	return setRecursive(v, parts, []string{}, val)
+}
+
+func setRecursive(v reflect.Value, parts []string, prev []string, val string) error {
+	if v.Kind() == reflect.Pointer {
+		if v.IsNil() {
+			v.Set(reflect.New(v.Type().Elem()))
+		}
+
+		v = reflect.Indirect(v)
+	}
+
+	if len(parts) == 0 {
+		n, err := parse(val, v.Interface())
+		if err != nil {
+			return err
+		}
+
+		v.Set(reflect.ValueOf(n))
+
+		return nil
+	}
+
+	if v.Kind() != reflect.Struct {
+		return fmt.Errorf("%s: %w", strings.Join(prev, "."), errNotAStruct)
+	}
+
+	part := parts[0]
+
+	sub := getField(v, part)
+	if !sub.IsValid() {
+		return fmt.Errorf("%s: %w", errorPath(prev, part), errUnknownFieldName)
+	}
+
+	newPrev := []string{}
+	copy(newPrev, prev)
+	newPrev = append(newPrev, part)
+
+	return setRecursive(sub, parts[1:], newPrev, val)
+}
+
 func errorPath(prev []string, part string) string {
 	if len(prev) == 0 {
 		return part
