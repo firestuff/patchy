@@ -84,6 +84,26 @@ func parseFloat32(str string) (float32, error) {
 	return float32(val), err
 }
 
+type timeFormat struct {
+	format    string
+	precision time.Duration
+}
+
+var timeFormats = []timeFormat{
+	{
+		format:    "2006-01-02-07:00",
+		precision: 24 * time.Hour,
+	},
+	{
+		format:    "2006-01-02T15:04:05Z",
+		precision: 1 * time.Second,
+	},
+	{
+		format:    "2006-01-02T15:04:05-07:00",
+		precision: 1 * time.Second,
+	},
+}
+
 func parseTime(str string) (*timeVal, error) {
 	if strings.ToLower(str) == "now" {
 		return &timeVal{
@@ -92,18 +112,15 @@ func parseTime(str string) (*timeVal, error) {
 		}, nil
 	}
 
-	for _, layout := range []string{
-		"2006-01-02T15:04:05Z",
-		"2006-01-02T15:04:05-07:00",
-	} {
-		tm, err := time.Parse(layout, str)
+	for _, format := range timeFormats {
+		tm, err := time.Parse(format.format, str)
 		if err != nil {
 			continue
 		}
 
 		return &timeVal{
 			time:      tm,
-			precision: 1 * time.Second,
+			precision: format.precision,
 		}, nil
 	}
 

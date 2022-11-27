@@ -11,6 +11,7 @@ func equal(v1, v2 any) bool {
 	case time.Time:
 		tm := v1.(*timeVal)
 
+		// TODO: Replace Truncate() with a timezone-aware version
 		return tm.time.Equal(v2t.Truncate(tm.precision))
 
 	default:
