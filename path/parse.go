@@ -93,6 +93,8 @@ var timeFormats = []timeFormat{
 	{
 		format:    "2006-01-02-07:00",
 		precision: 24 * time.Hour,
+		// TODO: Support field annotation to change start vs end of day
+		// TODO: Support timezone context passed down to allow naked date
 	},
 	{
 		format:    "2006-01-02T15:04:05Z",
