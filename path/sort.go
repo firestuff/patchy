@@ -11,14 +11,14 @@ import (
 
 func Sort(objs any, path string) error {
 	as := newAnySlice(objs, path)
-	sort.Sort(as)
+	sort.Stable(as)
 
 	return as.Error()
 }
 
 func SortReverse(objs any, path string) error {
 	as := newAnySlice(objs, path)
-	sort.Sort(sort.Reverse(as))
+	sort.Stable(sort.Reverse(as))
 
 	return as.Error()
 }
