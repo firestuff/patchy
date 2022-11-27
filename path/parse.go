@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/civil"
@@ -84,6 +85,13 @@ func parseFloat32(str string) (float32, error) {
 }
 
 func parseTime(str string) (*timeVal, error) {
+	if strings.ToLower(str) == "now" {
+		return &timeVal{
+			time:      time.Now(),
+			precision: 1 * time.Nanosecond,
+		}, nil
+	}
+
 	for _, layout := range []string{
 		"2006-01-02T15:04:05Z",
 		"2006-01-02T15:04:05-07:00",
