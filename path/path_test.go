@@ -51,6 +51,10 @@ func TestSet(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, int64(1234), tt1.Int64)
 
+	err = path.Set(tt1, "time", "2022-11-01-08:00")
+	require.Nil(t, err)
+	require.Equal(t, int64(1667289600), tt1.Time.Unix())
+
 	tt2 := &testType2{}
 	err = path.Set(tt2, "tt1p.bool2", "true")
 	require.Nil(t, err)

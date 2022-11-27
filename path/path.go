@@ -97,6 +97,10 @@ func setRecursive(v reflect.Value, parts []string, prev []string, val string) er
 			return err
 		}
 
+		if _, ok := n.(*timeVal); ok {
+			n = n.(*timeVal).time
+		}
+
 		v.Set(reflect.ValueOf(n))
 
 		return nil
