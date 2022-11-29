@@ -1,8 +1,11 @@
 package patchy
 
 import (
+	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"reflect"
 	"strings"
 
@@ -35,6 +38,12 @@ func NewAPI(st store.Storer) (*API, error) {
 
 	api.potency = potency.NewPotency(st)
 	api.router.Use(api.potency.Middleware)
+
+	api.router.HandleFunc(
+		"/_debug",
+		func(w http.ResponseWriter, r *http.Request) { api.handleDebug(w, r) },
+	).
+		Methods("GET")
 
 	return api, nil
 }
@@ -111,4 +120,40 @@ func (api *API) registerHandlers(base string, cfg *config) {
 		func(w http.ResponseWriter, r *http.Request) { api.get(cfg, w, r) },
 	).
 		Methods("GET")
+}
+
+func (api *API) handleDebug(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
+
+	enc := json.NewEncoder(w)
+	enc.SetEscapeHTML(false)
+	enc.SetIndent("", "\t")
+
+	hostname, _ := os.Hostname()
+
+	if r.TLS == nil {
+		r.TLS = &tls.ConnectionState{}
+	}
+
+	enc.Encode(map[string]any{ //nolint: errcheck,errchkjson
+		"server": map[string]any{
+			"hostname": hostname,
+		},
+		"ip": map[string]any{
+			"remoteaddr": r.RemoteAddr,
+		},
+		"http": map[string]any{
+			"proto":  r.Proto,
+			"method": r.Method,
+			"header": r.Header,
+			"url":    r.URL.String(),
+		},
+		"tls": map[string]any{
+			"version":            r.TLS.Version,
+			"didresume":          r.TLS.DidResume,
+			"ciphersuite":        r.TLS.CipherSuite,
+			"negotiatedprotocol": r.TLS.NegotiatedProtocol,
+			"servername":         r.TLS.ServerName,
+		},
+	})
 }
