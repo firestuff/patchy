@@ -68,6 +68,7 @@ func NewTLSConfig(hosts []string) (*tls.Config, error) {
 	conf := &tls.Config{
 		Certificates: []tls.Certificate{cert},
 		MinVersion:   tls.VersionTLS13,
+		NextProtos:   []string{"h2"},
 	}
 
 	return conf, nil
