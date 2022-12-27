@@ -17,13 +17,13 @@ import (
 func TestCert(t *testing.T) {
 	t.Parallel()
 
-	conf, err := selfcert.NewTLSConfigFromHostPort("[::]:0")
+	conf, err := selfcert.NewTLSConfigFromHostPort("localhost:0")
 	require.Nil(t, err)
 
-	listener, err := tls.Listen("tcp", "[::]:0", conf)
+	listener, err := tls.Listen("tcp", "localhost:0", conf)
 	require.Nil(t, err)
 
-	baseURL := fmt.Sprintf("https://[::1]:%d/", listener.Addr().(*net.TCPAddr).Port)
+	baseURL := fmt.Sprintf("https://localhost:%d/", listener.Addr().(*net.TCPAddr).Port)
 
 	srv := &http.Server{
 		ReadHeaderTimeout: 1 * time.Second,
