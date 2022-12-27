@@ -73,3 +73,12 @@ func NewTLSConfig(hosts []string) (*tls.Config, error) {
 
 	return conf, nil
 }
+
+func NewTLSConfigFromHostPort(hostport string) (*tls.Config, error) {
+	host, _, err := net.SplitHostPort(hostport)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTLSConfig([]string{host})
+}

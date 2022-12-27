@@ -17,7 +17,7 @@ import (
 func TestCert(t *testing.T) {
 	t.Parallel()
 
-	conf, err := selfcert.NewTLSConfig([]string{"junk"})
+	conf, err := selfcert.NewTLSConfigFromHostPort("[::]:0")
 	require.Nil(t, err)
 
 	listener, err := tls.Listen("tcp", "[::]:0", conf)
