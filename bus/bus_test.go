@@ -22,12 +22,12 @@ func TestBus(t *testing.T) {
 		},
 	})
 
-	ev1a := view.NewEphemeralViewEmpty[any](context.TODO())
-	ev2a := view.NewEphemeralViewEmpty[any](context.TODO())
-	ev2b := view.NewEphemeralViewEmpty[any](context.TODO())
-	ev2c := view.NewEphemeralViewEmpty[any](context.TODO())
-	evt1 := view.NewEphemeralViewEmpty[any](context.TODO())
-	evt2 := view.NewEphemeralViewEmpty[any](context.TODO())
+	ev1a := view.NewEphemeralViewEmpty[any](context.Background())
+	ev2a := view.NewEphemeralViewEmpty[any](context.Background())
+	ev2b := view.NewEphemeralViewEmpty[any](context.Background())
+	ev2c := view.NewEphemeralViewEmpty[any](context.Background())
+	evt1 := view.NewEphemeralViewEmpty[any](context.Background())
+	evt2 := view.NewEphemeralViewEmpty[any](context.Background())
 
 	// Complex subscription layout
 	bus.SubscribeKey("busTest1", "id-overlap", ev1a)
@@ -100,12 +100,12 @@ func TestBusDelete(t *testing.T) {
 
 	bus := bus.NewBus()
 
-	ev, err := view.NewEphemeralView[any](context.TODO(), nil)
+	ev, err := view.NewEphemeralView[any](context.Background(), nil)
 	require.Nil(t, err)
 	<-ev.Chan()
 	bus.SubscribeKey("busTest", "id1", ev)
 
-	evt, err := view.NewEphemeralView[any](context.TODO(), nil)
+	evt, err := view.NewEphemeralView[any](context.Background(), nil)
 	require.Nil(t, err)
 	<-evt.Chan()
 	bus.SubscribeType("busTest", evt)
