@@ -1,11 +1,14 @@
 package patchy
 
 import (
+	"fmt"
 	"net/http"
 	"sync"
 
 	"github.com/firestuff/patchy/metadata"
 )
+
+var ErrMissingAuthCheck = fmt.Errorf("missing auth check")
 
 type config struct {
 	typeName string
@@ -84,4 +87,28 @@ func newConfig[T any](typeName string) *config {
 	}
 
 	return cfg
+}
+
+func (cfg *config) isSafe() error {
+	if cfg.mayCreate == nil {
+		return fmt.Errorf("%s: MayCreate: %w", cfg.typeName, ErrMissingAuthCheck)
+	}
+
+	if cfg.mayReplace == nil {
+		return fmt.Errorf("%s: MayReplace: %w", cfg.typeName, ErrMissingAuthCheck)
+	}
+
+	if cfg.mayUpdate == nil {
+		return fmt.Errorf("%s: MayUpdate: %w", cfg.typeName, ErrMissingAuthCheck)
+	}
+
+	if cfg.mayDelete == nil {
+		return fmt.Errorf("%s: MayDelete: %w", cfg.typeName, ErrMissingAuthCheck)
+	}
+
+	if cfg.mayRead == nil {
+		return fmt.Errorf("%s: MayRead: %w", cfg.typeName, ErrMissingAuthCheck)
+	}
+
+	return nil
 }

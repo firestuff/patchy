@@ -94,3 +94,25 @@ type testType struct {
 	Text string `json:"text"`
 	Num  int64  `json:"num"`
 }
+
+func TestCheckSafe(t *testing.T) {
+	t.Parallel()
+
+	dir, err := os.MkdirTemp("", "")
+	require.Nil(t, err)
+
+	defer os.RemoveAll(dir)
+
+	api, err := patchy.NewFileStoreAPI(dir)
+	require.Nil(t, err)
+
+	require.Nil(t, api.IsSafe())
+
+	patchy.Register[testType](api)
+
+	require.ErrorIs(t, api.IsSafe(), patchy.ErrMissingAuthCheck)
+
+	require.Panics(t, func() {
+		api.CheckSafe()
+	})
+}

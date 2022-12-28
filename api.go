@@ -61,6 +61,24 @@ func RegisterName[T any](api *API, typeName string) {
 	api.registerHandlers(fmt.Sprintf("/%s", cfg.typeName), cfg)
 }
 
+func (api *API) IsSafe() error {
+	for _, cfg := range api.registry {
+		err := cfg.isSafe()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (api *API) CheckSafe() {
+	err := api.IsSafe()
+	if err != nil {
+		panic(err)
+	}
+}
+
 func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	api.router.ServeHTTP(w, r)
 }
