@@ -3,7 +3,7 @@ package potency_test
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -105,7 +105,7 @@ func withServer(t *testing.T, cb func(*testing.T, string, *resty.Client)) {
 	router := mux.NewRouter()
 	router.Use(p.Middleware)
 	router.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, err := ioutil.ReadAll(r.Body)
+		_, err := io.ReadAll(r.Body)
 		require.Nil(t, err)
 
 		_, err = w.Write([]byte(uuid.NewString()))

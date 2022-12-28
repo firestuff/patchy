@@ -30,6 +30,7 @@ linters:
     - maligned
     - nestif
     - nlreturn
+    - nolintlint
     - nosnakecase
     - scopelint
     - structcheck
