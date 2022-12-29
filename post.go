@@ -8,6 +8,18 @@ import (
 )
 
 func (api *API) post(cfg *config, w http.ResponseWriter, r *http.Request) {
+	// TODO: Parse semicolon params
+	switch r.Header.Get("Content-Type") {
+	case "":
+		fallthrough
+	case "application/json":
+		break
+
+	default:
+		http.Error(w, "unknown Content-Type", http.StatusUnsupportedMediaType)
+		return
+	}
+
 	obj := cfg.factory()
 
 	err := readJSON(r, obj)

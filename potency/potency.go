@@ -14,7 +14,8 @@ import (
 )
 
 type Potency struct {
-	store store.Storer
+	store   store.Storer
+	handler http.Handler
 
 	inProgress map[string]bool
 	mu         sync.Mutex
@@ -34,101 +35,101 @@ type savedResult struct {
 
 var errConflict = fmt.Errorf("conflict")
 
-func NewPotency(store store.Storer) *Potency {
+func NewPotency(store store.Storer, handler http.Handler) *Potency {
 	return &Potency{
 		store:      store,
+		handler:    handler,
 		inProgress: map[string]bool{},
 	}
 }
 
-func (p *Potency) Middleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		val := r.Header.Get("Idempotency-Key")
-		if val == "" {
-			next.ServeHTTP(w, r)
+func (p *Potency) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	val := r.Header.Get("Idempotency-Key")
+	if val == "" {
+		p.handler.ServeHTTP(w, r)
+		return
+	}
 
+	if len(val) < 2 || !strings.HasPrefix(val, `"`) || !strings.HasSuffix(val, `"`) {
+		http.Error(w, "Invalid Idempotency-Key", http.StatusBadRequest)
+		return
+	}
+
+	key := val[1 : len(val)-1]
+
+	rd, err := p.store.Read("idempotency-key", key, func() any { return &savedResult{} })
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if rd != nil {
+		saved := rd.(*savedResult)
+
+		if r.Method != saved.Method {
+			http.Error(w, "Idempotency-Key method mismatch", http.StatusBadRequest)
 			return
 		}
 
-		if len(val) < 2 || !strings.HasPrefix(val, `"`) || !strings.HasSuffix(val, `"`) {
-			http.Error(w, "Invalid Idempotency-Key", http.StatusBadRequest)
-
+		if r.URL.String() != saved.URL {
+			http.Error(w, "Idempotency-Key URL mismatch", http.StatusBadRequest)
 			return
 		}
 
-		key := val[1 : len(val)-1]
+		h := sha256.New()
 
-		rd, err := p.store.Read("idempotency-key", key, func() any { return &savedResult{} })
+		_, err = io.Copy(h, r.Body)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		if rd != nil {
-			saved := rd.(*savedResult)
-
-			if r.Method != saved.Method {
-				http.Error(w, "Idempotency-Key method mismatch", http.StatusBadRequest)
-				return
-			}
-
-			if r.URL.String() != saved.URL {
-				http.Error(w, "Idempotency-Key URL mismatch", http.StatusBadRequest)
-				return
-			}
-
-			h := sha256.New()
-			_, err = io.Copy(h, r.Body)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-			}
-			if hex.EncodeToString(h.Sum(nil)) != saved.Sha256 {
-				http.Error(w, "Idempotency-Key request body mismatch", http.StatusUnprocessableEntity)
-				return
-			}
-
-			// TODO: Ability to verify specified headers match (e.g. authentication token) before returning
-
-			w.WriteHeader(saved.StatusCode)
-			_, _ = w.Write(saved.Result)
-
+		if hex.EncodeToString(h.Sum(nil)) != saved.Sha256 {
+			http.Error(w, "Idempotency-Key request body mismatch", http.StatusUnprocessableEntity)
 			return
 		}
 
-		// Store miss, proceed to normal execution with interception
-		err = p.lockKey(key)
-		if err != nil {
-			http.Error(w, "Conflict", http.StatusConflict)
-			return
-		}
-		defer p.unlockKey(key)
+		// TODO: Ability to verify specified headers match (e.g. authentication token) before returning
 
-		bi := newBodyIntercept(r.Body)
-		r.Body = bi
+		w.WriteHeader(saved.StatusCode)
+		_, _ = w.Write(saved.Result)
 
-		rwi := newResponseWriterIntercept(w)
-		w = rwi
+		return
+	}
 
-		next.ServeHTTP(w, r)
+	// Store miss, proceed to normal execution with interception
+	err = p.lockKey(key)
+	if err != nil {
+		http.Error(w, "Conflict", http.StatusConflict)
+		return
+	}
 
-		save := &savedResult{
-			Metadata: metadata.Metadata{
-				ID: key,
-			},
+	defer p.unlockKey(key)
 
-			Method: r.Method,
-			URL:    r.URL.String(),
-			Sha256: hex.EncodeToString(bi.sha256.Sum(nil)),
+	bi := newBodyIntercept(r.Body)
+	r.Body = bi
 
-			StatusCode: rwi.statusCode,
-			Header:     rwi.Header(),
-			Result:     rwi.buf.Bytes(),
-		}
+	rwi := newResponseWriterIntercept(w)
+	w = rwi
 
-		// Can't really do anything with the error
-		_ = p.store.Write("idempotency-key", save)
-	})
+	p.handler.ServeHTTP(w, r)
+
+	save := &savedResult{
+		Metadata: metadata.Metadata{
+			ID: key,
+		},
+
+		Method: r.Method,
+		URL:    r.URL.String(),
+		Sha256: hex.EncodeToString(bi.sha256.Sum(nil)),
+
+		StatusCode: rwi.statusCode,
+		Header:     rwi.Header(),
+		Result:     rwi.buf.Bytes(),
+	}
+
+	// Can't really do anything with the error
+	_ = p.store.Write("idempotency-key", save)
 }
 
 func (p *Potency) lockKey(key string) error {

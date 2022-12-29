@@ -3,13 +3,9 @@ package patchy
 import (
 	"net/http"
 	"time"
-
-	"github.com/gorilla/mux"
 )
 
-func (api *API) stream(cfg *config, w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-
+func (api *API) stream(cfg *config, id string, w http.ResponseWriter, r *http.Request) {
 	if _, ok := w.(http.Flusher); !ok {
 		http.Error(w, "Streaming not supported", http.StatusBadRequest)
 		return
@@ -18,7 +14,7 @@ func (api *API) stream(cfg *config, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 
-	v, err := api.sb.Read(r.Context(), cfg.typeName, vars["id"], cfg.factory)
+	v, err := api.sb.Read(r.Context(), cfg.typeName, id, cfg.factory)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
