@@ -7,18 +7,6 @@ import (
 )
 
 func (api *API) put(cfg *config, id string, w http.ResponseWriter, r *http.Request) {
-	// TODO: Parse semicolon params
-	switch r.Header.Get("Content-Type") {
-	case "":
-		fallthrough
-	case "application/json":
-		break
-
-	default:
-		http.Error(w, "unknown Content-Type", http.StatusUnsupportedMediaType)
-		return
-	}
-
 	cfg.mu.Lock()
 	defer cfg.mu.Unlock()
 
@@ -40,9 +28,7 @@ func (api *API) put(cfg *config, id string, w http.ResponseWriter, r *http.Reque
 
 	replace := cfg.factory()
 
-	err = readJSON(r, replace)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	if !readJSON(w, r, replace) {
 		return
 	}
 
