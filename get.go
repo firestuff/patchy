@@ -2,14 +2,10 @@ package patchy
 
 import (
 	"net/http"
-
-	"github.com/gorilla/mux"
 )
 
-func (api *API) get(cfg *config, w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-
-	v, err := api.sb.Read(r.Context(), cfg.typeName, vars["id"], cfg.factory)
+func (api *API) get(cfg *config, id string, w http.ResponseWriter, r *http.Request) {
+	v, err := api.sb.Read(r.Context(), cfg.typeName, id, cfg.factory)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

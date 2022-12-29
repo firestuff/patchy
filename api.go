@@ -13,11 +13,11 @@ import (
 	"github.com/firestuff/patchy/potency"
 	"github.com/firestuff/patchy/store"
 	"github.com/firestuff/patchy/storebus"
-	"github.com/gorilla/mux"
+	"github.com/julienschmidt/httprouter"
 )
 
 type API struct {
-	router   *mux.Router
+	router   *httprouter.Router
 	sb       *storebus.StoreBus
 	potency  *potency.Potency
 	registry map[string]*config
@@ -30,20 +30,19 @@ func NewFileStoreAPI(root string) (*API, error) {
 }
 
 func NewAPI(st store.Storer) (*API, error) {
+	router := httprouter.New()
+
 	api := &API{
-		router:   mux.NewRouter(),
+		router:   router,
 		sb:       storebus.NewStoreBus(st),
+		potency:  potency.NewPotency(st, router),
 		registry: map[string]*config{},
 	}
 
-	api.potency = potency.NewPotency(st)
-	api.router.Use(api.potency.Middleware)
-
-	api.router.HandleFunc(
+	api.router.GET(
 		"/_debug",
-		func(w http.ResponseWriter, r *http.Request) { api.handleDebug(w, r) },
-	).
-		Methods("GET")
+		func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) { api.handleDebug(w, r) },
+	)
 
 	return api, nil
 }
@@ -80,64 +79,81 @@ func (api *API) CheckSafe() {
 }
 
 func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	api.router.ServeHTTP(w, r)
+	api.potency.ServeHTTP(w, r)
 }
 
 // TODO: Add standard HTTP error handling that returns JSON
 
 func (api *API) registerHandlers(base string, cfg *config) {
-	api.router.HandleFunc(
+	api.router.GET(
 		base,
-		func(w http.ResponseWriter, r *http.Request) { api.streamList(cfg, w, r) },
-	).
-		Methods("GET").
-		Headers("Accept", "text/event-stream")
+		func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) { api.routeListGET(cfg, w, r) },
+	)
 
-	api.router.HandleFunc(
+	api.router.POST(
 		base,
-		func(w http.ResponseWriter, r *http.Request) { api.getList(cfg, w, r) },
-	).
-		Methods("GET")
+		func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) { api.post(cfg, w, r) },
+	)
 
-	api.router.HandleFunc(
-		base,
-		func(w http.ResponseWriter, r *http.Request) { api.post(cfg, w, r) },
-	).
-		Methods("POST").
-		Headers("Content-Type", "application/json")
+	single := fmt.Sprintf("%s/:id", base)
 
-	api.router.HandleFunc(
-		fmt.Sprintf("%s/{id}", base),
-		func(w http.ResponseWriter, r *http.Request) { api.put(cfg, w, r) },
-	).
-		Methods("PUT").
-		Headers("Content-Type", "application/json")
+	api.router.PUT(
+		single,
+		func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) { api.put(cfg, ps[0].Value, w, r) },
+	)
 
-	api.router.HandleFunc(
-		fmt.Sprintf("%s/{id}", base),
-		func(w http.ResponseWriter, r *http.Request) { api.patch(cfg, w, r) },
-	).
-		Methods("PATCH").
-		Headers("Content-Type", "application/json")
+	api.router.PATCH(
+		single,
+		func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) { api.patch(cfg, ps[0].Value, w, r) },
+	)
 
-	api.router.HandleFunc(
-		fmt.Sprintf("%s/{id}", base),
-		func(w http.ResponseWriter, r *http.Request) { api.delete(cfg, w, r) },
-	).
-		Methods("DELETE")
+	api.router.DELETE(
+		single,
+		func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) { api.delete(cfg, ps[0].Value, w, r) },
+	)
 
-	api.router.HandleFunc(
-		fmt.Sprintf("%s/{id}", base),
-		func(w http.ResponseWriter, r *http.Request) { api.stream(cfg, w, r) },
-	).
-		Methods("GET").
-		Headers("Accept", "text/event-stream")
+	api.router.GET(
+		single,
+		func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+			api.routeSingleGET(cfg, ps[0].Value, w, r)
+		},
+	)
+}
 
-	api.router.HandleFunc(
-		fmt.Sprintf("%s/{id}", base),
-		func(w http.ResponseWriter, r *http.Request) { api.get(cfg, w, r) },
-	).
-		Methods("GET")
+func (api *API) routeListGET(cfg *config, w http.ResponseWriter, r *http.Request) {
+	// TODO: Parse Accept preference lists
+	switch r.Header.Get("Accept") {
+	case "text/event-stream":
+		api.streamList(cfg, w, r)
+
+	case "":
+		fallthrough
+	case "*/*":
+		fallthrough
+	case "application/json":
+		api.getList(cfg, w, r)
+
+	default:
+		http.Error(w, "unknown Accept type", http.StatusNotAcceptable)
+	}
+}
+
+func (api *API) routeSingleGET(cfg *config, id string, w http.ResponseWriter, r *http.Request) {
+	// TODO: Parse Accept preference lists
+	switch r.Header.Get("Accept") {
+	case "text/event-stream":
+		api.stream(cfg, id, w, r)
+
+	case "":
+		fallthrough
+	case "*/*":
+		fallthrough
+	case "application/json":
+		api.get(cfg, id, w, r)
+
+	default:
+		http.Error(w, "unknown Accept type", http.StatusNotAcceptable)
+	}
 }
 
 func (api *API) handleDebug(w http.ResponseWriter, r *http.Request) {

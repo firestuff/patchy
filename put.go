@@ -4,16 +4,25 @@ import (
 	"net/http"
 
 	"github.com/firestuff/patchy/metadata"
-	"github.com/gorilla/mux"
 )
 
-func (api *API) put(cfg *config, w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
+func (api *API) put(cfg *config, id string, w http.ResponseWriter, r *http.Request) {
+	// TODO: Parse semicolon params
+	switch r.Header.Get("Content-Type") {
+	case "":
+		fallthrough
+	case "application/json":
+		break
+
+	default:
+		http.Error(w, "unknown Content-Type", http.StatusUnsupportedMediaType)
+		return
+	}
 
 	cfg.mu.Lock()
 	defer cfg.mu.Unlock()
 
-	v, err := api.sb.Read(r.Context(), cfg.typeName, vars["id"], cfg.factory)
+	v, err := api.sb.Read(r.Context(), cfg.typeName, id, cfg.factory)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -41,7 +50,7 @@ func (api *API) put(cfg *config, w http.ResponseWriter, r *http.Request) {
 	metadata.ClearMetadata(replace)
 	objMD := metadata.GetMetadata(obj)
 	replaceMD := metadata.GetMetadata(replace)
-	replaceMD.ID = vars["id"]
+	replaceMD.ID = id
 	replaceMD.Generation = objMD.Generation + 1
 
 	if cfg.mayReplace != nil {

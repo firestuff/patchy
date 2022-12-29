@@ -14,7 +14,6 @@ import (
 	"github.com/firestuff/patchy/store"
 	"github.com/go-resty/resty/v2"
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
 )
 
@@ -97,14 +96,13 @@ func withServer(t *testing.T, cb func(*testing.T, string, *resty.Client)) {
 	defer os.RemoveAll(dir)
 
 	store := store.NewFileStore(dir)
-	p := potency.NewPotency(store)
+	mux := http.NewServeMux()
+	p := potency.NewPotency(store, mux)
 
 	listener, err := net.Listen("tcp", "[::]:0")
 	require.Nil(t, err)
 
-	router := mux.NewRouter()
-	router.Use(p.Middleware)
-	router.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		_, err := io.ReadAll(r.Body)
 		require.Nil(t, err)
 
@@ -113,7 +111,7 @@ func withServer(t *testing.T, cb func(*testing.T, string, *resty.Client)) {
 	})
 
 	srv := &http.Server{
-		Handler:           router,
+		Handler:           p,
 		ReadHeaderTimeout: 1 * time.Second,
 	}
 
