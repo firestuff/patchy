@@ -8,11 +8,29 @@ import (
 	"github.com/firestuff/patchy/metadata"
 )
 
-func readJSON(r *http.Request, obj any) error {
+func readJSON(w http.ResponseWriter, r *http.Request, obj any) bool {
+	// TODO: Parse semicolon params
+	switch r.Header.Get("Content-Type") {
+	case "":
+		fallthrough
+	case "application/json":
+		break
+
+	default:
+		http.Error(w, "unknown Content-Type", http.StatusUnsupportedMediaType)
+		return false
+	}
+
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 
-	return dec.Decode(obj)
+	err := dec.Decode(obj)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return false
+	}
+
+	return true
 }
 
 func writeJSON(w http.ResponseWriter, obj any) error {

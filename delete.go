@@ -30,4 +30,6 @@ func (api *API) delete(cfg *config, id string, w http.ResponseWriter, r *http.Re
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
