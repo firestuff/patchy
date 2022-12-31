@@ -14,19 +14,19 @@ func (api *API) getList(cfg *config, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	parsed, err := parseListParams(params)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	parsed, jse := parseListParams(params)
+	if jse != nil {
+		jse.Write(w)
 		return
 	}
 
-	v, err := api.list(cfg, r, parsed)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	v, jse := api.list(cfg, r, parsed)
+	if jse != nil {
+		jse.Write(w)
 		return
 	}
 
-	jse := jsrest.WriteList(w, <-v.Chan())
+	jse = jsrest.WriteList(w, <-v.Chan())
 	if jse != nil {
 		jse.Write(w)
 		return
