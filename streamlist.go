@@ -18,7 +18,7 @@ var (
 
 func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) {
 	if _, ok := w.(http.Flusher); !ok {
-		jse := jsrest.FromError(ErrStreamingNotSupported, http.StatusBadRequest)
+		jse := jsrest.FromError(ErrStreamingNotSupported, jsrest.StatusBadRequest)
 		jse.Write(w)
 
 		return
@@ -27,7 +27,7 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 	params, err := url.ParseQuery(r.URL.RawQuery)
 	if err != nil {
 		e := fmt.Errorf("failed to parse URL query: %w", err)
-		jse := jsrest.FromError(e, http.StatusBadRequest)
+		jse := jsrest.FromError(e, jsrest.StatusBadRequest)
 		jse.Write(w)
 
 		return
@@ -36,10 +36,9 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 	stream := params.Get("_stream")
 	params.Del("_stream")
 
-	parsed, err := parseListParams(params)
-	if err != nil {
-		// TODO: Make parseListParams return *jsrest.Error
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	parsed, jse := parseListParams(params)
+	if jse != nil {
+		jse.Write(w)
 		return
 	}
 
@@ -57,16 +56,15 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 
 	default:
 		e := fmt.Errorf("%s: %w", stream, ErrUnknownStreamFormat)
-		jse := jsrest.FromError(e, http.StatusBadRequest)
+		jse := jsrest.FromError(e, jsrest.StatusBadRequest)
 		jse.Write(w)
 	}
 }
 
 func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Request, params *listParams) {
-	// TODO: Make api.list return *jsrest.Error
-	v, err := api.list(cfg, r, params)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	v, jse := api.list(cfg, r, params)
+	if jse != nil {
+		jse.Write(w)
 		return
 	}
 
@@ -78,7 +76,7 @@ func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Reque
 			return
 
 		case <-ticker.C:
-			err = writeEvent(w, "heartbeat", emptyEvent)
+			err := writeEvent(w, "heartbeat", emptyEvent)
 			if err != nil {
 				return
 			}
@@ -86,7 +84,7 @@ func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Reque
 			continue
 
 		case list := <-v.Chan():
-			err = writeEvent(w, "list", list)
+			err := writeEvent(w, "list", list)
 			if err != nil {
 				return
 			}
@@ -95,9 +93,9 @@ func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Reque
 }
 
 func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Request, params *listParams) {
-	v, err := api.list(cfg, r, params)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	v, jse := api.list(cfg, r, params)
+	if jse != nil {
+		jse.Write(w)
 		return
 	}
 
@@ -108,7 +106,7 @@ func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Reque
 	for {
 		select {
 		case <-ticker.C:
-			err = writeEvent(w, "heartbeat", emptyEvent)
+			err := writeEvent(w, "heartbeat", emptyEvent)
 			if err != nil {
 				return
 			}
@@ -128,13 +126,13 @@ func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Reque
 				if found {
 					lastMD := metadata.GetMetadata(lastObj)
 					if objMD.ETag != lastMD.ETag {
-						err = writeEvent(w, "update", obj)
+						err := writeEvent(w, "update", obj)
 						if err != nil {
 							return
 						}
 					}
 				} else {
-					err = writeEvent(w, "add", obj)
+					err := writeEvent(w, "add", obj)
 					if err != nil {
 						return
 					}
@@ -150,7 +148,7 @@ func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Reque
 					continue
 				}
 
-				err = writeEvent(w, "remove", old)
+				err := writeEvent(w, "remove", old)
 				if err != nil {
 					return
 				}

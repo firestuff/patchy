@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/firestuff/patchy/jsrest"
 	"github.com/firestuff/patchy/metadata"
 	"github.com/firestuff/patchy/path"
 	"github.com/firestuff/patchy/view"
@@ -39,11 +40,11 @@ var (
 		"lt":  true,
 		"lte": true,
 	}
-	errInvalidFilterOp = errors.New("invalid filter operator")
-	errInvalidSort     = errors.New("invalid _sort")
+	ErrInvalidFilterOp = errors.New("invalid filter operator")
+	ErrInvalidSort     = errors.New("invalid _sort")
 )
 
-func parseListParams(params url.Values) (*listParams, error) {
+func parseListParams(params url.Values) (*listParams, *jsrest.Error) {
 	ret := &listParams{
 		limit:   math.MaxInt64,
 		sorts:   []string{},
@@ -55,7 +56,10 @@ func parseListParams(params url.Values) (*listParams, error) {
 	if limit := params.Get("_limit"); limit != "" {
 		ret.limit, err = strconv.ParseInt(limit, 10, 64)
 		if err != nil {
-			return nil, err
+			e := fmt.Errorf("failed to parse _limit value %s: %w", limit, err)
+			jse := jsrest.FromError(e, jsrest.StatusBadRequest)
+
+			return nil, jse
 		}
 
 		params.Del("_limit")
@@ -64,7 +68,10 @@ func parseListParams(params url.Values) (*listParams, error) {
 	if offset := params.Get("_offset"); offset != "" {
 		ret.offset, err = strconv.ParseInt(offset, 10, 64)
 		if err != nil {
-			return nil, err
+			e := fmt.Errorf("failed to parse _offset value %s: %w", offset, err)
+			jse := jsrest.FromError(e, jsrest.StatusBadRequest)
+
+			return nil, jse
 		}
 
 		params.Del("_offset")
@@ -78,7 +85,10 @@ func parseListParams(params url.Values) (*listParams, error) {
 	for i := len(sorts) - 1; i >= 0; i-- {
 		srt := sorts[i]
 		if len(srt) == 0 {
-			return nil, fmt.Errorf("%s: %w", srt, errInvalidSort)
+			e := fmt.Errorf("%s: %w", srt, ErrInvalidSort)
+			jse := jsrest.FromError(e, jsrest.StatusBadRequest)
+
+			return nil, jse
 		}
 
 		ret.sorts = append(ret.sorts, srt)
@@ -100,7 +110,10 @@ func parseListParams(params url.Values) (*listParams, error) {
 			}
 
 			if _, valid := validOps[f.op]; !valid {
-				return nil, fmt.Errorf("%s: %w", f.op, errInvalidFilterOp)
+				e := fmt.Errorf("%s: %w", f.op, ErrInvalidFilterOp)
+				jse := jsrest.FromError(e, jsrest.StatusBadRequest)
+
+				return nil, jse
 			}
 
 			ret.filters = append(ret.filters, f)
@@ -110,10 +123,13 @@ func parseListParams(params url.Values) (*listParams, error) {
 	return ret, nil
 }
 
-func (api *API) list(cfg *config, r *http.Request, params *listParams) (view.ReadView[[]any], error) {
+func (api *API) list(cfg *config, r *http.Request, params *listParams) (view.ReadView[[]any], *jsrest.Error) {
 	v, err := api.sb.List(r.Context(), cfg.typeName, cfg.factory)
 	if err != nil {
-		return nil, err
+		e := fmt.Errorf("failed to read list: %w", err)
+		jse := jsrest.FromError(e, jsrest.StatusInternalServerError)
+
+		return nil, jse
 	}
 
 	return filterList(cfg, r, params, v), nil
