@@ -21,7 +21,7 @@ func Read(r *http.Request, obj any) *Error {
 
 	default:
 		jse := fmt.Errorf("%s: %w", r.Header.Get("Content-Type"), ErrUnsupportedContentType)
-		return FromError(jse, http.StatusUnsupportedMediaType)
+		return FromError(jse, StatusUnsupportedMediaType)
 	}
 
 	dec := json.NewDecoder(r.Body)
@@ -30,7 +30,7 @@ func Read(r *http.Request, obj any) *Error {
 	err := dec.Decode(obj)
 	if err != nil {
 		jse := fmt.Errorf("failed to decode JSON request body: %w", err)
-		return FromError(jse, http.StatusBadRequest)
+		return FromError(jse, StatusBadRequest)
 	}
 
 	return nil
