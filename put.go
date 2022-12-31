@@ -29,7 +29,9 @@ func (api *API) put(cfg *config, id string, w http.ResponseWriter, r *http.Reque
 
 	replace := cfg.factory()
 
-	if !jsrest.Read(w, r, replace) {
+	jse := jsrest.Read(r, replace)
+	if jse != nil {
+		jse.Write(w)
 		return
 	}
 
@@ -54,9 +56,9 @@ func (api *API) put(cfg *config, id string, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = jsrest.Write(w, replace)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	jse = jsrest.Write(w, replace)
+	if jse != nil {
+		jse.Write(w)
 		return
 	}
 }

@@ -53,8 +53,8 @@ const (
 )
 
 type Error struct {
-	Code     Code
-	Messages []string
+	Code     Code     `json:"code"`
+	Messages []string `json:"messages"`
 }
 
 func FromError(err error, code Code) *Error {
@@ -69,10 +69,20 @@ func FromError(err error, code Code) *Error {
 	return e
 }
 
+func (e *Error) Error() string {
+	msg, err := json.Marshal(e)
+	if err != nil {
+		return err.Error()
+	}
+
+	return string(msg)
+}
+
 func (e *Error) Write(w http.ResponseWriter) {
 	w.WriteHeader(int(e.Code))
 
 	enc := json.NewEncoder(w)
+
 	enc.Encode(map[string]any{ //nolint:errcheck,errchkjson
 		"errors": e.Messages,
 	})

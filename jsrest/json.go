@@ -2,13 +2,16 @@ package jsrest
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/firestuff/patchy/metadata"
 )
 
-func Read(w http.ResponseWriter, r *http.Request, obj any) bool {
+var ErrUnsupportedContentType = errors.New("unsupported Content-Type")
+
+func Read(r *http.Request, obj any) *Error {
 	// TODO: Parse semicolon params
 	switch r.Header.Get("Content-Type") {
 	case "":
@@ -17,8 +20,8 @@ func Read(w http.ResponseWriter, r *http.Request, obj any) bool {
 		break
 
 	default:
-		http.Error(w, "unknown Content-Type", http.StatusUnsupportedMediaType)
-		return false
+		jse := fmt.Errorf("%s: %w", r.Header.Get("Content-Type"), ErrUnsupportedContentType)
+		return FromError(jse, http.StatusUnsupportedMediaType)
 	}
 
 	dec := json.NewDecoder(r.Body)
@@ -26,14 +29,14 @@ func Read(w http.ResponseWriter, r *http.Request, obj any) bool {
 
 	err := dec.Decode(obj)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return false
+		jse := fmt.Errorf("failed to decode JSON request body: %w", err)
+		return FromError(jse, http.StatusBadRequest)
 	}
 
-	return true
+	return nil
 }
 
-func Write(w http.ResponseWriter, obj any) error {
+func Write(w http.ResponseWriter, obj any) *Error {
 	m := metadata.GetMetadata(obj)
 
 	w.Header().Set("Content-Type", "application/json")
@@ -41,13 +44,25 @@ func Write(w http.ResponseWriter, obj any) error {
 
 	enc := json.NewEncoder(w)
 
-	return enc.Encode(obj)
+	err := enc.Encode(obj)
+	if err != nil {
+		jse := fmt.Errorf("failed to encode JSON response: %w", err)
+		return FromError(jse, StatusInternalServerError)
+	}
+
+	return nil
 }
 
-func WriteList(w http.ResponseWriter, list []any) error {
+func WriteList(w http.ResponseWriter, list []any) *Error {
 	w.Header().Set("Content-Type", "application/json")
 
 	enc := json.NewEncoder(w)
 
-	return enc.Encode(list)
+	err := enc.Encode(list)
+	if err != nil {
+		jse := fmt.Errorf("failed to encode JSON response: %w", err)
+		return FromError(jse, StatusInternalServerError)
+	}
+
+	return nil
 }
