@@ -20,3 +20,16 @@ func TestFromError(t *testing.T) {
 	require.Equal(t, e.Code, jsrest.StatusBadGateway)
 	require.Equal(t, e.Messages, []string{"error 2: error 1", "error 1"})
 }
+
+func TestParams(t *testing.T) {
+	t.Parallel()
+
+	e1 := errors.New("error 1") //nolint:goerr113
+
+	e := jsrest.FromError(e1, jsrest.StatusUnauthorized)
+	e.SetParam("foo", "bar")
+
+	require.Contains(t, e.Error(), `"error 1"`)
+	require.Contains(t, e.Error(), `"foo":`)
+	require.Contains(t, e.Error(), `"bar"`)
+}
