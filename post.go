@@ -11,7 +11,9 @@ import (
 func (api *API) post(cfg *config, w http.ResponseWriter, r *http.Request) {
 	obj := cfg.factory()
 
-	if !jsrest.Read(w, r, obj) {
+	jse := jsrest.Read(r, obj)
+	if jse != nil {
+		jse.Write(w)
 		return
 	}
 
@@ -31,9 +33,9 @@ func (api *API) post(cfg *config, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = jsrest.Write(w, obj)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	jse = jsrest.Write(w, obj)
+	if jse != nil {
+		jse.Write(w)
 		return
 	}
 }

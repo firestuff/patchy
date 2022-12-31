@@ -28,9 +28,9 @@ func (api *API) get(cfg *config, id string, w http.ResponseWriter, r *http.Reque
 		}
 	}
 
-	err = jsrest.Write(w, obj)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	jse := jsrest.Write(w, obj)
+	if jse != nil {
+		jse.Write(w)
 		return
 	}
 }

@@ -26,9 +26,9 @@ func (api *API) getList(cfg *config, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = jsrest.WriteList(w, <-v.Chan())
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	jse := jsrest.WriteList(w, <-v.Chan())
+	if jse != nil {
+		jse.Write(w)
 		return
 	}
 }
