@@ -53,15 +53,22 @@ const (
 )
 
 type Error struct {
-	Code     Code     `json:"code"`
-	Messages []string `json:"messages"`
+	Code     Code
+	Messages []string
+	Params   map[string]any
+}
+
+func NewError() *Error {
+	return &Error{
+		Params: map[string]any{},
+	}
 }
 
 func FromError(err error, code Code) *Error {
-	e := &Error{
-		Code: code,
-	}
+	e := NewError()
+	e.Code = code
 
+	// TODO: Support multiple error inheritance in Go 1.20
 	for iter := err; iter != nil; iter = errors.Unwrap(iter) {
 		e.Messages = append(e.Messages, iter.Error())
 	}
@@ -69,8 +76,12 @@ func FromError(err error, code Code) *Error {
 	return e
 }
 
+func (e *Error) SetParam(key string, value any) {
+	e.Params[key] = value
+}
+
 func (e *Error) Error() string {
-	msg, err := json.Marshal(e)
+	msg, err := json.Marshal(e.Values())
 	if err != nil {
 		return err.Error()
 	}
@@ -82,8 +93,17 @@ func (e *Error) Write(w http.ResponseWriter) {
 	w.WriteHeader(int(e.Code))
 
 	enc := json.NewEncoder(w)
+	enc.Encode(e.Values()) //nolint:errcheck,errchkjson
+}
 
-	enc.Encode(map[string]any{ //nolint:errcheck,errchkjson
+func (e *Error) Values() map[string]any {
+	vals := map[string]any{
 		"errors": e.Messages,
-	})
+	}
+
+	for k, v := range e.Params {
+		vals[k] = v
+	}
+
+	return vals
 }

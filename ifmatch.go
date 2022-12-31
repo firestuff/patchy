@@ -44,6 +44,7 @@ func ifMatch(obj any, r *http.Request) *jsrest.Error {
 		if val != objMD.ETag {
 			e := fmt.Errorf("%s vs %s: %w", val, objMD.ETag, ErrEtagMismatch)
 			jse := jsrest.FromError(e, jsrest.StatusPreconditionFailed)
+			jse.SetParam("actual_etag", objMD.ETag)
 
 			return jse
 		}
@@ -62,6 +63,7 @@ func ifMatch(obj any, r *http.Request) *jsrest.Error {
 		if gen != objMD.Generation {
 			e := fmt.Errorf("%d vs %d: %w", gen, objMD.Generation, ErrGenerationMismatch)
 			jse := jsrest.FromError(e, jsrest.StatusPreconditionFailed)
+			jse.SetParam("actual_generation", objMD.Generation)
 
 			return jse
 		}
