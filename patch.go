@@ -1,6 +1,7 @@
 package patchy
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/firestuff/patchy/jsrest"
@@ -13,13 +14,19 @@ func (api *API) patch(cfg *config, id string, w http.ResponseWriter, r *http.Req
 
 	v, err := api.sb.Read(r.Context(), cfg.typeName, id, cfg.factory)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		e := fmt.Errorf("failed to read %s: %w", id, err)
+		jse := jsrest.FromError(e, jsrest.StatusInternalServerError)
+		jse.Write(w)
+
 		return
 	}
 
 	obj := <-v.Chan()
 	if obj == nil {
-		http.Error(w, "not found", http.StatusNotFound)
+		e := fmt.Errorf("%s: %w", id, ErrNotFound)
+		jse := jsrest.FromError(e, jsrest.StatusNotFound)
+		jse.Write(w)
+
 		return
 	}
 
@@ -41,7 +48,10 @@ func (api *API) patch(cfg *config, id string, w http.ResponseWriter, r *http.Req
 	if cfg.mayUpdate != nil {
 		err = cfg.mayUpdate(obj, patch, r)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
+			e := fmt.Errorf("unauthorized %s: %w", id, err)
+			jse := jsrest.FromError(e, jsrest.StatusUnauthorized)
+			jse.Write(w)
+
 			return
 		}
 	}
@@ -52,7 +62,10 @@ func (api *API) patch(cfg *config, id string, w http.ResponseWriter, r *http.Req
 
 	err = api.sb.Write(cfg.typeName, obj)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		e := fmt.Errorf("failed to write %s: %w", id, err)
+		jse := jsrest.FromError(e, jsrest.StatusInternalServerError)
+		jse.Write(w)
+
 		return
 	}
 
