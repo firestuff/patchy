@@ -3,7 +3,7 @@ package potency
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -33,7 +33,7 @@ type savedResult struct {
 	Result     []byte      `json:"result"`
 }
 
-var errConflict = fmt.Errorf("conflict")
+var ErrConflict = errors.New("conflict")
 
 func NewPotency(store store.Storer, handler http.Handler) *Potency {
 	return &Potency{
@@ -137,7 +137,7 @@ func (p *Potency) lockKey(key string) error {
 	defer p.mu.Unlock()
 
 	if p.inProgress[key] {
-		return errConflict
+		return ErrConflict
 	}
 
 	p.inProgress[key] = true

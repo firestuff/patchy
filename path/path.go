@@ -1,14 +1,15 @@
 package path
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 )
 
 var (
-	errNotAStruct       = fmt.Errorf("not a struct")
-	errUnknownFieldName = fmt.Errorf("unknown field name")
+	ErrNotAStruct       = errors.New("not a struct")
+	ErrUnknownFieldName = errors.New("unknown field name")
 )
 
 func getAny(obj any, path string) (any, error) {
@@ -32,14 +33,14 @@ func getAnyRecursive(v reflect.Value, parts []string, prev []string) (any, error
 	}
 
 	if v.Kind() != reflect.Struct {
-		return nil, fmt.Errorf("%s: %w", strings.Join(prev, "."), errNotAStruct)
+		return nil, fmt.Errorf("%s: %w", strings.Join(prev, "."), ErrNotAStruct)
 	}
 
 	part := parts[0]
 
 	sub := getField(v, part)
 	if !sub.IsValid() {
-		return nil, fmt.Errorf("%s: %w", errorPath(prev, part), errUnknownFieldName)
+		return nil, fmt.Errorf("%s: %w", errorPath(prev, part), ErrUnknownFieldName)
 	}
 
 	newPrev := []string{}
@@ -107,14 +108,14 @@ func setRecursive(v reflect.Value, parts []string, prev []string, val string) er
 	}
 
 	if v.Kind() != reflect.Struct {
-		return fmt.Errorf("%s: %w", strings.Join(prev, "."), errNotAStruct)
+		return fmt.Errorf("%s: %w", strings.Join(prev, "."), ErrNotAStruct)
 	}
 
 	part := parts[0]
 
 	sub := getField(v, part)
 	if !sub.IsValid() {
-		return fmt.Errorf("%s: %w", errorPath(prev, part), errUnknownFieldName)
+		return fmt.Errorf("%s: %w", errorPath(prev, part), ErrUnknownFieldName)
 	}
 
 	newPrev := []string{}

@@ -2,7 +2,7 @@ package view
 
 import (
 	"context"
-	"fmt"
+	"errors"
 )
 
 type EphemeralView[T any] struct {
@@ -29,7 +29,7 @@ func NewEphemeralViewEmpty[T any](ctx context.Context) *EphemeralView[T] {
 	}
 }
 
-var errChannelOverrun = fmt.Errorf("channel overrun")
+var ErrChannelOverrun = errors.New("channel overrun")
 
 func (v *EphemeralView[T]) Chan() <-chan T {
 	return v.ch
@@ -46,7 +46,7 @@ func (v *EphemeralView[T]) Update(data T) error {
 
 	default:
 		close(v.ch)
-		return errChannelOverrun
+		return ErrChannelOverrun
 	}
 }
 

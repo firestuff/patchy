@@ -1,6 +1,7 @@
 package path
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"sort"
@@ -30,7 +31,7 @@ type anySlice struct {
 	err     error
 }
 
-var errUnsupportedSortType = fmt.Errorf("unsupported _sort type")
+var ErrUnsupportedSortType = errors.New("unsupported _sort type")
 
 func newAnySlice(objs any, path string) *anySlice {
 	return &anySlice{
@@ -99,7 +100,7 @@ func (as *anySlice) Less(i, j int) bool {
 		return t1.Before(v2.(civil.Date))
 
 	default:
-		as.err = fmt.Errorf("%T: %w", t1, errUnsupportedSortType)
+		as.err = fmt.Errorf("%T: %w", t1, ErrUnsupportedSortType)
 		return i < j
 	}
 }

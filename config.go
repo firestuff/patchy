@@ -1,6 +1,7 @@
 package patchy
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"sync"
@@ -8,7 +9,7 @@ import (
 	"github.com/firestuff/patchy/metadata"
 )
 
-var ErrMissingAuthCheck = fmt.Errorf("missing auth check")
+var ErrMissingAuthCheck = errors.New("missing auth check")
 
 type config struct {
 	typeName string
