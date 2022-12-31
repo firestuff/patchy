@@ -11,10 +11,7 @@ import (
 	"github.com/firestuff/patchy/metadata"
 )
 
-var (
-	ErrStreamingNotSupported = errors.New("streaming not supported")
-	ErrUnknownStreamFormat   = errors.New("unknown _stream format")
-)
+var ErrUnknownStreamFormat = errors.New("unknown _stream format")
 
 func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) {
 	if _, ok := w.(http.Flusher); !ok {
@@ -76,16 +73,18 @@ func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Reque
 			return
 
 		case <-ticker.C:
-			err := writeEvent(w, "heartbeat", emptyEvent)
-			if err != nil {
+			jse = writeEvent(w, "heartbeat", emptyEvent)
+			if jse != nil {
+				_ = writeEvent(w, "error", jse)
 				return
 			}
 
 			continue
 
 		case list := <-v.Chan():
-			err := writeEvent(w, "list", list)
-			if err != nil {
+			jse := writeEvent(w, "list", list)
+			if jse != nil {
+				_ = writeEvent(w, "error", jse)
 				return
 			}
 		}
@@ -106,8 +105,9 @@ func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Reque
 	for {
 		select {
 		case <-ticker.C:
-			err := writeEvent(w, "heartbeat", emptyEvent)
-			if err != nil {
+			jse = writeEvent(w, "heartbeat", emptyEvent)
+			if jse != nil {
+				_ = writeEvent(w, "error", jse)
 				return
 			}
 
@@ -126,14 +126,16 @@ func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Reque
 				if found {
 					lastMD := metadata.GetMetadata(lastObj)
 					if objMD.ETag != lastMD.ETag {
-						err := writeEvent(w, "update", obj)
-						if err != nil {
+						jse = writeEvent(w, "update", obj)
+						if jse != nil {
+							_ = writeEvent(w, "error", jse)
 							return
 						}
 					}
 				} else {
-					err := writeEvent(w, "add", obj)
-					if err != nil {
+					jse = writeEvent(w, "add", obj)
+					if jse != nil {
+						_ = writeEvent(w, "error", jse)
 						return
 					}
 				}
@@ -148,8 +150,9 @@ func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Reque
 					continue
 				}
 
-				err := writeEvent(w, "remove", old)
-				if err != nil {
+				jse = writeEvent(w, "remove", old)
+				if jse != nil {
+					_ = writeEvent(w, "error", jse)
 					return
 				}
 
