@@ -1,24 +1,40 @@
 package patchy
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"github.com/firestuff/patchy/jsrest"
 	"github.com/firestuff/patchy/metadata"
 )
 
-func ifMatch(obj any, w http.ResponseWriter, r *http.Request) bool {
+var (
+	ErrInvalidIfMatch           = errors.New("invalid If-Match")
+	ErrIfMatchMissingQuotes     = fmt.Errorf("missing quotes: %w", ErrInvalidIfMatch)
+	ErrIfMatchUnknownType       = fmt.Errorf("unknown type: %w", ErrInvalidIfMatch)
+	ErrIfMatchInvalidGeneration = fmt.Errorf("invalid generation: %w", ErrInvalidIfMatch)
+
+	ErrMismatch           = errors.New("If-Match mismatch")
+	ErrEtagMismatch       = fmt.Errorf("etag mismatch: %w", ErrMismatch)
+	ErrGenerationMismatch = fmt.Errorf("generation mismatch: %w", ErrMismatch)
+)
+
+func ifMatch(obj any, r *http.Request) *jsrest.Error {
 	match := r.Header.Get("If-Match")
 	if match == "" {
-		return true
+		return nil
 	}
 
 	objMD := metadata.GetMetadata(obj)
 
 	if len(match) < 2 || !strings.HasPrefix(match, `"`) || !strings.HasSuffix(match, `"`) {
-		http.Error(w, "Invalid If-Match (missing quotes)", http.StatusBadRequest)
-		return false
+		e := fmt.Errorf("%s: %w", match, ErrIfMatchMissingQuotes)
+		jse := jsrest.FromError(e, jsrest.StatusBadRequest)
+
+		return jse
 	}
 
 	val := strings.TrimPrefix(strings.TrimSuffix(match, `"`), `"`)
@@ -26,28 +42,36 @@ func ifMatch(obj any, w http.ResponseWriter, r *http.Request) bool {
 	switch {
 	case strings.HasPrefix(val, "etag:"):
 		if val != objMD.ETag {
-			http.Error(w, "If-Match mismatch", http.StatusPreconditionFailed)
-			return false
+			e := fmt.Errorf("%s vs %s: %w", val, objMD.ETag, ErrEtagMismatch)
+			jse := jsrest.FromError(e, jsrest.StatusPreconditionFailed)
+
+			return jse
 		}
 
-		return true
+		return nil
 
 	case strings.HasPrefix(val, "generation:"):
 		gen, err := strconv.ParseInt(strings.TrimPrefix(val, "generation:"), 10, 64)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return false
+			e := fmt.Errorf("%s: %w", match, ErrIfMatchInvalidGeneration)
+			jse := jsrest.FromError(e, jsrest.StatusBadRequest)
+
+			return jse
 		}
 
 		if gen != objMD.Generation {
-			http.Error(w, "If-Match mismatch", http.StatusPreconditionFailed)
-			return false
+			e := fmt.Errorf("%d vs %d: %w", gen, objMD.Generation, ErrGenerationMismatch)
+			jse := jsrest.FromError(e, jsrest.StatusPreconditionFailed)
+
+			return jse
 		}
 
-		return true
+		return nil
 
 	default:
-		http.Error(w, "Invalid If-Match (unknown type)", http.StatusBadRequest)
-		return false
+		e := fmt.Errorf("%s: %w", match, ErrIfMatchUnknownType)
+		jse := jsrest.FromError(e, jsrest.StatusBadRequest)
+
+		return jse
 	}
 }

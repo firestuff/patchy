@@ -30,13 +30,15 @@ func (api *API) patch(cfg *config, id string, w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if !ifMatch(obj, w, r) {
+	jse := ifMatch(obj, r)
+	if jse != nil {
+		jse.Write(w)
 		return
 	}
 
 	patch := cfg.factory()
 
-	jse := jsrest.Read(r, patch)
+	jse = jsrest.Read(r, patch)
 	if jse != nil {
 		jse.Write(w)
 		return

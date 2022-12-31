@@ -30,13 +30,15 @@ func (api *API) put(cfg *config, id string, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if !ifMatch(obj, w, r) {
+	jse := ifMatch(obj, r)
+	if jse != nil {
+		jse.Write(w)
 		return
 	}
 
 	replace := cfg.factory()
 
-	jse := jsrest.Read(r, replace)
+	jse = jsrest.Read(r, replace)
 	if jse != nil {
 		jse.Write(w)
 		return
