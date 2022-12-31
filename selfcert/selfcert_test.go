@@ -36,7 +36,7 @@ func TestCert(t *testing.T) {
 	cli := resty.New()
 	cli.SetBaseURL(baseURL)
 	cli.SetTLSClientConfig(&tls.Config{
-		InsecureSkipVerify: true, //nolint: gosec
+		InsecureSkipVerify: true, //nolint:gosec
 	})
 
 	resp, err := cli.R().Get("/")

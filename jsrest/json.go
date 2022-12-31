@@ -1,4 +1,4 @@
-package patchy
+package jsrest
 
 import (
 	"encoding/json"
@@ -8,7 +8,7 @@ import (
 	"github.com/firestuff/patchy/metadata"
 )
 
-func readJSON(w http.ResponseWriter, r *http.Request, obj any) bool {
+func Read(w http.ResponseWriter, r *http.Request, obj any) bool {
 	// TODO: Parse semicolon params
 	switch r.Header.Get("Content-Type") {
 	case "":
@@ -33,7 +33,7 @@ func readJSON(w http.ResponseWriter, r *http.Request, obj any) bool {
 	return true
 }
 
-func writeJSON(w http.ResponseWriter, obj any) error {
+func Write(w http.ResponseWriter, obj any) error {
 	m := metadata.GetMetadata(obj)
 
 	w.Header().Set("Content-Type", "application/json")
@@ -44,7 +44,7 @@ func writeJSON(w http.ResponseWriter, obj any) error {
 	return enc.Encode(obj)
 }
 
-func writeJSONList(w http.ResponseWriter, list []any) error {
+func WriteList(w http.ResponseWriter, list []any) error {
 	w.Header().Set("Content-Type", "application/json")
 
 	enc := json.NewEncoder(w)

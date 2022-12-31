@@ -2,6 +2,8 @@ package patchy
 
 import (
 	"net/http"
+
+	"github.com/firestuff/patchy/jsrest"
 )
 
 func (api *API) get(cfg *config, id string, w http.ResponseWriter, r *http.Request) {
@@ -26,7 +28,7 @@ func (api *API) get(cfg *config, id string, w http.ResponseWriter, r *http.Reque
 		}
 	}
 
-	err = writeJSON(w, obj)
+	err = jsrest.Write(w, obj)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
