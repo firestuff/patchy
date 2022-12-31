@@ -43,7 +43,7 @@ func (api *API) stream(cfg *config, id string, w http.ResponseWriter, r *http.Re
 	if cfg.mayRead != nil {
 		err = cfg.mayRead(obj, r)
 		if err != nil {
-			e := fmt.Errorf("unauthorized: %w", err)
+			e := fmt.Errorf("unauthorized %s: %w", id, err)
 			jse := jsrest.FromError(e, jsrest.StatusUnauthorized)
 			jse.Write(w)
 

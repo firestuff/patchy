@@ -52,7 +52,7 @@ func (api *API) put(cfg *config, id string, w http.ResponseWriter, r *http.Reque
 	if cfg.mayReplace != nil {
 		err = cfg.mayReplace(obj, replace, r)
 		if err != nil {
-			e := fmt.Errorf("unauthorized: %w", err)
+			e := fmt.Errorf("unauthorized %s: %w", id, err)
 			jse := jsrest.FromError(e, jsrest.StatusUnauthorized)
 			jse.Write(w)
 

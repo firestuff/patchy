@@ -1,6 +1,7 @@
 package patchy
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/firestuff/patchy/jsrest"
@@ -22,14 +23,20 @@ func (api *API) post(cfg *config, w http.ResponseWriter, r *http.Request) {
 	if cfg.mayCreate != nil {
 		err := cfg.mayCreate(obj, r)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
+			e := fmt.Errorf("unauthorized: %w", err)
+			jse := jsrest.FromError(e, jsrest.StatusUnauthorized)
+			jse.Write(w)
+
 			return
 		}
 	}
 
 	err := api.sb.Write(cfg.typeName, obj)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		e := fmt.Errorf("failed to write: %w", err)
+		jse := jsrest.FromError(e, jsrest.StatusInternalServerError)
+		jse.Write(w)
+
 		return
 	}
 
