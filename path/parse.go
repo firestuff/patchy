@@ -28,7 +28,7 @@ func parse(str string, t any) (any, error) {
 		typ = typ.Elem()
 	}
 
-	switch typ.Kind() { //nolint: exhaustive
+	switch typ.Kind() { //nolint:exhaustive
 	case reflect.Int:
 		return parseInt(str)
 

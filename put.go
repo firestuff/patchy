@@ -3,6 +3,7 @@ package patchy
 import (
 	"net/http"
 
+	"github.com/firestuff/patchy/jsrest"
 	"github.com/firestuff/patchy/metadata"
 )
 
@@ -28,7 +29,7 @@ func (api *API) put(cfg *config, id string, w http.ResponseWriter, r *http.Reque
 
 	replace := cfg.factory()
 
-	if !readJSON(w, r, replace) {
+	if !jsrest.Read(w, r, replace) {
 		return
 	}
 
@@ -53,7 +54,7 @@ func (api *API) put(cfg *config, id string, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = writeJSON(w, replace)
+	err = jsrest.Write(w, replace)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

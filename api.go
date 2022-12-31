@@ -169,7 +169,7 @@ func (api *API) handleDebug(w http.ResponseWriter, r *http.Request) {
 		r.TLS = &tls.ConnectionState{}
 	}
 
-	enc.Encode(map[string]any{ //nolint: errcheck,errchkjson
+	enc.Encode(map[string]any{ //nolint:errcheck,errchkjson
 		"server": map[string]any{
 			"hostname": hostname,
 		},
