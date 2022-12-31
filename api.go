@@ -3,12 +3,14 @@ package patchy
 import (
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"reflect"
 	"strings"
 
+	"github.com/firestuff/patchy/jsrest"
 	"github.com/firestuff/patchy/metadata"
 	"github.com/firestuff/patchy/potency"
 	"github.com/firestuff/patchy/store"
@@ -24,6 +26,8 @@ type API struct {
 }
 
 type Metadata = metadata.Metadata
+
+var ErrUnknownAcceptType = errors.New("unknown Accept type")
 
 func NewFileStoreAPI(root string) (*API, error) {
 	return NewAPI(store.NewFileStore(root))
@@ -82,8 +86,6 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	api.potency.ServeHTTP(w, r)
 }
 
-// TODO: Add standard HTTP error handling that returns JSON
-
 func (api *API) registerHandlers(base string, cfg *config) {
 	api.router.GET(
 		base,
@@ -134,7 +136,9 @@ func (api *API) routeListGET(cfg *config, w http.ResponseWriter, r *http.Request
 		api.getList(cfg, w, r)
 
 	default:
-		http.Error(w, "unknown Accept type", http.StatusNotAcceptable)
+		e := fmt.Errorf("%s: %w", r.Header.Get("Accept"), ErrUnknownAcceptType)
+		jse := jsrest.FromError(e, http.StatusNotAcceptable)
+		jse.Write(w)
 	}
 }
 
@@ -152,7 +156,9 @@ func (api *API) routeSingleGET(cfg *config, id string, w http.ResponseWriter, r 
 		api.get(cfg, id, w, r)
 
 	default:
-		http.Error(w, "unknown Accept type", http.StatusNotAcceptable)
+		e := fmt.Errorf("%s: %w", r.Header.Get("Accept"), ErrUnknownAcceptType)
+		jse := jsrest.FromError(e, http.StatusNotAcceptable)
+		jse.Write(w)
 	}
 }
 

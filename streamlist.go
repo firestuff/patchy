@@ -1,22 +1,35 @@
 package patchy
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"time"
 
+	"github.com/firestuff/patchy/jsrest"
 	"github.com/firestuff/patchy/metadata"
+)
+
+var (
+	ErrStreamingNotSupported = errors.New("streaming not supported")
+	ErrUnknownStreamFormat   = errors.New("unknown _stream format")
 )
 
 func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) {
 	if _, ok := w.(http.Flusher); !ok {
-		http.Error(w, "Streaming not supported", http.StatusBadRequest)
+		jse := jsrest.FromError(ErrStreamingNotSupported, http.StatusBadRequest)
+		jse.Write(w)
+
 		return
 	}
 
 	params, err := url.ParseQuery(r.URL.RawQuery)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		e := fmt.Errorf("failed to parse URL query: %w", err)
+		jse := jsrest.FromError(e, http.StatusBadRequest)
+		jse.Write(w)
+
 		return
 	}
 
@@ -25,6 +38,7 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 
 	parsed, err := parseListParams(params)
 	if err != nil {
+		// TODO: Make parseListParams return *jsrest.Error
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -42,11 +56,14 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 		api.streamListDiff(cfg, w, r, parsed)
 
 	default:
-		http.Error(w, "Unknown _stream format", http.StatusBadRequest)
+		e := fmt.Errorf("%s: %w", stream, ErrUnknownStreamFormat)
+		jse := jsrest.FromError(e, http.StatusBadRequest)
+		jse.Write(w)
 	}
 }
 
 func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Request, params *listParams) {
+	// TODO: Make api.list return *jsrest.Error
 	v, err := api.list(cfg, r, params)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
