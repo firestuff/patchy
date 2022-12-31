@@ -24,7 +24,7 @@ func (api *API) stream(cfg *config, id string, w http.ResponseWriter, r *http.Re
 
 	v, err := api.sb.Read(r.Context(), cfg.typeName, id, cfg.factory)
 	if err != nil {
-		e := fmt.Errorf("failed to read: %w", err)
+		e := fmt.Errorf("failed to read %s: %w", id, err)
 		jse := jsrest.FromError(e, jsrest.StatusInternalServerError)
 		jse.Write(w)
 
