@@ -1,6 +1,7 @@
 package patchy
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 
@@ -10,7 +11,10 @@ import (
 func (api *API) getList(cfg *config, w http.ResponseWriter, r *http.Request) {
 	params, err := url.ParseQuery(r.URL.RawQuery)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		e := fmt.Errorf("failed to parse URL query: %w", err)
+		jse := jsrest.FromError(e, jsrest.StatusBadRequest)
+		jse.Write(w)
+
 		return
 	}
 
