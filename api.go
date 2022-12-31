@@ -82,6 +82,8 @@ func (api *API) CheckSafe() {
 	}
 }
 
+// TODO: Support API-wide jsrest.Error.SetParam() values
+
 func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	api.potency.ServeHTTP(w, r)
 }
