@@ -1,6 +1,7 @@
 package path
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -15,7 +16,7 @@ type timeVal struct {
 	precision time.Duration
 }
 
-var errUnsupportedType = fmt.Errorf("unsupported type")
+var ErrUnsupportedType = errors.New("unsupported type")
 
 func parse(str string, t any) (any, error) {
 	typ := reflect.TypeOf(t)
@@ -63,7 +64,7 @@ func parse(str string, t any) (any, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("%T: %w", t, errUnsupportedType)
+	return nil, fmt.Errorf("%T: %w", t, ErrUnsupportedType)
 }
 
 func parseInt(str string) (int, error) {

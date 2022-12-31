@@ -53,9 +53,9 @@ func TestBus(t *testing.T) {
 
 	select {
 	case msg := <-ev2a.Chan():
-		t.Errorf("%+v", msg)
+		require.Fail(t, "unexpected message", msg)
 	case msg := <-evt2.Chan():
-		t.Errorf("%+v", msg)
+		require.Fail(t, "unexpected message", msg)
 	default:
 	}
 
@@ -67,9 +67,9 @@ func TestBus(t *testing.T) {
 
 	select {
 	case msg := <-ev1a.Chan():
-		t.Errorf("%+v", msg)
+		require.Fail(t, "unexpected message", msg)
 	case msg := <-evt1.Chan():
-		t.Errorf("%+v", msg)
+		require.Fail(t, "unexpected message", msg)
 	default:
 	}
 

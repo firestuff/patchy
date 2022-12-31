@@ -2,6 +2,7 @@
 package patchy_test
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"sync"
@@ -31,7 +32,7 @@ func (*flagType) MayCreate(r *http.Request) error {
 	defer flagMu.Unlock()
 
 	if !mayCreateFlag {
-		return fmt.Errorf("may not create")
+		return errors.New("may not create")
 	}
 
 	return nil
@@ -42,7 +43,7 @@ func (*flagType) MayReplace(replace *flagType, r *http.Request) error {
 	defer flagMu.Unlock()
 
 	if !mayReplaceFlag {
-		return fmt.Errorf("may not replace")
+		return errors.New("may not replace")
 	}
 
 	return nil
@@ -53,7 +54,7 @@ func (*flagType) MayUpdate(patch *flagType, r *http.Request) error {
 	defer flagMu.Unlock()
 
 	if !mayUpdateFlag {
-		return fmt.Errorf("may not update")
+		return errors.New("may not update")
 	}
 
 	return nil
@@ -64,7 +65,7 @@ func (*flagType) MayDelete(r *http.Request) error {
 	defer flagMu.Unlock()
 
 	if !mayDeleteFlag {
-		return fmt.Errorf("may not delete")
+		return errors.New("may not delete")
 	}
 
 	return nil
@@ -75,7 +76,7 @@ func (*flagType) MayRead(r *http.Request) error {
 	defer flagMu.Unlock()
 
 	if !mayReadFlag {
-		return fmt.Errorf("may not read")
+		return errors.New("may not read")
 	}
 
 	return nil

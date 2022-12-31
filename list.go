@@ -1,6 +1,7 @@
 package patchy
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"net/http"
@@ -38,8 +39,8 @@ var (
 		"lt":  true,
 		"lte": true,
 	}
-	errInvalidFilterOp = fmt.Errorf("invalid filter operator")
-	errInvalidSort     = fmt.Errorf("invalid _sort")
+	errInvalidFilterOp = errors.New("invalid filter operator")
+	errInvalidSort     = errors.New("invalid _sort")
 )
 
 func parseListParams(params url.Values) (*listParams, error) {
