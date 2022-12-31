@@ -1,13 +1,21 @@
 package patchy
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/firestuff/patchy/jsrest"
 )
+
+var ErrStreamingNotSupported = errors.New("streaming not supported")
 
 func (api *API) stream(cfg *config, id string, w http.ResponseWriter, r *http.Request) {
 	if _, ok := w.(http.Flusher); !ok {
-		http.Error(w, "Streaming not supported", http.StatusBadRequest)
+		jse := jsrest.FromError(ErrStreamingNotSupported, jsrest.StatusBadRequest)
+		jse.Write(w)
+
 		return
 	}
 
@@ -16,27 +24,36 @@ func (api *API) stream(cfg *config, id string, w http.ResponseWriter, r *http.Re
 
 	v, err := api.sb.Read(r.Context(), cfg.typeName, id, cfg.factory)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		e := fmt.Errorf("failed to read: %w", err)
+		jse := jsrest.FromError(e, jsrest.StatusInternalServerError)
+		jse.Write(w)
+
 		return
 	}
 
 	obj := <-v.Chan()
 	if obj == nil {
-		http.Error(w, "not found", http.StatusNotFound)
+		e := fmt.Errorf("%s: %w", id, ErrNotFound)
+		jse := jsrest.FromError(e, jsrest.StatusNotFound)
+		jse.Write(w)
+
 		return
 	}
 
 	if cfg.mayRead != nil {
 		err = cfg.mayRead(obj, r)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
+			e := fmt.Errorf("unauthorized: %w", err)
+			jse := jsrest.FromError(e, jsrest.StatusUnauthorized)
+			jse.Write(w)
+
 			return
 		}
 	}
 
-	err = writeEvent(w, "initial", obj)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	jse := writeEvent(w, "initial", obj)
+	if jse != nil {
+		_ = writeEvent(w, "error", jse)
 		return
 	}
 
@@ -49,18 +66,23 @@ func (api *API) stream(cfg *config, id string, w http.ResponseWriter, r *http.Re
 
 		case msg, ok := <-v.Chan():
 			if ok {
-				err = writeEvent(w, "update", msg)
-				if err != nil {
+				jse = writeEvent(w, "update", msg)
+				if jse != nil {
+					_ = writeEvent(w, "error", jse)
 					return
 				}
 			} else {
-				_ = writeEvent(w, "delete", emptyEvent)
+				jse = writeEvent(w, "delete", emptyEvent)
+				if jse != nil {
+					_ = writeEvent(w, "error", jse)
+				}
 				return
 			}
 
 		case <-ticker.C:
-			err = writeEvent(w, "heartbeat", emptyEvent)
-			if err != nil {
+			jse = writeEvent(w, "heartbeat", emptyEvent)
+			if jse != nil {
+				_ = writeEvent(w, "error", jse)
 				return
 			}
 		}

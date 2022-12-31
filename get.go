@@ -1,10 +1,13 @@
 package patchy
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/firestuff/patchy/jsrest"
 )
+
+var ErrNotFound = errors.New("not found")
 
 func (api *API) get(cfg *config, id string, w http.ResponseWriter, r *http.Request) {
 	v, err := api.sb.Read(r.Context(), cfg.typeName, id, cfg.factory)
