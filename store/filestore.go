@@ -117,6 +117,10 @@ func (s *FileStore) List(t string, factory func() any) ([]any, error) {
 		return nil
 	})
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, nil
+		}
+
 		return nil, err
 	}
 
