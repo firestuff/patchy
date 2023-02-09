@@ -84,6 +84,10 @@ func TestFileStoreList(t *testing.T) {
 
 	store := store.NewFileStore(dir)
 
+	objs, err := store.List("storeTest", func() any { return &storeTest{} })
+	require.Nil(t, err)
+	require.Len(t, objs, 0)
+
 	err = store.Write("storeTest", &storeTest{
 		Metadata: metadata.Metadata{
 			ID: "id1",
@@ -100,7 +104,7 @@ func TestFileStoreList(t *testing.T) {
 	})
 	require.Nil(t, err)
 
-	objs, err := store.List("storeTest", func() any { return &storeTest{} })
+	objs, err = store.List("storeTest", func() any { return &storeTest{} })
 	require.Nil(t, err)
 	require.Len(t, objs, 2)
 	require.ElementsMatch(t, []string{"foo", "bar"}, []string{objs[0].(*storeTest).Opaque, objs[1].(*storeTest).Opaque})
