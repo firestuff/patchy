@@ -6,45 +6,45 @@ import (
 	"cloud.google.com/go/civil"
 )
 
-func Less(obj any, path string, v1Str string) (bool, error) {
-	return op(obj, path, v1Str, less)
+func Less(obj any, path string, matchStr string) (bool, error) {
+	return op(obj, path, matchStr, less)
 }
 
-func less(v1, v2 any) bool {
-	switch v2t := v2.(type) {
+func less(match, obj any, _ string) bool {
+	switch objt := obj.(type) {
 	case int:
-		return v2t < v1.(int)
+		return objt < match.(int)
 
 	case int64:
-		return v2t < v1.(int64)
+		return objt < match.(int64)
 
 	case uint:
-		return v2t < v1.(uint)
+		return objt < match.(uint)
 
 	case uint64:
-		return v2t < v1.(uint64)
+		return objt < match.(uint64)
 
 	case float32:
-		return v2t < v1.(float32)
+		return objt < match.(float32)
 
 	case float64:
-		return v2t < v1.(float64)
+		return objt < match.(float64)
 
 	case string:
-		return v2t < v1.(string)
+		return objt < match.(string)
 
 	case bool:
-		return !v2t && v1.(bool)
+		return !objt && match.(bool)
 
 	case time.Time:
-		tm := v1.(*timeVal)
+		tm := match.(*timeVal)
 
-		return v2t.Truncate(tm.precision).Before(tm.time)
+		return objt.Truncate(tm.precision).Before(tm.time)
 
 	case civil.Date:
-		return v2t.Before(v1.(civil.Date))
+		return objt.Before(match.(civil.Date))
 
 	default:
-		panic(v2)
+		panic(obj)
 	}
 }

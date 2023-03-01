@@ -2,19 +2,19 @@ package path
 
 import "time"
 
-func Equal(obj any, path string, v1Str string) (bool, error) {
-	return op(obj, path, v1Str, equal)
+func Equal(obj any, path string, matchStr string) (bool, error) {
+	return op(obj, path, matchStr, equal)
 }
 
-func equal(v1, v2 any) bool {
-	switch v2t := v2.(type) {
+func equal(match, obj any, _ string) bool {
+	switch objt := obj.(type) {
 	case time.Time:
-		tm := v1.(*timeVal)
+		tm := match.(*timeVal)
 
 		// TODO: Replace Truncate() with a timezone-aware version
-		return tm.time.Equal(v2t.Truncate(tm.precision))
+		return tm.time.Equal(objt.Truncate(tm.precision))
 
 	default:
-		return v1 == v2
+		return obj == match
 	}
 }
