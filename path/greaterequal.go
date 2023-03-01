@@ -10,7 +10,7 @@ func GreaterEqual(obj any, path string, matchStr string) (bool, error) {
 	return op(obj, path, matchStr, greaterEqual)
 }
 
-func greaterEqual(match, obj any, _ string) bool {
+func greaterEqual(obj, match any, _ string) bool {
 	switch objt := obj.(type) {
 	case int:
 		return objt >= match.(int)
