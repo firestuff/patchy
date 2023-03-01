@@ -43,6 +43,10 @@ type testType2 struct {
 	Tt1p *testType1
 }
 
+type testType3 struct {
+	testType1
+}
+
 func TestSet(t *testing.T) {
 	t.Parallel()
 
@@ -67,4 +71,13 @@ func TestSet(t *testing.T) {
 	err = path.Set(tt2, "tt1.boolp", "true")
 	require.Nil(t, err)
 	require.Equal(t, true, *tt2.Tt1.BoolP)
+}
+
+func TestEmbed(t *testing.T) {
+	t.Parallel()
+
+	tt3 := &testType3{}
+	err := path.Set(tt3, "int", "1234")
+	require.Nil(t, err)
+	require.Equal(t, 1234, tt3.Int)
 }
