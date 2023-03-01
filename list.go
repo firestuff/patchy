@@ -36,6 +36,7 @@ var (
 		"eq":  true,
 		"gt":  true,
 		"gte": true,
+		"hp":  true,
 		"in":  true,
 		"lt":  true,
 		"lte": true,
@@ -226,6 +227,9 @@ func match(obj any, filters []filter) (bool, error) {
 
 		case "gte":
 			matches, err = path.GreaterEqual(obj, filter.path, filter.val)
+
+		case "hp":
+			matches, err = path.HasPrefix(obj, filter.path, filter.val)
 
 		case "in":
 			matches, err = path.In(obj, filter.path, filter.val)
