@@ -4,50 +4,51 @@ import (
 	"strings"
 )
 
-func op(obj any, path string, v1Str string, cb func(any, any) bool) (bool, error) {
-	v2, err := getAny(obj, path)
+func op(obj any, path string, matchStr string, cb func(any, any, string) bool) (bool, error) {
+	objVal, err := getAny(obj, path)
 	if err != nil {
 		return false, err
 	}
 
-	v1, err := parse(v1Str, v2)
+	matchVal, err := parse(matchStr, objVal)
 	if err != nil {
 		return false, err
 	}
 
-	if isSlice(v2) {
-		return anyTrue(v2, func(x any) bool { return cb(v1, x) }), nil
+	if isSlice(objVal) {
+		return anyTrue(objVal, func(x any) bool { return cb(matchVal, x, matchStr) }), nil
 	}
 
-	return cb(v1, v2), nil
+	return cb(matchVal, objVal, matchStr), nil
 }
 
-func opList(obj any, path string, v1Str string, cb func(any, any) bool) (bool, error) {
-	v2, err := getAny(obj, path)
+func opList(obj any, path string, matchStr string, cb func(any, any, string) bool) (bool, error) {
+	objVal, err := getAny(obj, path)
 	if err != nil {
 		return false, err
 	}
 
-	if v2 == nil {
+	if objVal == nil {
 		return false, nil
 	}
 
-	v1 := []any{}
+	// TODO: Store per-item matchStr
+	matchVal := []any{}
 
-	for _, v1Part := range strings.Split(v1Str, ",") {
-		v1Tmp, err := parse(v1Part, v2)
+	for _, matchPart := range strings.Split(matchStr, ",") {
+		matchTmp, err := parse(matchPart, objVal)
 		if err != nil {
 			return false, err
 		}
 
-		v1 = append(v1, v1Tmp)
+		matchVal = append(matchVal, matchTmp)
 	}
 
-	return anyTrue(v1, func(y any) bool {
-		if isSlice(v2) {
-			return anyTrue(v2, func(x any) bool { return cb(y, x) })
+	return anyTrue(matchVal, func(y any) bool {
+		if isSlice(objVal) {
+			return anyTrue(objVal, func(x any) bool { return cb(y, x, matchStr) })
 		}
 
-		return cb(y, v2)
+		return cb(y, objVal, matchStr)
 	}), nil
 }
