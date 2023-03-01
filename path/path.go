@@ -54,23 +54,27 @@ func getField(v reflect.Value, name string) reflect.Value {
 	name = strings.ToLower(name)
 	typ := v.Type()
 
-	for i := 0; i < typ.NumField(); i++ {
-		field := typ.Field(i)
-		fieldName := field.Name
+	field, ok := typ.FieldByNameFunc(func(iterName string) bool {
+		iterField, iterOK := typ.FieldByName(iterName)
+		if !iterOK {
+			panic(iterName)
+		}
 
-		tag := field.Tag.Get("json")
+		tag := iterField.Tag.Get("json")
 		if tag != "" {
 			if tag == "-" {
-				continue
+				return false
 			}
 
 			parts := strings.SplitN(tag, ",", 2)
-			fieldName = parts[0]
+			iterName = parts[0]
 		}
 
-		if strings.ToLower(fieldName) == name {
-			return v.Field(i)
-		}
+		return strings.ToLower(iterName) == name
+	})
+
+	if ok {
+		return v.FieldByName(field.Name)
 	}
 
 	return reflect.Value{}
