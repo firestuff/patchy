@@ -12,7 +12,7 @@ func HasPrefix(obj any, path string, matchStr string) (bool, error) {
 	return op(obj, path, matchStr, hasPrefix)
 }
 
-func hasPrefix(match, obj any, matchStr string) bool {
+func hasPrefix(obj, match any, matchStr string) bool {
 	var objStr string
 
 	switch objt := obj.(type) {

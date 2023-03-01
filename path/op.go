@@ -16,10 +16,10 @@ func op(obj any, path string, matchStr string, cb func(any, any, string) bool) (
 	}
 
 	if isSlice(objVal) {
-		return anyTrue(objVal, func(x any) bool { return cb(matchVal, x, matchStr) }), nil
+		return anyTrue(objVal, func(x any) bool { return cb(x, matchVal, matchStr) }), nil
 	}
 
-	return cb(matchVal, objVal, matchStr), nil
+	return cb(objVal, matchVal, matchStr), nil
 }
 
 func opList(obj any, path string, matchStr string, cb func(any, any, string) bool) (bool, error) {
@@ -46,9 +46,9 @@ func opList(obj any, path string, matchStr string, cb func(any, any, string) boo
 
 	return anyTrue(matchVal, func(y any) bool {
 		if isSlice(objVal) {
-			return anyTrue(objVal, func(x any) bool { return cb(y, x, matchStr) })
+			return anyTrue(objVal, func(x any) bool { return cb(x, y, matchStr) })
 		}
 
-		return cb(y, objVal, matchStr)
+		return cb(objVal, y, matchStr)
 	}), nil
 }

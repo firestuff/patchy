@@ -10,7 +10,7 @@ func Less(obj any, path string, matchStr string) (bool, error) {
 	return op(obj, path, matchStr, less)
 }
 
-func less(match, obj any, _ string) bool {
+func less(obj, match any, _ string) bool {
 	switch objt := obj.(type) {
 	case int:
 		return objt < match.(int)
