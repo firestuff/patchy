@@ -21,7 +21,7 @@ type Inner struct {
 func TestNestedInnerFirst(t *testing.T) {
 	t.Parallel()
 
-	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
+	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
 		patchy.Register[Inner](api)
 		patchy.Register[Outer](api)
 	})
@@ -30,7 +30,7 @@ func TestNestedInnerFirst(t *testing.T) {
 func TestNestedOuterFirst(t *testing.T) {
 	t.Parallel()
 
-	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
+	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
 		patchy.Register[Outer](api)
 		patchy.Register[Inner](api)
 	})

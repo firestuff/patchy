@@ -1,7 +1,6 @@
 package patchy_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/firestuff/patchy"
@@ -12,7 +11,7 @@ import (
 func TestPOST(t *testing.T) {
 	t.Parallel()
 
-	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
+	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
 		created := &testType{}
 
 		resp, err := c.R().
@@ -20,7 +19,7 @@ func TestPOST(t *testing.T) {
 				Text: "foo",
 			}).
 			SetResult(created).
-			Post(fmt.Sprintf("%s/testtype", baseURL))
+			Post("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Equal(t, "foo", created.Text)
@@ -30,7 +29,8 @@ func TestPOST(t *testing.T) {
 
 		resp, err = c.R().
 			SetResult(read).
-			Get(fmt.Sprintf("%s/testtype/%s", baseURL, created.ID))
+			SetPathParam("id", created.ID).
+			Get("testtype/{id}")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Equal(t, "foo", read.Text)
