@@ -28,31 +28,60 @@ func TestBeforeRead(t *testing.T) {
 	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
 		patchy.Register[beforeType](api)
 
-		created := &beforeType{}
+		create := &beforeType{}
 
 		resp, err := c.R().
 			SetHeader("X-Test", "1234").
 			SetBody(&beforeType{}).
-			SetResult(created).
+			SetResult(create).
 			Post(fmt.Sprintf("%s/beforetype", baseURL))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
-		require.Equal(t, "1234", created.Text1)
+		require.Equal(t, "1234", create.Text1)
 
-		patched := &beforeType{}
+		patch := &beforeType{}
 
 		resp, err = c.R().
 			SetHeader("X-Test", "2345").
 			SetBody(&beforeType{}).
-			SetResult(patched).
-			Patch(fmt.Sprintf("%s/beforetype/%s", baseURL, created.ID))
+			SetResult(patch).
+			Patch(fmt.Sprintf("%s/beforetype/%s", baseURL, create.ID))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
-		require.Equal(t, "2345", patched.Text1)
+		require.Equal(t, "2345", patch.Text1)
 
-		// TODO: PUT
-		// TODO: GET
-		// TODO: list
+		put := &beforeType{}
+
+		resp, err = c.R().
+			SetHeader("X-Test", "3456").
+			SetBody(&beforeType{}).
+			SetResult(put).
+			Put(fmt.Sprintf("%s/beforetype/%s", baseURL, create.ID))
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
+		require.Equal(t, "3456", put.Text1)
+
+		get := &beforeType{}
+
+		resp, err = c.R().
+			SetHeader("X-Test", "4567").
+			SetResult(get).
+			Get(fmt.Sprintf("%s/beforetype/%s", baseURL, create.ID))
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
+		require.Equal(t, "4567", get.Text1)
+
+		list := []*beforeType{}
+
+		resp, err = c.R().
+			SetHeader("X-Test", "5678").
+			SetResult(&list).
+			Get(fmt.Sprintf("%s/beforetype", baseURL))
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
+		require.Len(t, list, 1)
+		require.Equal(t, "5678", list[0].Text1)
+
 		// TODO: stream
 	})
 }

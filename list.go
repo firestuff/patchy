@@ -208,6 +208,15 @@ func filterList(cfg *config, r *http.Request, params *listParams, in view.ReadVi
 			ret = append(ret, obj)
 		}
 
+		for _, obj := range inter {
+			if cfg.beforeRead != nil {
+				err := cfg.beforeRead(obj, r)
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
+
 		return ret, nil
 	})
 }
