@@ -71,6 +71,17 @@ func (api *API) put(cfg *config, id string, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	if cfg.beforeRead != nil {
+		err := cfg.beforeRead(replace, r)
+		if err != nil {
+			e := fmt.Errorf("failed before read callback: %w", err)
+			jse := jsrest.FromError(e, jsrest.StatusInternalServerError)
+			jse.Write(w)
+
+			return
+		}
+	}
+
 	jse = jsrest.Write(w, replace)
 	if jse != nil {
 		jse.Write(w)
