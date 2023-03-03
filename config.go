@@ -22,6 +22,8 @@ type config struct {
 	mayDelete  func(any, *http.Request) error
 	mayRead    func(any, *http.Request) error
 
+	beforeRead func(any, *http.Request) error
+
 	mu sync.Mutex
 }
 
@@ -43,6 +45,10 @@ type mayDelete interface {
 
 type mayRead interface {
 	MayRead(*http.Request) error
+}
+
+type beforeRead interface {
+	BeforeRead(*http.Request) error
 }
 
 func newConfig[T any](typeName string) *config {
@@ -84,6 +90,12 @@ func newConfig[T any](typeName string) *config {
 	if _, has := any(obj).(mayRead); has {
 		cfg.mayRead = func(obj any, r *http.Request) error {
 			return obj.(mayRead).MayRead(r)
+		}
+	}
+
+	if _, has := any(obj).(beforeRead); has {
+		cfg.beforeRead = func(obj any, r *http.Request) error {
+			return obj.(beforeRead).BeforeRead(r)
 		}
 	}
 

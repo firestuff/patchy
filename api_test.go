@@ -19,6 +19,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TODO: Make this a struct with defer instead of a callback wrapper.
+// TODO: Don't pass through baseURL, just set it in resty.Client.
 func withAPI(t *testing.T, cb func(*testing.T, *patchy.API, string, *resty.Client)) {
 	// TODO: Add goroutine leak detection: https://github.com/uber-go/goleak
 	dir, err := os.MkdirTemp("", "")
