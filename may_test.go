@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type flagType struct {
+type mayType struct {
 	patchy.Metadata
 }
 
@@ -25,11 +25,11 @@ var (
 	mayReadFlag    bool
 )
 
-var flagMu sync.Mutex
+var mayMu sync.Mutex
 
-func (*flagType) MayCreate(r *http.Request) error {
-	flagMu.Lock()
-	defer flagMu.Unlock()
+func (*mayType) MayCreate(r *http.Request) error {
+	mayMu.Lock()
+	defer mayMu.Unlock()
 
 	if !mayCreateFlag {
 		return errors.New("may not create")
@@ -38,9 +38,9 @@ func (*flagType) MayCreate(r *http.Request) error {
 	return nil
 }
 
-func (*flagType) MayReplace(replace *flagType, r *http.Request) error {
-	flagMu.Lock()
-	defer flagMu.Unlock()
+func (*mayType) MayReplace(replace *mayType, r *http.Request) error {
+	mayMu.Lock()
+	defer mayMu.Unlock()
 
 	if !mayReplaceFlag {
 		return errors.New("may not replace")
@@ -49,9 +49,9 @@ func (*flagType) MayReplace(replace *flagType, r *http.Request) error {
 	return nil
 }
 
-func (*flagType) MayUpdate(patch *flagType, r *http.Request) error {
-	flagMu.Lock()
-	defer flagMu.Unlock()
+func (*mayType) MayUpdate(patch *mayType, r *http.Request) error {
+	mayMu.Lock()
+	defer mayMu.Unlock()
 
 	if !mayUpdateFlag {
 		return errors.New("may not update")
@@ -60,9 +60,9 @@ func (*flagType) MayUpdate(patch *flagType, r *http.Request) error {
 	return nil
 }
 
-func (*flagType) MayDelete(r *http.Request) error {
-	flagMu.Lock()
-	defer flagMu.Unlock()
+func (*mayType) MayDelete(r *http.Request) error {
+	mayMu.Lock()
+	defer mayMu.Unlock()
 
 	if !mayDeleteFlag {
 		return errors.New("may not delete")
@@ -71,9 +71,9 @@ func (*flagType) MayDelete(r *http.Request) error {
 	return nil
 }
 
-func (*flagType) MayRead(r *http.Request) error {
-	flagMu.Lock()
-	defer flagMu.Unlock()
+func (*mayType) MayRead(r *http.Request) error {
+	mayMu.Lock()
+	defer mayMu.Unlock()
 
 	if !mayReadFlag {
 		return errors.New("may not read")
@@ -84,30 +84,30 @@ func (*flagType) MayRead(r *http.Request) error {
 
 func TestMayCreate(t *testing.T) { //nolint:paralleltest
 	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
-		patchy.Register[flagType](api)
+		patchy.Register[mayType](api)
 
-		created := &flagType{}
+		created := &mayType{}
 
-		flagMu.Lock()
+		mayMu.Lock()
 		mayCreateFlag = true
-		flagMu.Unlock()
+		mayMu.Unlock()
 
 		resp, err := c.R().
-			SetBody(&flagType{}).
+			SetBody(&mayType{}).
 			SetResult(created).
-			Post(fmt.Sprintf("%s/flagtype", baseURL))
+			Post(fmt.Sprintf("%s/maytype", baseURL))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.NotEmpty(t, created.ID)
 
-		flagMu.Lock()
+		mayMu.Lock()
 		mayCreateFlag = false
-		flagMu.Unlock()
+		mayMu.Unlock()
 
 		resp, err = c.R().
-			SetBody(&flagType{}).
+			SetBody(&mayType{}).
 			SetResult(created).
-			Post(fmt.Sprintf("%s/flagtype", baseURL))
+			Post(fmt.Sprintf("%s/maytype", baseURL))
 		require.Nil(t, err)
 		require.True(t, resp.IsError())
 	})
@@ -115,42 +115,42 @@ func TestMayCreate(t *testing.T) { //nolint:paralleltest
 
 func TestMayReplace(t *testing.T) { //nolint:paralleltest
 	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
-		patchy.Register[flagType](api)
+		patchy.Register[mayType](api)
 
-		created := &flagType{}
+		created := &mayType{}
 
-		flagMu.Lock()
+		mayMu.Lock()
 		mayCreateFlag = true
-		flagMu.Unlock()
+		mayMu.Unlock()
 
 		resp, err := c.R().
-			SetBody(&flagType{}).
+			SetBody(&mayType{}).
 			SetResult(created).
-			Post(fmt.Sprintf("%s/flagtype", baseURL))
+			Post(fmt.Sprintf("%s/maytype", baseURL))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
-		flagMu.Lock()
+		mayMu.Lock()
 		mayReplaceFlag = true
-		flagMu.Unlock()
+		mayMu.Unlock()
 
-		replaced := &flagType{}
+		replaced := &mayType{}
 
 		resp, err = c.R().
-			SetBody(&flagType{}).
+			SetBody(&mayType{}).
 			SetResult(replaced).
-			Put(fmt.Sprintf("%s/flagtype/%s", baseURL, created.ID))
+			Put(fmt.Sprintf("%s/maytype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
-		flagMu.Lock()
+		mayMu.Lock()
 		mayReplaceFlag = false
-		flagMu.Unlock()
+		mayMu.Unlock()
 
 		resp, err = c.R().
-			SetBody(&flagType{}).
+			SetBody(&mayType{}).
 			SetResult(replaced).
-			Put(fmt.Sprintf("%s/flagtype/%s", baseURL, created.ID))
+			Put(fmt.Sprintf("%s/maytype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.True(t, resp.IsError())
 	})
@@ -158,42 +158,42 @@ func TestMayReplace(t *testing.T) { //nolint:paralleltest
 
 func TestMayUpdate(t *testing.T) { //nolint:paralleltest
 	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
-		patchy.Register[flagType](api)
+		patchy.Register[mayType](api)
 
-		created := &flagType{}
+		created := &mayType{}
 
-		flagMu.Lock()
+		mayMu.Lock()
 		mayCreateFlag = true
-		flagMu.Unlock()
+		mayMu.Unlock()
 
 		resp, err := c.R().
-			SetBody(&flagType{}).
+			SetBody(&mayType{}).
 			SetResult(created).
-			Post(fmt.Sprintf("%s/flagtype", baseURL))
+			Post(fmt.Sprintf("%s/maytype", baseURL))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
-		flagMu.Lock()
+		mayMu.Lock()
 		mayUpdateFlag = true
-		flagMu.Unlock()
+		mayMu.Unlock()
 
-		updated := &flagType{}
+		updated := &mayType{}
 
 		resp, err = c.R().
-			SetBody(&flagType{}).
+			SetBody(&mayType{}).
 			SetResult(updated).
-			Patch(fmt.Sprintf("%s/flagtype/%s", baseURL, created.ID))
+			Patch(fmt.Sprintf("%s/maytype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
-		flagMu.Lock()
+		mayMu.Lock()
 		mayUpdateFlag = false
-		flagMu.Unlock()
+		mayMu.Unlock()
 
 		resp, err = c.R().
-			SetBody(&flagType{}).
+			SetBody(&mayType{}).
 			SetResult(updated).
-			Patch(fmt.Sprintf("%s/flagtype/%s", baseURL, created.ID))
+			Patch(fmt.Sprintf("%s/maytype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.True(t, resp.IsError())
 	})
@@ -201,36 +201,36 @@ func TestMayUpdate(t *testing.T) { //nolint:paralleltest
 
 func TestMayDelete(t *testing.T) { //nolint:paralleltest
 	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
-		patchy.Register[flagType](api)
+		patchy.Register[mayType](api)
 
-		created := &flagType{}
+		created := &mayType{}
 
-		flagMu.Lock()
+		mayMu.Lock()
 		mayCreateFlag = true
-		flagMu.Unlock()
+		mayMu.Unlock()
 
 		resp, err := c.R().
-			SetBody(&flagType{}).
+			SetBody(&mayType{}).
 			SetResult(created).
-			Post(fmt.Sprintf("%s/flagtype", baseURL))
+			Post(fmt.Sprintf("%s/maytype", baseURL))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
-		flagMu.Lock()
+		mayMu.Lock()
 		mayDeleteFlag = false
-		flagMu.Unlock()
+		mayMu.Unlock()
 
 		resp, err = c.R().
-			Delete(fmt.Sprintf("%s/flagtype/%s", baseURL, created.ID))
+			Delete(fmt.Sprintf("%s/maytype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.True(t, resp.IsError())
 
-		flagMu.Lock()
+		mayMu.Lock()
 		mayDeleteFlag = true
-		flagMu.Unlock()
+		mayMu.Unlock()
 
 		resp, err = c.R().
-			Delete(fmt.Sprintf("%s/flagtype/%s", baseURL, created.ID))
+			Delete(fmt.Sprintf("%s/maytype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 	})
@@ -238,55 +238,55 @@ func TestMayDelete(t *testing.T) { //nolint:paralleltest
 
 func TestMayRead(t *testing.T) { //nolint:paralleltest
 	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
-		patchy.Register[flagType](api)
+		patchy.Register[mayType](api)
 
-		created := &flagType{}
+		created := &mayType{}
 
-		flagMu.Lock()
+		mayMu.Lock()
 		mayCreateFlag = true
-		flagMu.Unlock()
+		mayMu.Unlock()
 
 		resp, err := c.R().
-			SetBody(&flagType{}).
+			SetBody(&mayType{}).
 			SetResult(created).
-			Post(fmt.Sprintf("%s/flagtype", baseURL))
+			Post(fmt.Sprintf("%s/maytype", baseURL))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
 		read := &testType{}
 
-		flagMu.Lock()
+		mayMu.Lock()
 		mayReadFlag = true
-		flagMu.Unlock()
+		mayMu.Unlock()
 
 		resp, err = c.R().
 			SetResult(read).
-			Get(fmt.Sprintf("%s/flagtype/%s", baseURL, created.ID))
+			Get(fmt.Sprintf("%s/maytype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
 		resp, err = c.R().
 			SetDoNotParseResponse(true).
 			SetHeader("Accept", "text/event-stream").
-			Get(fmt.Sprintf("%s/flagtype/%s", baseURL, created.ID))
+			Get(fmt.Sprintf("%s/maytype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		resp.RawBody().Close()
 
-		flagMu.Lock()
+		mayMu.Lock()
 		mayReadFlag = false
-		flagMu.Unlock()
+		mayMu.Unlock()
 
 		resp, err = c.R().
 			SetResult(read).
-			Get(fmt.Sprintf("%s/flagtype/%s", baseURL, created.ID))
+			Get(fmt.Sprintf("%s/maytype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.True(t, resp.IsError())
 
 		resp, err = c.R().
 			SetDoNotParseResponse(true).
 			SetHeader("Accept", "text/event-stream").
-			Get(fmt.Sprintf("%s/flagtype/%s", baseURL, created.ID))
+			Get(fmt.Sprintf("%s/maytype/%s", baseURL, created.ID))
 		require.Nil(t, err)
 		require.True(t, resp.IsError())
 	})
