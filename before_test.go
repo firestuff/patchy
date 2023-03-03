@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/firestuff/patchy"
-	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,69 +21,69 @@ func (bt *beforeType) BeforeRead(r *http.Request) error {
 }
 
 func TestBeforeRead(t *testing.T) {
+	// TODO: stream one
+	// TODO: stream list
 	t.Parallel()
 
-	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
-		patchy.Register[beforeType](api)
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
 
-		create := &beforeType{}
+	patchy.Register[beforeType](ta.api)
 
-		resp, err := c.R().
-			SetHeader("X-Test", "1234").
-			SetBody(&beforeType{}).
-			SetResult(create).
-			Post("beforetype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Equal(t, "1234", create.Text1)
+	create := &beforeType{}
 
-		patch := &beforeType{}
+	resp, err := ta.r().
+		SetHeader("X-Test", "1234").
+		SetBody(&beforeType{}).
+		SetResult(create).
+		Post("beforetype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, "1234", create.Text1)
 
-		resp, err = c.R().
-			SetHeader("X-Test", "2345").
-			SetBody(&beforeType{}).
-			SetResult(patch).
-			SetPathParam("id", create.ID).
-			Patch("beforetype/{id}")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Equal(t, "2345", patch.Text1)
+	patch := &beforeType{}
 
-		put := &beforeType{}
+	resp, err = ta.r().
+		SetHeader("X-Test", "2345").
+		SetBody(&beforeType{}).
+		SetResult(patch).
+		SetPathParam("id", create.ID).
+		Patch("beforetype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, "2345", patch.Text1)
 
-		resp, err = c.R().
-			SetHeader("X-Test", "3456").
-			SetBody(&beforeType{}).
-			SetResult(put).
-			SetPathParam("id", create.ID).
-			Put("beforetype/{id}")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Equal(t, "3456", put.Text1)
+	put := &beforeType{}
 
-		get := &beforeType{}
+	resp, err = ta.r().
+		SetHeader("X-Test", "3456").
+		SetBody(&beforeType{}).
+		SetResult(put).
+		SetPathParam("id", create.ID).
+		Put("beforetype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, "3456", put.Text1)
 
-		resp, err = c.R().
-			SetHeader("X-Test", "4567").
-			SetResult(get).
-			SetPathParam("id", create.ID).
-			Get("beforetype/{id}")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Equal(t, "4567", get.Text1)
+	get := &beforeType{}
 
-		list := []*beforeType{}
+	resp, err = ta.r().
+		SetHeader("X-Test", "4567").
+		SetResult(get).
+		SetPathParam("id", create.ID).
+		Get("beforetype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, "4567", get.Text1)
 
-		resp, err = c.R().
-			SetHeader("X-Test", "5678").
-			SetResult(&list).
-			Get("beforetype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Len(t, list, 1)
-		require.Equal(t, "5678", list[0].Text1)
+	list := []*beforeType{}
 
-		// TODO: stream one
-		// TODO: stream list
-	})
+	resp, err = ta.r().
+		SetHeader("X-Test", "5678").
+		SetResult(&list).
+		Get("beforetype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Len(t, list, 1)
+	require.Equal(t, "5678", list[0].Text1)
 }

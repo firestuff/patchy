@@ -4,255 +4,255 @@ import (
 	"bufio"
 	"testing"
 
-	"github.com/firestuff/patchy"
-	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/require"
 )
 
 func TestStreamList(t *testing.T) {
 	t.Parallel()
 
-	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
-		created1 := &testType{}
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
 
-		resp, err := c.R().
-			SetBody(&testType{
-				Text: "foo",
-			}).
-			SetResult(created1).
-			Post("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
+	created1 := &testType{}
 
-		created2 := &testType{}
+	resp, err := ta.r().
+		SetBody(&testType{
+			Text: "foo",
+		}).
+		SetResult(created1).
+		Post("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
 
-		resp, err = c.R().
-			SetBody(&testType{
-				Text: "bar",
-			}).
-			SetResult(created2).
-			Post("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
+	created2 := &testType{}
 
-		resp, err = c.R().
-			SetDoNotParseResponse(true).
-			SetHeader("Accept", "text/event-stream").
-			Get("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
+	resp, err = ta.r().
+		SetBody(&testType{
+			Text: "bar",
+		}).
+		SetResult(created2).
+		Post("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
 
-		body := resp.RawBody()
-		defer body.Close()
+	resp, err = ta.r().
+		SetDoNotParseResponse(true).
+		SetHeader("Accept", "text/event-stream").
+		Get("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
 
-		scan := bufio.NewScanner(body)
+	body := resp.RawBody()
+	defer body.Close()
 
-		list := []*testType{}
+	scan := bufio.NewScanner(body)
 
-		eventType, err := readEvent(scan, &list)
-		require.Nil(t, err)
-		require.Equal(t, "list", eventType)
+	list := []*testType{}
 
-		require.Len(t, list, 2)
-		require.ElementsMatch(t, []string{"foo", "bar"}, []string{list[0].Text, list[1].Text})
+	eventType, err := readEvent(scan, &list)
+	require.Nil(t, err)
+	require.Equal(t, "list", eventType)
 
-		// Heartbeat (after 5 seconds)
-		eventType, err = readEvent(scan, nil)
-		require.Nil(t, err)
-		require.Equal(t, "heartbeat", eventType)
+	require.Len(t, list, 2)
+	require.ElementsMatch(t, []string{"foo", "bar"}, []string{list[0].Text, list[1].Text})
 
-		created3 := &testType{}
+	// Heartbeat (after 5 seconds)
+	eventType, err = readEvent(scan, nil)
+	require.Nil(t, err)
+	require.Equal(t, "heartbeat", eventType)
 
-		resp, err = c.R().
-			SetBody(&testType{
-				Text: "zig",
-			}).
-			SetResult(created3).
-			Post("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
+	created3 := &testType{}
 
-		eventType, err = readEvent(scan, &list)
-		require.Nil(t, err)
-		require.Equal(t, "list", eventType)
+	resp, err = ta.r().
+		SetBody(&testType{
+			Text: "zig",
+		}).
+		SetResult(created3).
+		Post("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
 
-		require.Len(t, list, 3)
-		require.ElementsMatch(t, []string{"foo", "bar", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
+	eventType, err = readEvent(scan, &list)
+	require.Nil(t, err)
+	require.Equal(t, "list", eventType)
 
-		resp, err = c.R().
-			SetBody(&testType{
-				Text: "zag",
-			}).
-			SetResult(created3).
-			SetPathParam("id", created3.ID).
-			Patch("testtype/{id}")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
+	require.Len(t, list, 3)
+	require.ElementsMatch(t, []string{"foo", "bar", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
 
-		eventType, err = readEvent(scan, &list)
-		require.Nil(t, err)
-		require.Equal(t, "list", eventType)
+	resp, err = ta.r().
+		SetBody(&testType{
+			Text: "zag",
+		}).
+		SetResult(created3).
+		SetPathParam("id", created3.ID).
+		Patch("testtype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
 
-		require.Len(t, list, 3)
-		require.ElementsMatch(t, []string{"foo", "bar", "zag"}, []string{list[0].Text, list[1].Text, list[2].Text})
+	eventType, err = readEvent(scan, &list)
+	require.Nil(t, err)
+	require.Equal(t, "list", eventType)
 
-		resp, err = c.R().
-			SetPathParam("id", created3.ID).
-			Delete("testtype/{id}")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
+	require.Len(t, list, 3)
+	require.ElementsMatch(t, []string{"foo", "bar", "zag"}, []string{list[0].Text, list[1].Text, list[2].Text})
 
-		eventType, err = readEvent(scan, &list)
-		require.Nil(t, err)
-		require.Equal(t, "list", eventType)
+	resp, err = ta.r().
+		SetPathParam("id", created3.ID).
+		Delete("testtype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
 
-		require.Len(t, list, 2)
-		require.ElementsMatch(t, []string{"foo", "bar"}, []string{list[0].Text, list[1].Text})
+	eventType, err = readEvent(scan, &list)
+	require.Nil(t, err)
+	require.Equal(t, "list", eventType)
 
-		resp, err = c.R().
-			SetDoNotParseResponse(true).
-			SetHeader("Accept", "text/event-stream").
-			SetQueryParam("_limit", "1").
-			Get("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
+	require.Len(t, list, 2)
+	require.ElementsMatch(t, []string{"foo", "bar"}, []string{list[0].Text, list[1].Text})
 
-		body2 := resp.RawBody()
-		defer body2.Close()
+	resp, err = ta.r().
+		SetDoNotParseResponse(true).
+		SetHeader("Accept", "text/event-stream").
+		SetQueryParam("_limit", "1").
+		Get("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
 
-		scan2 := bufio.NewScanner(body2)
+	body2 := resp.RawBody()
+	defer body2.Close()
 
-		eventType, err = readEvent(scan2, &list)
-		require.Nil(t, err)
-		require.Equal(t, "list", eventType)
+	scan2 := bufio.NewScanner(body2)
 
-		require.Len(t, list, 1)
-		require.True(t, list[0].Text == "foo" || list[0].Text == "bar")
-	})
+	eventType, err = readEvent(scan2, &list)
+	require.Nil(t, err)
+	require.Equal(t, "list", eventType)
+
+	require.Len(t, list, 1)
+	require.True(t, list[0].Text == "foo" || list[0].Text == "bar")
 }
 
 func TestStreamListDiff(t *testing.T) {
 	t.Parallel()
 
-	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
-		created1 := &testType{}
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
 
-		resp, err := c.R().
-			SetBody(&testType{
-				Text: "foo",
-			}).
-			SetResult(created1).
-			Post("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
+	created1 := &testType{}
 
-		created2 := &testType{}
+	resp, err := ta.r().
+		SetBody(&testType{
+			Text: "foo",
+		}).
+		SetResult(created1).
+		Post("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
 
-		resp, err = c.R().
-			SetBody(&testType{
-				Text: "bar",
-			}).
-			SetResult(created2).
-			Post("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
+	created2 := &testType{}
 
-		resp, err = c.R().
-			SetDoNotParseResponse(true).
-			SetHeader("Accept", "text/event-stream").
-			SetQueryParam("_stream", "diff").
-			Get("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
+	resp, err = ta.r().
+		SetBody(&testType{
+			Text: "bar",
+		}).
+		SetResult(created2).
+		Post("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
 
-		body := resp.RawBody()
-		defer body.Close()
+	resp, err = ta.r().
+		SetDoNotParseResponse(true).
+		SetHeader("Accept", "text/event-stream").
+		SetQueryParam("_stream", "diff").
+		Get("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
 
-		scan := bufio.NewScanner(body)
+	body := resp.RawBody()
+	defer body.Close()
 
-		resp2, err := c.R().
-			SetDoNotParseResponse(true).
-			SetHeader("Accept", "text/event-stream").
-			SetQueryParam("_stream", "diff").
-			SetQueryParam("_sort", "text").
-			SetQueryParam("_limit", "1").
-			Get("testtype")
-		require.Nil(t, err)
-		require.False(t, resp2.IsError())
+	scan := bufio.NewScanner(body)
 
-		body2 := resp2.RawBody()
-		defer body2.Close()
+	resp2, err := ta.r().
+		SetDoNotParseResponse(true).
+		SetHeader("Accept", "text/event-stream").
+		SetQueryParam("_stream", "diff").
+		SetQueryParam("_sort", "text").
+		SetQueryParam("_limit", "1").
+		Get("testtype")
+	require.Nil(t, err)
+	require.False(t, resp2.IsError())
 
-		scan2 := bufio.NewScanner(body2)
+	body2 := resp2.RawBody()
+	defer body2.Close()
 
-		obj1 := testType{}
+	scan2 := bufio.NewScanner(body2)
 
-		eventType, err := readEvent(scan, &obj1)
-		require.Nil(t, err)
-		require.Equal(t, "add", eventType)
+	obj1 := testType{}
 
-		obj2 := testType{}
+	eventType, err := readEvent(scan, &obj1)
+	require.Nil(t, err)
+	require.Equal(t, "add", eventType)
 
-		eventType, err = readEvent(scan, &obj2)
-		require.Nil(t, err)
-		require.Equal(t, "add", eventType)
-		require.ElementsMatch(t, []string{"foo", "bar"}, []string{obj1.Text, obj2.Text})
+	obj2 := testType{}
 
-		eventType, err = readEvent(scan2, &obj1)
-		require.Nil(t, err)
-		require.Equal(t, "add", eventType)
-		require.Equal(t, "bar", obj1.Text)
+	eventType, err = readEvent(scan, &obj2)
+	require.Nil(t, err)
+	require.Equal(t, "add", eventType)
+	require.ElementsMatch(t, []string{"foo", "bar"}, []string{obj1.Text, obj2.Text})
 
-		resp, err = c.R().
-			SetBody(&testType{
-				Text: "zig",
-			}).
-			SetResult(created2).
-			SetPathParam("id", created2.ID).
-			Patch("testtype/{id}")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
+	eventType, err = readEvent(scan2, &obj1)
+	require.Nil(t, err)
+	require.Equal(t, "add", eventType)
+	require.Equal(t, "bar", obj1.Text)
 
-		eventType, err = readEvent(scan, &obj1)
-		require.Nil(t, err)
-		require.Equal(t, "update", eventType)
-		require.Equal(t, created2.ID, obj1.ID)
-		require.Equal(t, "zig", obj1.Text)
+	resp, err = ta.r().
+		SetBody(&testType{
+			Text: "zig",
+		}).
+		SetResult(created2).
+		SetPathParam("id", created2.ID).
+		Patch("testtype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
 
-		eventType, err = readEvent(scan2, &obj1)
-		require.Nil(t, err)
-		require.Equal(t, "add", eventType)
-		require.Equal(t, created1.ID, obj1.ID)
-		require.Equal(t, "foo", obj1.Text)
+	eventType, err = readEvent(scan, &obj1)
+	require.Nil(t, err)
+	require.Equal(t, "update", eventType)
+	require.Equal(t, created2.ID, obj1.ID)
+	require.Equal(t, "zig", obj1.Text)
 
-		eventType, err = readEvent(scan2, &obj1)
-		require.Nil(t, err)
-		require.Equal(t, "remove", eventType)
-		require.Equal(t, created2.ID, obj1.ID)
-		require.Equal(t, "bar", obj1.Text)
+	eventType, err = readEvent(scan2, &obj1)
+	require.Nil(t, err)
+	require.Equal(t, "add", eventType)
+	require.Equal(t, created1.ID, obj1.ID)
+	require.Equal(t, "foo", obj1.Text)
 
-		resp, err = c.R().
-			SetPathParam("id", created1.ID).
-			Delete("testtype/{id}")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
+	eventType, err = readEvent(scan2, &obj1)
+	require.Nil(t, err)
+	require.Equal(t, "remove", eventType)
+	require.Equal(t, created2.ID, obj1.ID)
+	require.Equal(t, "bar", obj1.Text)
 
-		eventType, err = readEvent(scan, &obj1)
-		require.Nil(t, err)
-		require.Equal(t, "remove", eventType)
-		require.Equal(t, created1.ID, obj1.ID)
-		require.Equal(t, "foo", obj1.Text)
+	resp, err = ta.r().
+		SetPathParam("id", created1.ID).
+		Delete("testtype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
 
-		eventType, err = readEvent(scan2, &obj1)
-		require.Nil(t, err)
-		require.Equal(t, "add", eventType)
-		require.Equal(t, created2.ID, obj1.ID)
-		require.Equal(t, "zig", obj1.Text)
+	eventType, err = readEvent(scan, &obj1)
+	require.Nil(t, err)
+	require.Equal(t, "remove", eventType)
+	require.Equal(t, created1.ID, obj1.ID)
+	require.Equal(t, "foo", obj1.Text)
 
-		eventType, err = readEvent(scan2, &obj1)
-		require.Nil(t, err)
-		require.Equal(t, "remove", eventType)
-		require.Equal(t, created1.ID, obj1.ID)
-		require.Equal(t, "foo", obj1.Text)
-	})
+	eventType, err = readEvent(scan2, &obj1)
+	require.Nil(t, err)
+	require.Equal(t, "add", eventType)
+	require.Equal(t, created2.ID, obj1.ID)
+	require.Equal(t, "zig", obj1.Text)
+
+	eventType, err = readEvent(scan2, &obj1)
+	require.Nil(t, err)
+	require.Equal(t, "remove", eventType)
+	require.Equal(t, created1.ID, obj1.ID)
+	require.Equal(t, "foo", obj1.Text)
 }

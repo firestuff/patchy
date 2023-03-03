@@ -4,137 +4,137 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/firestuff/patchy"
-	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/require"
 )
 
 func TestPATCH(t *testing.T) {
 	t.Parallel()
 
-	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
-		created := &testType{}
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
 
-		resp, err := c.R().
-			SetBody(&testType{
-				Text: "foo",
-			}).
-			SetResult(created).
-			Post("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Equal(t, int64(0), created.Generation)
+	created := &testType{}
 
-		updated := &testType{}
+	resp, err := ta.r().
+		SetBody(&testType{
+			Text: "foo",
+		}).
+		SetResult(created).
+		Post("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, int64(0), created.Generation)
 
-		resp, err = c.R().
-			SetBody(&testType{
-				Text: "bar",
-			}).
-			SetResult(updated).
-			SetPathParam("id", created.ID).
-			Patch("testtype/{id}")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Equal(t, "bar", updated.Text)
-		require.Equal(t, created.ID, updated.ID)
-		require.Equal(t, int64(1), updated.Generation)
+	updated := &testType{}
 
-		read := &testType{}
+	resp, err = ta.r().
+		SetBody(&testType{
+			Text: "bar",
+		}).
+		SetResult(updated).
+		SetPathParam("id", created.ID).
+		Patch("testtype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, "bar", updated.Text)
+	require.Equal(t, created.ID, updated.ID)
+	require.Equal(t, int64(1), updated.Generation)
 
-		resp, err = c.R().
-			SetResult(read).
-			SetPathParam("id", created.ID).
-			Get("testtype/{id}")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Equal(t, "bar", read.Text)
-		require.Equal(t, created.ID, read.ID)
-		require.Equal(t, int64(1), read.Generation)
-	})
+	read := &testType{}
+
+	resp, err = ta.r().
+		SetResult(read).
+		SetPathParam("id", created.ID).
+		Get("testtype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, "bar", read.Text)
+	require.Equal(t, created.ID, read.ID)
+	require.Equal(t, int64(1), read.Generation)
 }
 
 func TestPATCHIfMatch(t *testing.T) {
 	t.Parallel()
 
-	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
-		created := &testType{}
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
 
-		resp, err := c.R().
-			SetBody(&testType{
-				Text: "foo",
-			}).
-			SetResult(created).
-			Post("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Equal(t, int64(0), created.Generation)
+	created := &testType{}
 
-		etag := resp.Header().Get("ETag")
-		require.Equal(t, fmt.Sprintf(`"%s"`, created.ETag), etag)
+	resp, err := ta.r().
+		SetBody(&testType{
+			Text: "foo",
+		}).
+		SetResult(created).
+		Post("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, int64(0), created.Generation)
 
-		updated := &testType{}
+	etag := resp.Header().Get("ETag")
+	require.Equal(t, fmt.Sprintf(`"%s"`, created.ETag), etag)
 
-		resp, err = c.R().
-			SetHeader("If-Match", etag).
-			SetBody(&testType{
-				Text: "bar",
-			}).
-			SetResult(updated).
-			SetPathParam("id", created.ID).
-			Patch("testtype/{id}")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Equal(t, int64(1), updated.Generation)
+	updated := &testType{}
 
-		etag = resp.Header().Get("ETag")
-		require.Equal(t, fmt.Sprintf(`"%s"`, updated.ETag), etag)
-		require.NotEqual(t, created.ETag, updated.ETag)
+	resp, err = ta.r().
+		SetHeader("If-Match", etag).
+		SetBody(&testType{
+			Text: "bar",
+		}).
+		SetResult(updated).
+		SetPathParam("id", created.ID).
+		Patch("testtype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, int64(1), updated.Generation)
 
-		resp, err = c.R().
-			SetHeader("If-Match", `"foobar"`).
-			SetBody(&testType{
-				Text: "zig",
-			}).
-			SetPathParam("id", created.ID).
-			Patch("testtype/{id}")
-		require.Nil(t, err)
-		require.True(t, resp.IsError())
-		require.Equal(t, 400, resp.StatusCode())
+	etag = resp.Header().Get("ETag")
+	require.Equal(t, fmt.Sprintf(`"%s"`, updated.ETag), etag)
+	require.NotEqual(t, created.ETag, updated.ETag)
 
-		resp, err = c.R().
-			SetHeader("If-Match", `"etag:foobar"`).
-			SetBody(&testType{
-				Text: "zig",
-			}).
-			SetPathParam("id", created.ID).
-			Patch("testtype/{id}")
-		require.Nil(t, err)
-		require.True(t, resp.IsError())
-		require.Equal(t, 412, resp.StatusCode())
+	resp, err = ta.r().
+		SetHeader("If-Match", `"foobar"`).
+		SetBody(&testType{
+			Text: "zig",
+		}).
+		SetPathParam("id", created.ID).
+		Patch("testtype/{id}")
+	require.Nil(t, err)
+	require.True(t, resp.IsError())
+	require.Equal(t, 400, resp.StatusCode())
 
-		resp, err = c.R().
-			SetHeader("If-Match", `"generation:1"`).
-			SetBody(&testType{
-				Text: "zig",
-			}).
-			SetResult(updated).
-			SetPathParam("id", created.ID).
-			Patch("testtype/{id}")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Equal(t, int64(2), updated.Generation)
-		require.Equal(t, "zig", updated.Text)
+	resp, err = ta.r().
+		SetHeader("If-Match", `"etag:foobar"`).
+		SetBody(&testType{
+			Text: "zig",
+		}).
+		SetPathParam("id", created.ID).
+		Patch("testtype/{id}")
+	require.Nil(t, err)
+	require.True(t, resp.IsError())
+	require.Equal(t, 412, resp.StatusCode())
 
-		resp, err = c.R().
-			SetHeader("If-Match", `"generation:1"`).
-			SetBody(&testType{
-				Text: "zag",
-			}).
-			SetPathParam("id", created.ID).
-			Patch("testtype/{id}")
-		require.Nil(t, err)
-		require.True(t, resp.IsError())
-		require.Equal(t, 412, resp.StatusCode())
-	})
+	resp, err = ta.r().
+		SetHeader("If-Match", `"generation:1"`).
+		SetBody(&testType{
+			Text: "zig",
+		}).
+		SetResult(updated).
+		SetPathParam("id", created.ID).
+		Patch("testtype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, int64(2), updated.Generation)
+	require.Equal(t, "zig", updated.Text)
+
+	resp, err = ta.r().
+		SetHeader("If-Match", `"generation:1"`).
+		SetBody(&testType{
+			Text: "zag",
+		}).
+		SetPathParam("id", created.ID).
+		Patch("testtype/{id}")
+	require.Nil(t, err)
+	require.True(t, resp.IsError())
+	require.Equal(t, 412, resp.StatusCode())
 }
