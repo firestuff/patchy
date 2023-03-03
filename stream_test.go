@@ -4,66 +4,65 @@ import (
 	"bufio"
 	"testing"
 
-	"github.com/firestuff/patchy"
-	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/require"
 )
 
 func TestStream(t *testing.T) {
 	t.Parallel()
 
-	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
-		created := &testType{}
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
 
-		resp, err := c.R().
-			SetBody(&testType{
-				Text: "foo",
-			}).
-			SetResult(created).
-			Post("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
+	created := &testType{}
 
-		resp, err = c.R().
-			SetDoNotParseResponse(true).
-			SetHeader("Accept", "text/event-stream").
-			SetPathParam("id", created.ID).
-			Get("testtype/{id}")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
+	resp, err := ta.r().
+		SetBody(&testType{
+			Text: "foo",
+		}).
+		SetResult(created).
+		Post("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
 
-		body := resp.RawBody()
-		defer body.Close()
+	resp, err = ta.r().
+		SetDoNotParseResponse(true).
+		SetHeader("Accept", "text/event-stream").
+		SetPathParam("id", created.ID).
+		Get("testtype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
 
-		scan := bufio.NewScanner(body)
+	body := resp.RawBody()
+	defer body.Close()
 
-		initial := &testType{}
-		eventType, err := readEvent(scan, initial)
-		require.Nil(t, err)
-		require.Equal(t, "initial", eventType)
-		require.Equal(t, "foo", initial.Text)
+	scan := bufio.NewScanner(body)
 
-		// Heartbeat (after 5 seconds)
-		eventType, err = readEvent(scan, nil)
-		require.Nil(t, err)
-		require.Equal(t, "heartbeat", eventType)
+	initial := &testType{}
+	eventType, err := readEvent(scan, initial)
+	require.Nil(t, err)
+	require.Equal(t, "initial", eventType)
+	require.Equal(t, "foo", initial.Text)
 
-		updated := &testType{}
+	// Heartbeat (after 5 seconds)
+	eventType, err = readEvent(scan, nil)
+	require.Nil(t, err)
+	require.Equal(t, "heartbeat", eventType)
 
-		// Round trip PATCH -> SSE
-		resp, err = c.R().
-			SetBody(&testType{
-				Text: "bar",
-			}).
-			SetResult(updated).
-			SetPathParam("id", created.ID).
-			Patch("testtype/{id}")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
+	updated := &testType{}
 
-		eventType, err = readEvent(scan, updated)
-		require.Nil(t, err)
-		require.Equal(t, "update", eventType)
-		require.Equal(t, "bar", updated.Text)
-	})
+	// Round trip PATCH -> SSE
+	resp, err = ta.r().
+		SetBody(&testType{
+			Text: "bar",
+		}).
+		SetResult(updated).
+		SetPathParam("id", created.ID).
+		Patch("testtype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+
+	eventType, err = readEvent(scan, updated)
+	require.Nil(t, err)
+	require.Equal(t, "update", eventType)
+	require.Equal(t, "bar", updated.Text)
 }

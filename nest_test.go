@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/firestuff/patchy"
-	"github.com/go-resty/resty/v2"
 )
 
 type Outer struct {
@@ -21,17 +20,19 @@ type Inner struct {
 func TestNestedInnerFirst(t *testing.T) {
 	t.Parallel()
 
-	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
-		patchy.Register[Inner](api)
-		patchy.Register[Outer](api)
-	})
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	patchy.Register[Inner](ta.api)
+	patchy.Register[Outer](ta.api)
 }
 
 func TestNestedOuterFirst(t *testing.T) {
 	t.Parallel()
 
-	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
-		patchy.Register[Outer](api)
-		patchy.Register[Inner](api)
-	})
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	patchy.Register[Outer](ta.api)
+	patchy.Register[Inner](ta.api)
 }

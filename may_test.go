@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/firestuff/patchy"
-	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/require"
 )
 
@@ -82,221 +81,226 @@ func (*mayType) MayRead(r *http.Request) error {
 }
 
 func TestMayCreate(t *testing.T) { //nolint:paralleltest
-	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
-		patchy.Register[mayType](api)
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
 
-		created := &mayType{}
+	patchy.Register[mayType](ta.api)
 
-		mayMu.Lock()
-		mayCreateFlag = true
-		mayMu.Unlock()
+	created := &mayType{}
 
-		resp, err := c.R().
-			SetBody(&mayType{}).
-			SetResult(created).
-			Post("maytype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.NotEmpty(t, created.ID)
+	mayMu.Lock()
+	mayCreateFlag = true
+	mayMu.Unlock()
 
-		mayMu.Lock()
-		mayCreateFlag = false
-		mayMu.Unlock()
+	resp, err := ta.r().
+		SetBody(&mayType{}).
+		SetResult(created).
+		Post("maytype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.NotEmpty(t, created.ID)
 
-		resp, err = c.R().
-			SetBody(&mayType{}).
-			SetResult(created).
-			Post("maytype")
-		require.Nil(t, err)
-		require.True(t, resp.IsError())
-	})
+	mayMu.Lock()
+	mayCreateFlag = false
+	mayMu.Unlock()
+
+	resp, err = ta.r().
+		SetBody(&mayType{}).
+		SetResult(created).
+		Post("maytype")
+	require.Nil(t, err)
+	require.True(t, resp.IsError())
 }
 
 func TestMayReplace(t *testing.T) { //nolint:paralleltest
-	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
-		patchy.Register[mayType](api)
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
 
-		created := &mayType{}
+	patchy.Register[mayType](ta.api)
 
-		mayMu.Lock()
-		mayCreateFlag = true
-		mayMu.Unlock()
+	created := &mayType{}
 
-		resp, err := c.R().
-			SetBody(&mayType{}).
-			SetResult(created).
-			Post("maytype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
+	mayMu.Lock()
+	mayCreateFlag = true
+	mayMu.Unlock()
 
-		mayMu.Lock()
-		mayReplaceFlag = true
-		mayMu.Unlock()
+	resp, err := ta.r().
+		SetBody(&mayType{}).
+		SetResult(created).
+		Post("maytype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
 
-		replaced := &mayType{}
+	mayMu.Lock()
+	mayReplaceFlag = true
+	mayMu.Unlock()
 
-		resp, err = c.R().
-			SetBody(&mayType{}).
-			SetResult(replaced).
-			SetPathParam("id", created.ID).
-			Put("maytype/{id}")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
+	replaced := &mayType{}
 
-		mayMu.Lock()
-		mayReplaceFlag = false
-		mayMu.Unlock()
+	resp, err = ta.r().
+		SetBody(&mayType{}).
+		SetResult(replaced).
+		SetPathParam("id", created.ID).
+		Put("maytype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
 
-		resp, err = c.R().
-			SetBody(&mayType{}).
-			SetResult(replaced).
-			SetPathParam("id", created.ID).
-			Put("maytype/{id}")
-		require.Nil(t, err)
-		require.True(t, resp.IsError())
-	})
+	mayMu.Lock()
+	mayReplaceFlag = false
+	mayMu.Unlock()
+
+	resp, err = ta.r().
+		SetBody(&mayType{}).
+		SetResult(replaced).
+		SetPathParam("id", created.ID).
+		Put("maytype/{id}")
+	require.Nil(t, err)
+	require.True(t, resp.IsError())
 }
 
 func TestMayUpdate(t *testing.T) { //nolint:paralleltest
-	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
-		patchy.Register[mayType](api)
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
 
-		created := &mayType{}
+	patchy.Register[mayType](ta.api)
 
-		mayMu.Lock()
-		mayCreateFlag = true
-		mayMu.Unlock()
+	created := &mayType{}
 
-		resp, err := c.R().
-			SetBody(&mayType{}).
-			SetResult(created).
-			Post("maytype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
+	mayMu.Lock()
+	mayCreateFlag = true
+	mayMu.Unlock()
 
-		mayMu.Lock()
-		mayUpdateFlag = true
-		mayMu.Unlock()
+	resp, err := ta.r().
+		SetBody(&mayType{}).
+		SetResult(created).
+		Post("maytype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
 
-		updated := &mayType{}
+	mayMu.Lock()
+	mayUpdateFlag = true
+	mayMu.Unlock()
 
-		resp, err = c.R().
-			SetBody(&mayType{}).
-			SetResult(updated).
-			SetPathParam("id", created.ID).
-			Patch("maytype/{id}")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
+	updated := &mayType{}
 
-		mayMu.Lock()
-		mayUpdateFlag = false
-		mayMu.Unlock()
+	resp, err = ta.r().
+		SetBody(&mayType{}).
+		SetResult(updated).
+		SetPathParam("id", created.ID).
+		Patch("maytype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
 
-		resp, err = c.R().
-			SetBody(&mayType{}).
-			SetResult(updated).
-			SetPathParam("id", created.ID).
-			Patch("maytype/{id}")
-		require.Nil(t, err)
-		require.True(t, resp.IsError())
-	})
+	mayMu.Lock()
+	mayUpdateFlag = false
+	mayMu.Unlock()
+
+	resp, err = ta.r().
+		SetBody(&mayType{}).
+		SetResult(updated).
+		SetPathParam("id", created.ID).
+		Patch("maytype/{id}")
+	require.Nil(t, err)
+	require.True(t, resp.IsError())
 }
 
 func TestMayDelete(t *testing.T) { //nolint:paralleltest
-	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
-		patchy.Register[mayType](api)
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
 
-		created := &mayType{}
+	patchy.Register[mayType](ta.api)
 
-		mayMu.Lock()
-		mayCreateFlag = true
-		mayMu.Unlock()
+	created := &mayType{}
 
-		resp, err := c.R().
-			SetBody(&mayType{}).
-			SetResult(created).
-			Post("maytype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
+	mayMu.Lock()
+	mayCreateFlag = true
+	mayMu.Unlock()
 
-		mayMu.Lock()
-		mayDeleteFlag = false
-		mayMu.Unlock()
+	resp, err := ta.r().
+		SetBody(&mayType{}).
+		SetResult(created).
+		Post("maytype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
 
-		resp, err = c.R().
-			SetPathParam("id", created.ID).
-			Delete("maytype/{id}")
-		require.Nil(t, err)
-		require.True(t, resp.IsError())
+	mayMu.Lock()
+	mayDeleteFlag = false
+	mayMu.Unlock()
 
-		mayMu.Lock()
-		mayDeleteFlag = true
-		mayMu.Unlock()
+	resp, err = ta.r().
+		SetPathParam("id", created.ID).
+		Delete("maytype/{id}")
+	require.Nil(t, err)
+	require.True(t, resp.IsError())
 
-		resp, err = c.R().
-			SetPathParam("id", created.ID).
-			Delete("maytype/{id}")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-	})
+	mayMu.Lock()
+	mayDeleteFlag = true
+	mayMu.Unlock()
+
+	resp, err = ta.r().
+		SetPathParam("id", created.ID).
+		Delete("maytype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
 }
 
 func TestMayRead(t *testing.T) { //nolint:paralleltest
-	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
-		patchy.Register[mayType](api)
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
 
-		created := &mayType{}
+	patchy.Register[mayType](ta.api)
 
-		mayMu.Lock()
-		mayCreateFlag = true
-		mayMu.Unlock()
+	created := &mayType{}
 
-		resp, err := c.R().
-			SetBody(&mayType{}).
-			SetResult(created).
-			Post("maytype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
+	mayMu.Lock()
+	mayCreateFlag = true
+	mayMu.Unlock()
 
-		read := &testType{}
+	resp, err := ta.r().
+		SetBody(&mayType{}).
+		SetResult(created).
+		Post("maytype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
 
-		mayMu.Lock()
-		mayReadFlag = true
-		mayMu.Unlock()
+	read := &testType{}
 
-		resp, err = c.R().
-			SetResult(read).
-			SetPathParam("id", created.ID).
-			Get("maytype/{id}")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
+	mayMu.Lock()
+	mayReadFlag = true
+	mayMu.Unlock()
 
-		resp, err = c.R().
-			SetDoNotParseResponse(true).
-			SetHeader("Accept", "text/event-stream").
-			SetPathParam("id", created.ID).
-			Get("maytype/{id}")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		resp.RawBody().Close()
+	resp, err = ta.r().
+		SetResult(read).
+		SetPathParam("id", created.ID).
+		Get("maytype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
 
-		mayMu.Lock()
-		mayReadFlag = false
-		mayMu.Unlock()
+	resp, err = ta.r().
+		SetDoNotParseResponse(true).
+		SetHeader("Accept", "text/event-stream").
+		SetPathParam("id", created.ID).
+		Get("maytype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	resp.RawBody().Close()
 
-		resp, err = c.R().
-			SetResult(read).
-			SetPathParam("id", created.ID).
-			Get("maytype/{id}")
-		require.Nil(t, err)
-		require.True(t, resp.IsError())
+	mayMu.Lock()
+	mayReadFlag = false
+	mayMu.Unlock()
 
-		resp, err = c.R().
-			SetDoNotParseResponse(true).
-			SetHeader("Accept", "text/event-stream").
-			SetPathParam("id", created.ID).
-			Get("maytype/{id}")
-		require.Nil(t, err)
-		require.True(t, resp.IsError())
-	})
+	resp, err = ta.r().
+		SetResult(read).
+		SetPathParam("id", created.ID).
+		Get("maytype/{id}")
+	require.Nil(t, err)
+	require.True(t, resp.IsError())
+
+	resp, err = ta.r().
+		SetDoNotParseResponse(true).
+		SetHeader("Accept", "text/event-stream").
+		SetPathParam("id", created.ID).
+		Get("maytype/{id}")
+	require.Nil(t, err)
+	require.True(t, resp.IsError())
 }

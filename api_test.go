@@ -19,13 +19,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TODO: Make this a struct with defer instead of a callback wrapper.
-func withAPI(t *testing.T, cb func(*testing.T, *patchy.API, *resty.Client)) {
+type testAPI struct {
+	dir string
+	api *patchy.API
+	srv *http.Server
+	rst *resty.Client
+}
+
+func newTestAPI(t *testing.T) *testAPI {
 	// TODO: Add goroutine leak detection: https://github.com/uber-go/goleak
 	dir, err := os.MkdirTemp("", "")
 	require.Nil(t, err)
-
-	defer os.RemoveAll(dir)
 
 	api, err := patchy.NewFileStoreAPI(dir)
 	require.Nil(t, err)
@@ -50,14 +54,27 @@ func withAPI(t *testing.T, cb func(*testing.T, *patchy.API, *resty.Client)) {
 
 	baseURL := fmt.Sprintf("http://[::1]:%d/api/", listener.Addr().(*net.TCPAddr).Port)
 
-	c := resty.New().
+	rst := resty.New().
 		SetHeader("Content-Type", "application/json").
 		SetBaseURL(baseURL)
 
-	cb(t, api, c)
+	return &testAPI{
+		dir: dir,
+		api: api,
+		srv: srv,
+		rst: rst,
+	}
+}
 
-	err = srv.Shutdown(context.Background())
+func (ta *testAPI) r() *resty.Request {
+	return ta.rst.R()
+}
+
+func (ta *testAPI) shutdown(t *testing.T) {
+	err := ta.srv.Shutdown(context.Background())
 	require.Nil(t, err)
+
+	os.RemoveAll(ta.dir)
 }
 
 func readEvent(scan *bufio.Scanner, out any) (string, error) {

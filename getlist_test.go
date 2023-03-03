@@ -3,227 +3,226 @@ package patchy_test
 import (
 	"testing"
 
-	"github.com/firestuff/patchy"
-	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/require"
 )
 
 func TestGETList(t *testing.T) {
 	t.Parallel()
 
-	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
-		created1 := &testType{}
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
 
-		resp, err := c.R().
-			SetBody(&testType{
-				Text: "foo",
-			}).
-			SetResult(created1).
-			Post("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
+	created1 := &testType{}
 
-		created2 := &testType{}
+	resp, err := ta.r().
+		SetBody(&testType{
+			Text: "foo",
+		}).
+		SetResult(created1).
+		Post("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
 
-		resp, err = c.R().
-			SetBody(&testType{
-				Text: "bar",
-			}).
-			SetResult(created2).
-			Post("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
+	created2 := &testType{}
 
-		created3 := &testType{}
+	resp, err = ta.r().
+		SetBody(&testType{
+			Text: "bar",
+		}).
+		SetResult(created2).
+		Post("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
 
-		resp, err = c.R().
-			SetBody(&testType{
-				Text: "zig",
-			}).
-			SetResult(created3).
-			Post("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
+	created3 := &testType{}
 
-		list := []testType{}
+	resp, err = ta.r().
+		SetBody(&testType{
+			Text: "zig",
+		}).
+		SetResult(created3).
+		Post("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
 
-		resp, err = c.R().
-			SetResult(&list).
-			Get("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Len(t, list, 3)
-		require.ElementsMatch(t, []string{"foo", "bar", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
+	list := []testType{}
 
-		resp, err = c.R().
-			SetResult(&list).
-			SetQueryParam("text", "bar").
-			Get("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Len(t, list, 1)
-		require.ElementsMatch(t, []string{"bar"}, []string{list[0].Text})
+	resp, err = ta.r().
+		SetResult(&list).
+		Get("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Len(t, list, 3)
+	require.ElementsMatch(t, []string{"foo", "bar", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
 
-		resp, err = c.R().
-			SetResult(&list).
-			SetQueryParam("text[eq]", "bar").
-			Get("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Len(t, list, 1)
-		require.ElementsMatch(t, []string{"bar"}, []string{list[0].Text})
+	resp, err = ta.r().
+		SetResult(&list).
+		SetQueryParam("text", "bar").
+		Get("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Len(t, list, 1)
+	require.ElementsMatch(t, []string{"bar"}, []string{list[0].Text})
 
-		resp, err = c.R().
-			SetResult(&list).
-			SetQueryParam("text[junk]", "bar").
-			Get("testtype")
-		require.Nil(t, err)
-		require.True(t, resp.IsError())
+	resp, err = ta.r().
+		SetResult(&list).
+		SetQueryParam("text[eq]", "bar").
+		Get("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Len(t, list, 1)
+	require.ElementsMatch(t, []string{"bar"}, []string{list[0].Text})
 
-		resp, err = c.R().
-			SetResult(&list).
-			SetQueryParam("text[gt]", "foo").
-			Get("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Len(t, list, 1)
-		require.ElementsMatch(t, []string{"zig"}, []string{list[0].Text})
+	resp, err = ta.r().
+		SetResult(&list).
+		SetQueryParam("text[junk]", "bar").
+		Get("testtype")
+	require.Nil(t, err)
+	require.True(t, resp.IsError())
 
-		resp, err = c.R().
-			SetResult(&list).
-			SetQueryParam("text[gte]", "foo").
-			Get("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Len(t, list, 2)
-		require.ElementsMatch(t, []string{"foo", "zig"}, []string{list[0].Text, list[1].Text})
+	resp, err = ta.r().
+		SetResult(&list).
+		SetQueryParam("text[gt]", "foo").
+		Get("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Len(t, list, 1)
+	require.ElementsMatch(t, []string{"zig"}, []string{list[0].Text})
 
-		resp, err = c.R().
-			SetResult(&list).
-			SetQueryParam("text[hp]", "f").
-			Get("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Len(t, list, 1)
-		require.ElementsMatch(t, []string{"foo"}, []string{list[0].Text})
+	resp, err = ta.r().
+		SetResult(&list).
+		SetQueryParam("text[gte]", "foo").
+		Get("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Len(t, list, 2)
+	require.ElementsMatch(t, []string{"foo", "zig"}, []string{list[0].Text, list[1].Text})
 
-		resp, err = c.R().
-			SetResult(&list).
-			SetQueryParam("text[in]", "zig,foo,zag").
-			Get("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Len(t, list, 2)
-		require.ElementsMatch(t, []string{"foo", "zig"}, []string{list[0].Text, list[1].Text})
+	resp, err = ta.r().
+		SetResult(&list).
+		SetQueryParam("text[hp]", "f").
+		Get("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Len(t, list, 1)
+	require.ElementsMatch(t, []string{"foo"}, []string{list[0].Text})
 
-		resp, err = c.R().
-			SetResult(&list).
-			SetQueryParam("text[lt]", "foo").
-			Get("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Len(t, list, 1)
-		require.ElementsMatch(t, []string{"bar"}, []string{list[0].Text})
+	resp, err = ta.r().
+		SetResult(&list).
+		SetQueryParam("text[in]", "zig,foo,zag").
+		Get("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Len(t, list, 2)
+	require.ElementsMatch(t, []string{"foo", "zig"}, []string{list[0].Text, list[1].Text})
 
-		resp, err = c.R().
-			SetResult(&list).
-			SetQueryParam("text[lte]", "foo").
-			Get("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Len(t, list, 2)
-		require.ElementsMatch(t, []string{"bar", "foo"}, []string{list[0].Text, list[1].Text})
+	resp, err = ta.r().
+		SetResult(&list).
+		SetQueryParam("text[lt]", "foo").
+		Get("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Len(t, list, 1)
+	require.ElementsMatch(t, []string{"bar"}, []string{list[0].Text})
 
-		resp, err = c.R().
-			SetResult(&list).
-			SetQueryParam("_limit", "1").
-			Get("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Len(t, list, 1)
-		require.True(t, list[0].Text == "bar" || list[0].Text == "foo" || list[0].Text == "zig")
+	resp, err = ta.r().
+		SetResult(&list).
+		SetQueryParam("text[lte]", "foo").
+		Get("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Len(t, list, 2)
+	require.ElementsMatch(t, []string{"bar", "foo"}, []string{list[0].Text, list[1].Text})
 
-		resp, err = c.R().
-			SetResult(&list).
-			SetQueryParam("_offset", "0").
-			Get("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Len(t, list, 3)
-		require.ElementsMatch(t, []string{"bar", "foo", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
+	resp, err = ta.r().
+		SetResult(&list).
+		SetQueryParam("_limit", "1").
+		Get("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Len(t, list, 1)
+	require.True(t, list[0].Text == "bar" || list[0].Text == "foo" || list[0].Text == "zig")
 
-		resp, err = c.R().
-			SetResult(&list).
-			SetQueryParam("_offset", "1").
-			Get("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Len(t, list, 2)
+	resp, err = ta.r().
+		SetResult(&list).
+		SetQueryParam("_offset", "0").
+		Get("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Len(t, list, 3)
+	require.ElementsMatch(t, []string{"bar", "foo", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
 
-		resp, err = c.R().
-			SetResult(&list).
-			Get("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Len(t, list, 3)
-		require.ElementsMatch(t, []string{"bar", "foo", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
+	resp, err = ta.r().
+		SetResult(&list).
+		SetQueryParam("_offset", "1").
+		Get("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Len(t, list, 2)
 
-		list2 := []testType{}
+	resp, err = ta.r().
+		SetResult(&list).
+		Get("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Len(t, list, 3)
+	require.ElementsMatch(t, []string{"bar", "foo", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
 
-		resp, err = c.R().
-			SetResult(&list2).
-			SetQueryParam("_after", list[0].ID).
-			Get("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Len(t, list2, 2)
-		require.ElementsMatch(t, []string{list[1].Text, list[2].Text}, []string{list2[0].Text, list2[1].Text})
+	list2 := []testType{}
 
-		resp, err = c.R().
-			SetResult(&list).
-			SetQueryParam("_sort", "text").
-			Get("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Len(t, list, 3)
-		require.Equal(t, []string{"bar", "foo", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
+	resp, err = ta.r().
+		SetResult(&list2).
+		SetQueryParam("_after", list[0].ID).
+		Get("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Len(t, list2, 2)
+	require.ElementsMatch(t, []string{list[1].Text, list[2].Text}, []string{list2[0].Text, list2[1].Text})
 
-		resp, err = c.R().
-			SetResult(&list).
-			SetQueryParam("_sort", "+text").
-			Get("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Len(t, list, 3)
-		require.Equal(t, []string{"bar", "foo", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
+	resp, err = ta.r().
+		SetResult(&list).
+		SetQueryParam("_sort", "text").
+		Get("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Len(t, list, 3)
+	require.Equal(t, []string{"bar", "foo", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
 
-		resp, err = c.R().
-			SetResult(&list).
-			SetQueryParam("_sort", "-text").
-			Get("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Len(t, list, 3)
-		require.Equal(t, []string{"zig", "foo", "bar"}, []string{list[0].Text, list[1].Text, list[2].Text})
+	resp, err = ta.r().
+		SetResult(&list).
+		SetQueryParam("_sort", "+text").
+		Get("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Len(t, list, 3)
+	require.Equal(t, []string{"bar", "foo", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
 
-		resp, err = c.R().
-			SetResult(&list).
-			SetQueryParam("_sort", "+text").
-			SetQueryParam("_offset", "1").
-			Get("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Len(t, list, 2)
-		require.Equal(t, []string{"foo", "zig"}, []string{list[0].Text, list[1].Text})
+	resp, err = ta.r().
+		SetResult(&list).
+		SetQueryParam("_sort", "-text").
+		Get("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Len(t, list, 3)
+	require.Equal(t, []string{"zig", "foo", "bar"}, []string{list[0].Text, list[1].Text, list[2].Text})
 
-		resp, err = c.R().
-			SetResult(&list).
-			SetQueryParam("_sort", "text").
-			SetQueryParam("_limit", "2").
-			Get("testtype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Len(t, list, 2)
-		require.ElementsMatch(t, []string{"bar", "foo"}, []string{list[0].Text, list[1].Text})
-	})
+	resp, err = ta.r().
+		SetResult(&list).
+		SetQueryParam("_sort", "+text").
+		SetQueryParam("_offset", "1").
+		Get("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Len(t, list, 2)
+	require.Equal(t, []string{"foo", "zig"}, []string{list[0].Text, list[1].Text})
+
+	resp, err = ta.r().
+		SetResult(&list).
+		SetQueryParam("_sort", "text").
+		SetQueryParam("_limit", "2").
+		Get("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Len(t, list, 2)
+	require.ElementsMatch(t, []string{"bar", "foo"}, []string{list[0].Text, list[1].Text})
 }
