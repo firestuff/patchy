@@ -12,7 +12,7 @@ import (
 func TestPATCH(t *testing.T) {
 	t.Parallel()
 
-	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
+	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
 		created := &testType{}
 
 		resp, err := c.R().
@@ -20,7 +20,7 @@ func TestPATCH(t *testing.T) {
 				Text: "foo",
 			}).
 			SetResult(created).
-			Post(fmt.Sprintf("%s/testtype", baseURL))
+			Post("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Equal(t, int64(0), created.Generation)
@@ -32,7 +32,8 @@ func TestPATCH(t *testing.T) {
 				Text: "bar",
 			}).
 			SetResult(updated).
-			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created.ID))
+			SetPathParam("id", created.ID).
+			Patch("testtype/{id}")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Equal(t, "bar", updated.Text)
@@ -43,7 +44,8 @@ func TestPATCH(t *testing.T) {
 
 		resp, err = c.R().
 			SetResult(read).
-			Get(fmt.Sprintf("%s/testtype/%s", baseURL, created.ID))
+			SetPathParam("id", created.ID).
+			Get("testtype/{id}")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Equal(t, "bar", read.Text)
@@ -55,7 +57,7 @@ func TestPATCH(t *testing.T) {
 func TestPATCHIfMatch(t *testing.T) {
 	t.Parallel()
 
-	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
+	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
 		created := &testType{}
 
 		resp, err := c.R().
@@ -63,7 +65,7 @@ func TestPATCHIfMatch(t *testing.T) {
 				Text: "foo",
 			}).
 			SetResult(created).
-			Post(fmt.Sprintf("%s/testtype", baseURL))
+			Post("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Equal(t, int64(0), created.Generation)
@@ -79,7 +81,8 @@ func TestPATCHIfMatch(t *testing.T) {
 				Text: "bar",
 			}).
 			SetResult(updated).
-			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created.ID))
+			SetPathParam("id", created.ID).
+			Patch("testtype/{id}")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Equal(t, int64(1), updated.Generation)
@@ -93,7 +96,8 @@ func TestPATCHIfMatch(t *testing.T) {
 			SetBody(&testType{
 				Text: "zig",
 			}).
-			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created.ID))
+			SetPathParam("id", created.ID).
+			Patch("testtype/{id}")
 		require.Nil(t, err)
 		require.True(t, resp.IsError())
 		require.Equal(t, 400, resp.StatusCode())
@@ -103,7 +107,8 @@ func TestPATCHIfMatch(t *testing.T) {
 			SetBody(&testType{
 				Text: "zig",
 			}).
-			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created.ID))
+			SetPathParam("id", created.ID).
+			Patch("testtype/{id}")
 		require.Nil(t, err)
 		require.True(t, resp.IsError())
 		require.Equal(t, 412, resp.StatusCode())
@@ -114,7 +119,8 @@ func TestPATCHIfMatch(t *testing.T) {
 				Text: "zig",
 			}).
 			SetResult(updated).
-			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created.ID))
+			SetPathParam("id", created.ID).
+			Patch("testtype/{id}")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Equal(t, int64(2), updated.Generation)
@@ -125,7 +131,8 @@ func TestPATCHIfMatch(t *testing.T) {
 			SetBody(&testType{
 				Text: "zag",
 			}).
-			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created.ID))
+			SetPathParam("id", created.ID).
+			Patch("testtype/{id}")
 		require.Nil(t, err)
 		require.True(t, resp.IsError())
 		require.Equal(t, 412, resp.StatusCode())

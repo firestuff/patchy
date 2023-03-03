@@ -2,7 +2,6 @@ package patchy_test
 
 import (
 	"bufio"
-	"fmt"
 	"testing"
 
 	"github.com/firestuff/patchy"
@@ -13,7 +12,7 @@ import (
 func TestStream(t *testing.T) {
 	t.Parallel()
 
-	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
+	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
 		created := &testType{}
 
 		resp, err := c.R().
@@ -21,14 +20,15 @@ func TestStream(t *testing.T) {
 				Text: "foo",
 			}).
 			SetResult(created).
-			Post(fmt.Sprintf("%s/testtype", baseURL))
+			Post("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
 		resp, err = c.R().
 			SetDoNotParseResponse(true).
 			SetHeader("Accept", "text/event-stream").
-			Get(fmt.Sprintf("%s/testtype/%s", baseURL, created.ID))
+			SetPathParam("id", created.ID).
+			Get("testtype/{id}")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
@@ -56,7 +56,8 @@ func TestStream(t *testing.T) {
 				Text: "bar",
 			}).
 			SetResult(updated).
-			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created.ID))
+			SetPathParam("id", created.ID).
+			Patch("testtype/{id}")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 

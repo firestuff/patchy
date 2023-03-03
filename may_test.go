@@ -3,7 +3,6 @@ package patchy_test
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"sync"
 	"testing"
@@ -83,7 +82,7 @@ func (*mayType) MayRead(r *http.Request) error {
 }
 
 func TestMayCreate(t *testing.T) { //nolint:paralleltest
-	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
+	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
 		patchy.Register[mayType](api)
 
 		created := &mayType{}
@@ -95,7 +94,7 @@ func TestMayCreate(t *testing.T) { //nolint:paralleltest
 		resp, err := c.R().
 			SetBody(&mayType{}).
 			SetResult(created).
-			Post(fmt.Sprintf("%s/maytype", baseURL))
+			Post("maytype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.NotEmpty(t, created.ID)
@@ -107,14 +106,14 @@ func TestMayCreate(t *testing.T) { //nolint:paralleltest
 		resp, err = c.R().
 			SetBody(&mayType{}).
 			SetResult(created).
-			Post(fmt.Sprintf("%s/maytype", baseURL))
+			Post("maytype")
 		require.Nil(t, err)
 		require.True(t, resp.IsError())
 	})
 }
 
 func TestMayReplace(t *testing.T) { //nolint:paralleltest
-	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
+	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
 		patchy.Register[mayType](api)
 
 		created := &mayType{}
@@ -126,7 +125,7 @@ func TestMayReplace(t *testing.T) { //nolint:paralleltest
 		resp, err := c.R().
 			SetBody(&mayType{}).
 			SetResult(created).
-			Post(fmt.Sprintf("%s/maytype", baseURL))
+			Post("maytype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
@@ -139,7 +138,8 @@ func TestMayReplace(t *testing.T) { //nolint:paralleltest
 		resp, err = c.R().
 			SetBody(&mayType{}).
 			SetResult(replaced).
-			Put(fmt.Sprintf("%s/maytype/%s", baseURL, created.ID))
+			SetPathParam("id", created.ID).
+			Put("maytype/{id}")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
@@ -150,14 +150,15 @@ func TestMayReplace(t *testing.T) { //nolint:paralleltest
 		resp, err = c.R().
 			SetBody(&mayType{}).
 			SetResult(replaced).
-			Put(fmt.Sprintf("%s/maytype/%s", baseURL, created.ID))
+			SetPathParam("id", created.ID).
+			Put("maytype/{id}")
 		require.Nil(t, err)
 		require.True(t, resp.IsError())
 	})
 }
 
 func TestMayUpdate(t *testing.T) { //nolint:paralleltest
-	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
+	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
 		patchy.Register[mayType](api)
 
 		created := &mayType{}
@@ -169,7 +170,7 @@ func TestMayUpdate(t *testing.T) { //nolint:paralleltest
 		resp, err := c.R().
 			SetBody(&mayType{}).
 			SetResult(created).
-			Post(fmt.Sprintf("%s/maytype", baseURL))
+			Post("maytype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
@@ -182,7 +183,8 @@ func TestMayUpdate(t *testing.T) { //nolint:paralleltest
 		resp, err = c.R().
 			SetBody(&mayType{}).
 			SetResult(updated).
-			Patch(fmt.Sprintf("%s/maytype/%s", baseURL, created.ID))
+			SetPathParam("id", created.ID).
+			Patch("maytype/{id}")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
@@ -193,14 +195,15 @@ func TestMayUpdate(t *testing.T) { //nolint:paralleltest
 		resp, err = c.R().
 			SetBody(&mayType{}).
 			SetResult(updated).
-			Patch(fmt.Sprintf("%s/maytype/%s", baseURL, created.ID))
+			SetPathParam("id", created.ID).
+			Patch("maytype/{id}")
 		require.Nil(t, err)
 		require.True(t, resp.IsError())
 	})
 }
 
 func TestMayDelete(t *testing.T) { //nolint:paralleltest
-	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
+	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
 		patchy.Register[mayType](api)
 
 		created := &mayType{}
@@ -212,7 +215,7 @@ func TestMayDelete(t *testing.T) { //nolint:paralleltest
 		resp, err := c.R().
 			SetBody(&mayType{}).
 			SetResult(created).
-			Post(fmt.Sprintf("%s/maytype", baseURL))
+			Post("maytype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
@@ -221,7 +224,8 @@ func TestMayDelete(t *testing.T) { //nolint:paralleltest
 		mayMu.Unlock()
 
 		resp, err = c.R().
-			Delete(fmt.Sprintf("%s/maytype/%s", baseURL, created.ID))
+			SetPathParam("id", created.ID).
+			Delete("maytype/{id}")
 		require.Nil(t, err)
 		require.True(t, resp.IsError())
 
@@ -230,14 +234,15 @@ func TestMayDelete(t *testing.T) { //nolint:paralleltest
 		mayMu.Unlock()
 
 		resp, err = c.R().
-			Delete(fmt.Sprintf("%s/maytype/%s", baseURL, created.ID))
+			SetPathParam("id", created.ID).
+			Delete("maytype/{id}")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 	})
 }
 
 func TestMayRead(t *testing.T) { //nolint:paralleltest
-	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
+	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
 		patchy.Register[mayType](api)
 
 		created := &mayType{}
@@ -249,7 +254,7 @@ func TestMayRead(t *testing.T) { //nolint:paralleltest
 		resp, err := c.R().
 			SetBody(&mayType{}).
 			SetResult(created).
-			Post(fmt.Sprintf("%s/maytype", baseURL))
+			Post("maytype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
@@ -261,14 +266,16 @@ func TestMayRead(t *testing.T) { //nolint:paralleltest
 
 		resp, err = c.R().
 			SetResult(read).
-			Get(fmt.Sprintf("%s/maytype/%s", baseURL, created.ID))
+			SetPathParam("id", created.ID).
+			Get("maytype/{id}")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
 		resp, err = c.R().
 			SetDoNotParseResponse(true).
 			SetHeader("Accept", "text/event-stream").
-			Get(fmt.Sprintf("%s/maytype/%s", baseURL, created.ID))
+			SetPathParam("id", created.ID).
+			Get("maytype/{id}")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		resp.RawBody().Close()
@@ -279,14 +286,16 @@ func TestMayRead(t *testing.T) { //nolint:paralleltest
 
 		resp, err = c.R().
 			SetResult(read).
-			Get(fmt.Sprintf("%s/maytype/%s", baseURL, created.ID))
+			SetPathParam("id", created.ID).
+			Get("maytype/{id}")
 		require.Nil(t, err)
 		require.True(t, resp.IsError())
 
 		resp, err = c.R().
 			SetDoNotParseResponse(true).
 			SetHeader("Accept", "text/event-stream").
-			Get(fmt.Sprintf("%s/maytype/%s", baseURL, created.ID))
+			SetPathParam("id", created.ID).
+			Get("maytype/{id}")
 		require.Nil(t, err)
 		require.True(t, resp.IsError())
 	})

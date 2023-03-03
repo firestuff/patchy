@@ -1,7 +1,6 @@
 package patchy_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/firestuff/patchy"
@@ -12,7 +11,7 @@ import (
 func TestGETList(t *testing.T) {
 	t.Parallel()
 
-	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
+	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
 		created1 := &testType{}
 
 		resp, err := c.R().
@@ -20,7 +19,7 @@ func TestGETList(t *testing.T) {
 				Text: "foo",
 			}).
 			SetResult(created1).
-			Post(fmt.Sprintf("%s/testtype", baseURL))
+			Post("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
@@ -31,7 +30,7 @@ func TestGETList(t *testing.T) {
 				Text: "bar",
 			}).
 			SetResult(created2).
-			Post(fmt.Sprintf("%s/testtype", baseURL))
+			Post("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
@@ -42,7 +41,7 @@ func TestGETList(t *testing.T) {
 				Text: "zig",
 			}).
 			SetResult(created3).
-			Post(fmt.Sprintf("%s/testtype", baseURL))
+			Post("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
@@ -50,7 +49,7 @@ func TestGETList(t *testing.T) {
 
 		resp, err = c.R().
 			SetResult(&list).
-			Get(fmt.Sprintf("%s/testtype", baseURL))
+			Get("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Len(t, list, 3)
@@ -59,7 +58,7 @@ func TestGETList(t *testing.T) {
 		resp, err = c.R().
 			SetResult(&list).
 			SetQueryParam("text", "bar").
-			Get(fmt.Sprintf("%s/testtype", baseURL))
+			Get("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Len(t, list, 1)
@@ -68,7 +67,7 @@ func TestGETList(t *testing.T) {
 		resp, err = c.R().
 			SetResult(&list).
 			SetQueryParam("text[eq]", "bar").
-			Get(fmt.Sprintf("%s/testtype", baseURL))
+			Get("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Len(t, list, 1)
@@ -77,14 +76,14 @@ func TestGETList(t *testing.T) {
 		resp, err = c.R().
 			SetResult(&list).
 			SetQueryParam("text[junk]", "bar").
-			Get(fmt.Sprintf("%s/testtype", baseURL))
+			Get("testtype")
 		require.Nil(t, err)
 		require.True(t, resp.IsError())
 
 		resp, err = c.R().
 			SetResult(&list).
 			SetQueryParam("text[gt]", "foo").
-			Get(fmt.Sprintf("%s/testtype", baseURL))
+			Get("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Len(t, list, 1)
@@ -93,7 +92,7 @@ func TestGETList(t *testing.T) {
 		resp, err = c.R().
 			SetResult(&list).
 			SetQueryParam("text[gte]", "foo").
-			Get(fmt.Sprintf("%s/testtype", baseURL))
+			Get("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Len(t, list, 2)
@@ -102,7 +101,7 @@ func TestGETList(t *testing.T) {
 		resp, err = c.R().
 			SetResult(&list).
 			SetQueryParam("text[hp]", "f").
-			Get(fmt.Sprintf("%s/testtype", baseURL))
+			Get("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Len(t, list, 1)
@@ -111,7 +110,7 @@ func TestGETList(t *testing.T) {
 		resp, err = c.R().
 			SetResult(&list).
 			SetQueryParam("text[in]", "zig,foo,zag").
-			Get(fmt.Sprintf("%s/testtype", baseURL))
+			Get("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Len(t, list, 2)
@@ -120,7 +119,7 @@ func TestGETList(t *testing.T) {
 		resp, err = c.R().
 			SetResult(&list).
 			SetQueryParam("text[lt]", "foo").
-			Get(fmt.Sprintf("%s/testtype", baseURL))
+			Get("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Len(t, list, 1)
@@ -129,7 +128,7 @@ func TestGETList(t *testing.T) {
 		resp, err = c.R().
 			SetResult(&list).
 			SetQueryParam("text[lte]", "foo").
-			Get(fmt.Sprintf("%s/testtype", baseURL))
+			Get("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Len(t, list, 2)
@@ -138,7 +137,7 @@ func TestGETList(t *testing.T) {
 		resp, err = c.R().
 			SetResult(&list).
 			SetQueryParam("_limit", "1").
-			Get(fmt.Sprintf("%s/testtype", baseURL))
+			Get("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Len(t, list, 1)
@@ -147,7 +146,7 @@ func TestGETList(t *testing.T) {
 		resp, err = c.R().
 			SetResult(&list).
 			SetQueryParam("_offset", "0").
-			Get(fmt.Sprintf("%s/testtype", baseURL))
+			Get("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Len(t, list, 3)
@@ -156,14 +155,14 @@ func TestGETList(t *testing.T) {
 		resp, err = c.R().
 			SetResult(&list).
 			SetQueryParam("_offset", "1").
-			Get(fmt.Sprintf("%s/testtype", baseURL))
+			Get("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Len(t, list, 2)
 
 		resp, err = c.R().
 			SetResult(&list).
-			Get(fmt.Sprintf("%s/testtype", baseURL))
+			Get("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Len(t, list, 3)
@@ -174,7 +173,7 @@ func TestGETList(t *testing.T) {
 		resp, err = c.R().
 			SetResult(&list2).
 			SetQueryParam("_after", list[0].ID).
-			Get(fmt.Sprintf("%s/testtype", baseURL))
+			Get("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Len(t, list2, 2)
@@ -183,7 +182,7 @@ func TestGETList(t *testing.T) {
 		resp, err = c.R().
 			SetResult(&list).
 			SetQueryParam("_sort", "text").
-			Get(fmt.Sprintf("%s/testtype", baseURL))
+			Get("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Len(t, list, 3)
@@ -192,7 +191,7 @@ func TestGETList(t *testing.T) {
 		resp, err = c.R().
 			SetResult(&list).
 			SetQueryParam("_sort", "+text").
-			Get(fmt.Sprintf("%s/testtype", baseURL))
+			Get("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Len(t, list, 3)
@@ -201,7 +200,7 @@ func TestGETList(t *testing.T) {
 		resp, err = c.R().
 			SetResult(&list).
 			SetQueryParam("_sort", "-text").
-			Get(fmt.Sprintf("%s/testtype", baseURL))
+			Get("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Len(t, list, 3)
@@ -211,7 +210,7 @@ func TestGETList(t *testing.T) {
 			SetResult(&list).
 			SetQueryParam("_sort", "+text").
 			SetQueryParam("_offset", "1").
-			Get(fmt.Sprintf("%s/testtype", baseURL))
+			Get("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Len(t, list, 2)
@@ -221,7 +220,7 @@ func TestGETList(t *testing.T) {
 			SetResult(&list).
 			SetQueryParam("_sort", "text").
 			SetQueryParam("_limit", "2").
-			Get(fmt.Sprintf("%s/testtype", baseURL))
+			Get("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		require.Len(t, list, 2)

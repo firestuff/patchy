@@ -20,8 +20,7 @@ import (
 )
 
 // TODO: Make this a struct with defer instead of a callback wrapper.
-// TODO: Don't pass through baseURL, just set it in resty.Client.
-func withAPI(t *testing.T, cb func(*testing.T, *patchy.API, string, *resty.Client)) {
+func withAPI(t *testing.T, cb func(*testing.T, *patchy.API, *resty.Client)) {
 	// TODO: Add goroutine leak detection: https://github.com/uber-go/goleak
 	dir, err := os.MkdirTemp("", "")
 	require.Nil(t, err)
@@ -49,12 +48,13 @@ func withAPI(t *testing.T, cb func(*testing.T, *patchy.API, string, *resty.Clien
 		_ = srv.Serve(listener)
 	}()
 
-	baseURL := fmt.Sprintf("http://[::1]:%d/api", listener.Addr().(*net.TCPAddr).Port)
+	baseURL := fmt.Sprintf("http://[::1]:%d/api/", listener.Addr().(*net.TCPAddr).Port)
 
 	c := resty.New().
-		SetHeader("Content-Type", "application/json")
+		SetHeader("Content-Type", "application/json").
+		SetBaseURL(baseURL)
 
-	cb(t, api, baseURL, c)
+	cb(t, api, c)
 
 	err = srv.Shutdown(context.Background())
 	require.Nil(t, err)

@@ -2,7 +2,6 @@ package patchy_test
 
 import (
 	"bufio"
-	"fmt"
 	"testing"
 
 	"github.com/firestuff/patchy"
@@ -13,7 +12,7 @@ import (
 func TestDELETE(t *testing.T) {
 	t.Parallel()
 
-	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
+	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
 		created := &testType{}
 
 		resp, err := c.R().
@@ -21,14 +20,15 @@ func TestDELETE(t *testing.T) {
 				Text: "foo",
 			}).
 			SetResult(created).
-			Post(fmt.Sprintf("%s/testtype", baseURL))
+			Post("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
 		resp, err = c.R().
 			SetDoNotParseResponse(true).
 			SetHeader("Accept", "text/event-stream").
-			Get(fmt.Sprintf("%s/testtype/%s", baseURL, created.ID))
+			SetPathParam("id", created.ID).
+			Get("testtype/{id}")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 		body := resp.RawBody()
@@ -43,7 +43,8 @@ func TestDELETE(t *testing.T) {
 		require.Equal(t, "foo", initial.Text)
 
 		resp, err = c.R().
-			Delete(fmt.Sprintf("%s/testtype/%s", baseURL, created.ID))
+			SetPathParam("id", created.ID).
+			Delete("testtype/{id}")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
@@ -57,7 +58,8 @@ func TestDELETE(t *testing.T) {
 
 		resp, err = c.R().
 			SetResult(read).
-			Get(fmt.Sprintf("%s/testtype/%s", baseURL, created.ID))
+			SetPathParam("id", created.ID).
+			Get("testtype/{id}")
 		require.Nil(t, err)
 		require.True(t, resp.IsError())
 	})

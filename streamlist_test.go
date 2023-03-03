@@ -2,7 +2,6 @@ package patchy_test
 
 import (
 	"bufio"
-	"fmt"
 	"testing"
 
 	"github.com/firestuff/patchy"
@@ -13,7 +12,7 @@ import (
 func TestStreamList(t *testing.T) {
 	t.Parallel()
 
-	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
+	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
 		created1 := &testType{}
 
 		resp, err := c.R().
@@ -21,7 +20,7 @@ func TestStreamList(t *testing.T) {
 				Text: "foo",
 			}).
 			SetResult(created1).
-			Post(fmt.Sprintf("%s/testtype", baseURL))
+			Post("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
@@ -32,14 +31,14 @@ func TestStreamList(t *testing.T) {
 				Text: "bar",
 			}).
 			SetResult(created2).
-			Post(fmt.Sprintf("%s/testtype", baseURL))
+			Post("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
 		resp, err = c.R().
 			SetDoNotParseResponse(true).
 			SetHeader("Accept", "text/event-stream").
-			Get(fmt.Sprintf("%s/testtype", baseURL))
+			Get("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
@@ -69,7 +68,7 @@ func TestStreamList(t *testing.T) {
 				Text: "zig",
 			}).
 			SetResult(created3).
-			Post(fmt.Sprintf("%s/testtype", baseURL))
+			Post("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
@@ -85,7 +84,8 @@ func TestStreamList(t *testing.T) {
 				Text: "zag",
 			}).
 			SetResult(created3).
-			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created3.ID))
+			SetPathParam("id", created3.ID).
+			Patch("testtype/{id}")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
@@ -97,7 +97,8 @@ func TestStreamList(t *testing.T) {
 		require.ElementsMatch(t, []string{"foo", "bar", "zag"}, []string{list[0].Text, list[1].Text, list[2].Text})
 
 		resp, err = c.R().
-			Delete(fmt.Sprintf("%s/testtype/%s", baseURL, created3.ID))
+			SetPathParam("id", created3.ID).
+			Delete("testtype/{id}")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
@@ -112,7 +113,7 @@ func TestStreamList(t *testing.T) {
 			SetDoNotParseResponse(true).
 			SetHeader("Accept", "text/event-stream").
 			SetQueryParam("_limit", "1").
-			Get(fmt.Sprintf("%s/testtype", baseURL))
+			Get("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
@@ -133,7 +134,7 @@ func TestStreamList(t *testing.T) {
 func TestStreamListDiff(t *testing.T) {
 	t.Parallel()
 
-	withAPI(t, func(t *testing.T, api *patchy.API, baseURL string, c *resty.Client) {
+	withAPI(t, func(t *testing.T, api *patchy.API, c *resty.Client) {
 		created1 := &testType{}
 
 		resp, err := c.R().
@@ -141,7 +142,7 @@ func TestStreamListDiff(t *testing.T) {
 				Text: "foo",
 			}).
 			SetResult(created1).
-			Post(fmt.Sprintf("%s/testtype", baseURL))
+			Post("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
@@ -152,7 +153,7 @@ func TestStreamListDiff(t *testing.T) {
 				Text: "bar",
 			}).
 			SetResult(created2).
-			Post(fmt.Sprintf("%s/testtype", baseURL))
+			Post("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
@@ -160,7 +161,7 @@ func TestStreamListDiff(t *testing.T) {
 			SetDoNotParseResponse(true).
 			SetHeader("Accept", "text/event-stream").
 			SetQueryParam("_stream", "diff").
-			Get(fmt.Sprintf("%s/testtype", baseURL))
+			Get("testtype")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
@@ -175,7 +176,7 @@ func TestStreamListDiff(t *testing.T) {
 			SetQueryParam("_stream", "diff").
 			SetQueryParam("_sort", "text").
 			SetQueryParam("_limit", "1").
-			Get(fmt.Sprintf("%s/testtype", baseURL))
+			Get("testtype")
 		require.Nil(t, err)
 		require.False(t, resp2.IsError())
 
@@ -207,7 +208,8 @@ func TestStreamListDiff(t *testing.T) {
 				Text: "zig",
 			}).
 			SetResult(created2).
-			Patch(fmt.Sprintf("%s/testtype/%s", baseURL, created2.ID))
+			SetPathParam("id", created2.ID).
+			Patch("testtype/{id}")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
@@ -230,7 +232,8 @@ func TestStreamListDiff(t *testing.T) {
 		require.Equal(t, "bar", obj1.Text)
 
 		resp, err = c.R().
-			Delete(fmt.Sprintf("%s/testtype/%s", baseURL, created1.ID))
+			SetPathParam("id", created1.ID).
+			Delete("testtype/{id}")
 		require.Nil(t, err)
 		require.False(t, resp.IsError())
 
