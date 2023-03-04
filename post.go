@@ -40,13 +40,13 @@ func (api *API) post(cfg *config, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jse = cfg.checkRead(&obj, r)
+	checked, jse := cfg.checkRead(obj, r)
 	if jse != nil {
 		jse.Write(w)
 		return
 	}
 
-	jse = jsrest.Write(w, obj)
+	jse = jsrest.Write(w, checked)
 	if jse != nil {
 		jse.Write(w)
 		return

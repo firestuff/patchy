@@ -71,13 +71,13 @@ func (api *API) patch(cfg *config, id string, w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	jse = cfg.checkRead(&obj, r)
+	checked, jse := cfg.checkRead(obj, r)
 	if jse != nil {
 		jse.Write(w)
 		return
 	}
 
-	jse = jsrest.Write(w, obj)
+	jse = jsrest.Write(w, checked)
 	if jse != nil {
 		jse.Write(w)
 		return
