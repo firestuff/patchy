@@ -90,6 +90,7 @@ func TestMayCreate(t *testing.T) { //nolint:paralleltest
 
 	mayMu.Lock()
 	mayCreateFlag = true
+	mayReadFlag = true
 	mayMu.Unlock()
 
 	resp, err := ta.r().
@@ -168,6 +169,7 @@ func TestMayUpdate(t *testing.T) { //nolint:paralleltest
 
 	mayMu.Lock()
 	mayCreateFlag = true
+	mayReadFlag = true
 	mayMu.Unlock()
 
 	resp, err := ta.r().
@@ -189,7 +191,7 @@ func TestMayUpdate(t *testing.T) { //nolint:paralleltest
 		SetPathParam("id", created.ID).
 		Patch("maytype/{id}")
 	require.Nil(t, err)
-	require.False(t, resp.IsError())
+	require.False(t, resp.IsError(), resp)
 
 	mayMu.Lock()
 	mayUpdateFlag = false

@@ -1,11 +1,14 @@
 package patchy
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"reflect"
 	"sync"
 
+	"github.com/firestuff/patchy/jsrest"
 	"github.com/firestuff/patchy/metadata"
 )
 
@@ -124,4 +127,49 @@ func (cfg *config) isSafe() error {
 	}
 
 	return nil
+}
+
+func (cfg *config) checkRead(obj *any, r *http.Request) *jsrest.Error {
+	if cfg.mayRead != nil {
+		err := cfg.mayRead(*obj, r)
+		if err != nil {
+			e := fmt.Errorf("unauthorized: %w", err)
+			return jsrest.FromError(e, jsrest.StatusUnauthorized)
+		}
+	}
+
+	if cfg.beforeRead != nil {
+		tmp, err := clone(*obj)
+		if err != nil {
+			e := fmt.Errorf("clone failed: %w", err)
+			return jsrest.FromError(e, jsrest.StatusInternalServerError)
+		}
+
+		*obj = tmp
+
+		err = cfg.beforeRead(*obj, r)
+		if err != nil {
+			e := fmt.Errorf("failed before read callback: %w", err)
+			return jsrest.FromError(e, jsrest.StatusInternalServerError)
+		}
+	}
+
+	return nil
+}
+
+func clone(src any) (any, error) {
+	js, err := json.Marshal(src)
+	if err != nil {
+		return nil, err
+	}
+
+	srcVal := reflect.Indirect(reflect.ValueOf(src))
+	dst := reflect.New(srcVal.Type()).Interface()
+
+	err = json.Unmarshal(js, dst)
+	if err != nil {
+		return nil, err
+	}
+
+	return dst, nil
 }

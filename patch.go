@@ -71,15 +71,10 @@ func (api *API) patch(cfg *config, id string, w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if cfg.beforeRead != nil {
-		err := cfg.beforeRead(obj, r)
-		if err != nil {
-			e := fmt.Errorf("failed before read callback: %w", err)
-			jse := jsrest.FromError(e, jsrest.StatusInternalServerError)
-			jse.Write(w)
-
-			return
-		}
+	jse = cfg.checkRead(&obj, r)
+	if jse != nil {
+		jse.Write(w)
+		return
 	}
 
 	jse = jsrest.Write(w, obj)
