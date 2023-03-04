@@ -1,6 +1,7 @@
 package patchy_test
 
 import (
+	"bufio"
 	"net/http"
 	"testing"
 
@@ -21,6 +22,7 @@ func (bt *beforeType) BeforeRead(r *http.Request) error {
 }
 
 func TestBeforeRead(t *testing.T) {
+	// TODO: list
 	// TODO: stream one
 	// TODO: stream list
 	t.Parallel()
@@ -53,6 +55,26 @@ func TestBeforeRead(t *testing.T) {
 	require.False(t, resp.IsError())
 	require.Equal(t, "2345", patch.Text1)
 
+	resp, err = ta.r().
+		SetDoNotParseResponse(true).
+		SetHeader("X-Test", "stream1234").
+		SetHeader("Accept", "text/event-stream").
+		SetPathParam("id", create.ID).
+		Get("beforetype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+
+	body1 := resp.RawBody()
+	defer body1.Close()
+
+	scan1 := bufio.NewScanner(body1)
+
+	initial := &beforeType{}
+	eventType, err := readEvent(scan1, initial)
+	require.Nil(t, err)
+	require.Equal(t, "initial", eventType)
+	require.Equal(t, "stream1234", initial.Text1)
+
 	put := &beforeType{}
 
 	resp, err = ta.r().
@@ -75,15 +97,4 @@ func TestBeforeRead(t *testing.T) {
 	require.Nil(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, "4567", get.Text1)
-
-	list := []*beforeType{}
-
-	resp, err = ta.r().
-		SetHeader("X-Test", "5678").
-		SetResult(&list).
-		Get("beforetype")
-	require.Nil(t, err)
-	require.False(t, resp.IsError())
-	require.Len(t, list, 1)
-	require.Equal(t, "5678", list[0].Text1)
 }

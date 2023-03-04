@@ -30,29 +30,13 @@ func (api *API) get(cfg *config, id string, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if cfg.mayRead != nil {
-		err = cfg.mayRead(obj, r)
-		if err != nil {
-			e := fmt.Errorf("unauthorized %s: %w", id, err)
-			jse := jsrest.FromError(e, jsrest.StatusUnauthorized)
-			jse.Write(w)
-
-			return
-		}
+	jse := cfg.checkRead(&obj, r)
+	if jse != nil {
+		jse.Write(w)
+		return
 	}
 
-	if cfg.beforeRead != nil {
-		err := cfg.beforeRead(obj, r)
-		if err != nil {
-			e := fmt.Errorf("failed before read callback: %w", err)
-			jse := jsrest.FromError(e, jsrest.StatusInternalServerError)
-			jse.Write(w)
-
-			return
-		}
-	}
-
-	jse := jsrest.Write(w, obj)
+	jse = jsrest.Write(w, obj)
 	if jse != nil {
 		jse.Write(w)
 		return

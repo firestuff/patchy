@@ -30,6 +30,8 @@ func (api *API) getList(cfg *config, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO: Filter list through checkRead()
+
 	jse = jsrest.WriteList(w, <-v.Chan())
 	if jse != nil {
 		jse.Write(w)

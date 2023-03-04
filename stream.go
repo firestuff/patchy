@@ -40,18 +40,13 @@ func (api *API) stream(cfg *config, id string, w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	if cfg.mayRead != nil {
-		err = cfg.mayRead(obj, r)
-		if err != nil {
-			e := fmt.Errorf("unauthorized %s: %w", id, err)
-			jse := jsrest.FromError(e, jsrest.StatusUnauthorized)
-			jse.Write(w)
-
-			return
-		}
+	jse := cfg.checkRead(&obj, r)
+	if jse != nil {
+		jse.Write(w)
+		return
 	}
 
-	jse := writeEvent(w, "initial", obj)
+	jse = writeEvent(w, "initial", obj)
 	if jse != nil {
 		_ = writeEvent(w, "error", jse)
 		return
@@ -66,6 +61,12 @@ func (api *API) stream(cfg *config, id string, w http.ResponseWriter, r *http.Re
 
 		case msg, ok := <-v.Chan():
 			if ok {
+				jse = cfg.checkRead(&msg, r)
+				if jse != nil {
+					jse.Write(w)
+					return
+				}
+
 				jse = writeEvent(w, "update", msg)
 				if jse != nil {
 					_ = writeEvent(w, "error", jse)
