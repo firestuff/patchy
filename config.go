@@ -25,8 +25,6 @@ type config struct {
 	mayDelete  func(any, *http.Request) error
 	mayRead    func(any, *http.Request) error
 
-	beforeRead func(any, *http.Request) error
-
 	mu sync.Mutex
 }
 
@@ -48,10 +46,6 @@ type mayDelete interface {
 
 type mayRead interface {
 	MayRead(*http.Request) error
-}
-
-type beforeRead interface {
-	BeforeRead(*http.Request) error
 }
 
 func newConfig[T any](typeName string) *config {
@@ -96,12 +90,6 @@ func newConfig[T any](typeName string) *config {
 		}
 	}
 
-	if _, has := any(obj).(beforeRead); has {
-		cfg.beforeRead = func(obj any, r *http.Request) error {
-			return obj.(beforeRead).BeforeRead(r)
-		}
-	}
-
 	return cfg
 }
 
@@ -129,32 +117,22 @@ func (cfg *config) isSafe() error {
 	return nil
 }
 
-func (cfg *config) checkRead(obj *any, r *http.Request) *jsrest.Error {
+func (cfg *config) checkRead(obj any, r *http.Request) (any, *jsrest.Error) {
+	ret, err := clone(obj)
+	if err != nil {
+		e := fmt.Errorf("clone failed: %w", err)
+		return nil, jsrest.FromError(e, jsrest.StatusInternalServerError)
+	}
+
 	if cfg.mayRead != nil {
-		err := cfg.mayRead(*obj, r)
+		err := cfg.mayRead(ret, r)
 		if err != nil {
 			e := fmt.Errorf("unauthorized: %w", err)
-			return jsrest.FromError(e, jsrest.StatusUnauthorized)
+			return nil, jsrest.FromError(e, jsrest.StatusUnauthorized)
 		}
 	}
 
-	if cfg.beforeRead != nil {
-		tmp, err := clone(*obj)
-		if err != nil {
-			e := fmt.Errorf("clone failed: %w", err)
-			return jsrest.FromError(e, jsrest.StatusInternalServerError)
-		}
-
-		*obj = tmp
-
-		err = cfg.beforeRead(*obj, r)
-		if err != nil {
-			e := fmt.Errorf("failed before read callback: %w", err)
-			return jsrest.FromError(e, jsrest.StatusInternalServerError)
-		}
-	}
-
-	return nil
+	return ret, nil
 }
 
 func clone(src any) (any, error) {
