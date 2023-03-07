@@ -21,7 +21,7 @@ func (mt *mayType) MayRead(r *http.Request) error {
 		return fmt.Errorf("may not read")
 	}
 
-	text1 := r.Header.Get("X-Text1")
+	text1 := r.Header.Get("X-Text1-Read")
 	if text1 != "" {
 		mt.Text1 = text1
 	}
@@ -29,9 +29,14 @@ func (mt *mayType) MayRead(r *http.Request) error {
 	return nil
 }
 
-func (*mayType) MayWrite(prev *mayType, r *http.Request) error {
+func (mt *mayType) MayWrite(prev *mayType, r *http.Request) error {
 	if r.Header.Get("X-Refuse-Write") != "" {
 		return fmt.Errorf("may not write")
+	}
+
+	text1 := r.Header.Get("X-Text1-Write")
+	if text1 != "" {
+		mt.Text1 = text1
 	}
 
 	return nil
@@ -168,6 +173,76 @@ func TestMayRead(t *testing.T) {
 	require.True(t, resp.IsError())
 }
 
+func TestMayWriteMutate(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	patchy.Register[mayType](ta.api)
+
+	create := &mayType{}
+
+	resp, err := ta.r().
+		SetHeader("X-Text1-Write", "1234").
+		SetBody(&mayType{Text1: "foo"}).
+		SetResult(create).
+		Post("maytype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, "1234", create.Text1)
+
+	get := &mayType{}
+
+	resp, err = ta.r().
+		SetResult(get).
+		SetPathParam("id", create.ID).
+		Get("maytype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, "1234", get.Text1)
+
+	patch := &mayType{}
+
+	resp, err = ta.r().
+		SetHeader("X-Text1-Write", "2345").
+		SetBody(&mayType{Text1: "bar"}).
+		SetResult(patch).
+		SetPathParam("id", create.ID).
+		Patch("maytype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, "2345", patch.Text1)
+
+	resp, err = ta.r().
+		SetResult(get).
+		SetPathParam("id", create.ID).
+		Get("maytype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, "2345", get.Text1)
+
+	put := &mayType{}
+
+	resp, err = ta.r().
+		SetHeader("X-Text1-Write", "3456").
+		SetBody(&mayType{Text1: "zig"}).
+		SetResult(put).
+		SetPathParam("id", create.ID).
+		Put("maytype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, "3456", put.Text1)
+
+	resp, err = ta.r().
+		SetResult(get).
+		SetPathParam("id", create.ID).
+		Get("maytype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, "3456", get.Text1)
+}
+
 func TestMayReadMutate(t *testing.T) {
 	t.Parallel()
 
@@ -179,7 +254,7 @@ func TestMayReadMutate(t *testing.T) {
 	create := &mayType{}
 
 	resp, err := ta.r().
-		SetHeader("X-Text1", "1234").
+		SetHeader("X-Text1-Read", "1234").
 		SetBody(&mayType{Text1: "foo"}).
 		SetResult(create).
 		Post("maytype")
@@ -200,7 +275,7 @@ func TestMayReadMutate(t *testing.T) {
 	patch := &mayType{}
 
 	resp, err = ta.r().
-		SetHeader("X-Text1", "2345").
+		SetHeader("X-Text1-Read", "2345").
 		SetBody(&mayType{Text1: "bar"}).
 		SetResult(patch).
 		SetPathParam("id", create.ID).
@@ -219,7 +294,7 @@ func TestMayReadMutate(t *testing.T) {
 
 	resp, err = ta.r().
 		SetDoNotParseResponse(true).
-		SetHeader("X-Text1", "stream1234").
+		SetHeader("X-Text1-Read", "stream1234").
 		SetHeader("Accept", "text/event-stream").
 		SetPathParam("id", create.ID).
 		Get("maytype/{id}")
@@ -240,7 +315,7 @@ func TestMayReadMutate(t *testing.T) {
 
 	resp, err = ta.r().
 		SetDoNotParseResponse(true).
-		SetHeader("X-Text1", "stream2345").
+		SetHeader("X-Text1-Read", "stream2345").
 		SetHeader("Accept", "text/event-stream").
 		Get("maytype")
 	require.Nil(t, err)
@@ -262,7 +337,7 @@ func TestMayReadMutate(t *testing.T) {
 	put := &mayType{}
 
 	resp, err = ta.r().
-		SetHeader("X-Text1", "3456").
+		SetHeader("X-Text1-Read", "3456").
 		SetBody(&mayType{Text1: "zig"}).
 		SetResult(put).
 		SetPathParam("id", create.ID).
@@ -280,7 +355,7 @@ func TestMayReadMutate(t *testing.T) {
 	require.Equal(t, "zig", get.Text1)
 
 	resp, err = ta.r().
-		SetHeader("X-Text1", "4567").
+		SetHeader("X-Text1-Read", "4567").
 		SetResult(get).
 		SetPathParam("id", create.ID).
 		Get("maytype/{id}")
@@ -302,7 +377,7 @@ func TestMayReadMutate(t *testing.T) {
 	list := []*mayType{}
 
 	resp, err = ta.r().
-		SetHeader("X-Text1", "5678").
+		SetHeader("X-Text1-Read", "5678").
 		SetResult(&list).
 		Get("maytype")
 	require.Nil(t, err)
