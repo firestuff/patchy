@@ -2,6 +2,7 @@
 package patchy_test
 
 import (
+	"bufio"
 	"fmt"
 	"net/http"
 	"testing"
@@ -12,11 +13,17 @@ import (
 
 type mayType struct {
 	patchy.Metadata
+	Text1 string
 }
 
-func (*mayType) MayRead(r *http.Request) error {
+func (mt *mayType) MayRead(r *http.Request) error {
 	if r.Header.Get("X-Refuse-Read") != "" {
 		return fmt.Errorf("may not read")
+	}
+
+	text1 := r.Header.Get("X-Text1")
+	if text1 != "" {
+		mt.Text1 = text1
 	}
 
 	return nil
@@ -109,6 +116,8 @@ func TestMayWrite(t *testing.T) {
 }
 
 func TestMayRead(t *testing.T) {
+	// TODO: list
+	// TODO: stream list
 	t.Parallel()
 
 	ta := newTestAPI(t)
@@ -159,4 +168,109 @@ func TestMayRead(t *testing.T) {
 		Get("maytype/{id}")
 	require.Nil(t, err)
 	require.True(t, resp.IsError())
+}
+
+func TestMayReadMutate(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	patchy.Register[mayType](ta.api)
+
+	create := &mayType{}
+
+	resp, err := ta.r().
+		SetHeader("X-Text1", "1234").
+		SetBody(&mayType{Text1: "foo"}).
+		SetResult(create).
+		Post("maytype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, "1234", create.Text1)
+
+	get := &mayType{}
+
+	resp, err = ta.r().
+		SetResult(get).
+		SetPathParam("id", create.ID).
+		Get("maytype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, "foo", get.Text1)
+
+	patch := &mayType{}
+
+	resp, err = ta.r().
+		SetHeader("X-Text1", "2345").
+		SetBody(&mayType{Text1: "bar"}).
+		SetResult(patch).
+		SetPathParam("id", create.ID).
+		Patch("maytype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, "2345", patch.Text1)
+
+	resp, err = ta.r().
+		SetResult(get).
+		SetPathParam("id", create.ID).
+		Get("maytype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, "bar", get.Text1)
+
+	resp, err = ta.r().
+		SetDoNotParseResponse(true).
+		SetHeader("X-Text1", "stream1234").
+		SetHeader("Accept", "text/event-stream").
+		SetPathParam("id", create.ID).
+		Get("maytype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+
+	body1 := resp.RawBody()
+	defer body1.Close()
+
+	scan1 := bufio.NewScanner(body1)
+
+	stream := &mayType{}
+
+	eventType, err := readEvent(scan1, stream)
+	require.Nil(t, err)
+	require.Equal(t, "initial", eventType)
+	require.Equal(t, "stream1234", stream.Text1)
+
+	put := &mayType{}
+
+	resp, err = ta.r().
+		SetHeader("X-Text1", "3456").
+		SetBody(&mayType{Text1: "zig"}).
+		SetResult(put).
+		SetPathParam("id", create.ID).
+		Put("maytype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, "3456", put.Text1)
+
+	resp, err = ta.r().
+		SetResult(get).
+		SetPathParam("id", create.ID).
+		Get("maytype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, "zig", get.Text1)
+
+	resp, err = ta.r().
+		SetHeader("X-Text1", "4567").
+		SetResult(get).
+		SetPathParam("id", create.ID).
+		Get("maytype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, "4567", get.Text1)
+
+	eventType, err = readEvent(scan1, stream)
+	require.Nil(t, err)
+	require.Equal(t, "update", eventType)
+	require.Equal(t, "stream1234", stream.Text1)
 }
