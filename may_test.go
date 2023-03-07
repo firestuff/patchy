@@ -116,8 +116,6 @@ func TestMayWrite(t *testing.T) {
 }
 
 func TestMayRead(t *testing.T) {
-	// TODO: list
-	// TODO: stream list
 	t.Parallel()
 
 	ta := newTestAPI(t)
@@ -228,17 +226,38 @@ func TestMayReadMutate(t *testing.T) {
 	require.Nil(t, err)
 	require.False(t, resp.IsError())
 
-	body1 := resp.RawBody()
-	defer body1.Close()
+	body := resp.RawBody()
+	defer body.Close()
 
-	scan1 := bufio.NewScanner(body1)
+	scan := bufio.NewScanner(body)
 
 	stream := &mayType{}
 
-	eventType, err := readEvent(scan1, stream)
+	eventType, err := readEvent(scan, stream)
 	require.Nil(t, err)
 	require.Equal(t, "initial", eventType)
 	require.Equal(t, "stream1234", stream.Text1)
+
+	resp, err = ta.r().
+		SetDoNotParseResponse(true).
+		SetHeader("X-Text1", "stream2345").
+		SetHeader("Accept", "text/event-stream").
+		Get("maytype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+
+	bodyList := resp.RawBody()
+	defer bodyList.Close()
+
+	scanList := bufio.NewScanner(bodyList)
+
+	streamList := []*mayType{}
+
+	eventType, err = readEvent(scanList, &streamList)
+	require.Nil(t, err)
+	require.Equal(t, "list", eventType)
+	require.Len(t, streamList, 1)
+	require.Equal(t, "stream2345", streamList[0].Text1)
 
 	put := &mayType{}
 
@@ -269,8 +288,25 @@ func TestMayReadMutate(t *testing.T) {
 	require.False(t, resp.IsError())
 	require.Equal(t, "4567", get.Text1)
 
-	eventType, err = readEvent(scan1, stream)
+	eventType, err = readEvent(scan, stream)
 	require.Nil(t, err)
 	require.Equal(t, "update", eventType)
 	require.Equal(t, "stream1234", stream.Text1)
+
+	eventType, err = readEvent(scanList, &streamList)
+	require.Nil(t, err)
+	require.Equal(t, "list", eventType)
+	require.Len(t, streamList, 1)
+	require.Equal(t, "stream2345", streamList[0].Text1)
+
+	list := []*mayType{}
+
+	resp, err = ta.r().
+		SetHeader("X-Text1", "5678").
+		SetResult(&list).
+		Get("maytype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Len(t, list, 1)
+	require.Equal(t, "5678", list[0].Text1)
 }
