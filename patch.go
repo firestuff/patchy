@@ -36,6 +36,12 @@ func (api *API) patch(cfg *config, id string, w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	prev, jse := cfg.clone(obj)
+	if jse != nil {
+		jse.Write(w)
+		return
+	}
+
 	patch := cfg.factory()
 
 	jse = jsrest.Read(r, patch)
@@ -47,20 +53,15 @@ func (api *API) patch(cfg *config, id string, w http.ResponseWriter, r *http.Req
 	// Metadata is immutable or server-owned
 	metadata.ClearMetadata(patch)
 
-	if cfg.mayUpdate != nil {
-		err = cfg.mayUpdate(obj, patch, r)
-		if err != nil {
-			e := fmt.Errorf("unauthorized %s: %w", id, err)
-			jse := jsrest.FromError(e, jsrest.StatusUnauthorized)
-			jse.Write(w)
-
-			return
-		}
-	}
-
 	merge(obj, patch)
 
 	metadata.GetMetadata(obj).Generation++
+
+	obj, jse = cfg.checkWrite(obj, prev, r)
+	if jse != nil {
+		jse.Write(w)
+		return
+	}
 
 	err = api.sb.Write(cfg.typeName, obj)
 	if err != nil {
@@ -71,13 +72,13 @@ func (api *API) patch(cfg *config, id string, w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	checked, jse := cfg.checkRead(obj, r)
+	obj, jse = cfg.checkRead(obj, r)
 	if jse != nil {
 		jse.Write(w)
 		return
 	}
 
-	jse = jsrest.Write(w, checked)
+	jse = jsrest.Write(w, obj)
 	if jse != nil {
 		jse.Write(w)
 		return

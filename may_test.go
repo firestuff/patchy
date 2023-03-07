@@ -2,9 +2,8 @@
 package patchy_test
 
 import (
-	"errors"
+	"fmt"
 	"net/http"
-	"sync"
 	"testing"
 
 	"github.com/firestuff/patchy"
@@ -15,83 +14,31 @@ type mayType struct {
 	patchy.Metadata
 }
 
-var (
-	mayCreateFlag  bool
-	mayReplaceFlag bool
-	mayUpdateFlag  bool
-	mayDeleteFlag  bool
-	mayReadFlag    bool
-)
-
-var mayMu sync.Mutex
-
-func (*mayType) MayCreate(r *http.Request) error {
-	mayMu.Lock()
-	defer mayMu.Unlock()
-
-	if !mayCreateFlag {
-		return errors.New("may not create")
-	}
-
-	return nil
-}
-
-func (*mayType) MayReplace(replace *mayType, r *http.Request) error {
-	mayMu.Lock()
-	defer mayMu.Unlock()
-
-	if !mayReplaceFlag {
-		return errors.New("may not replace")
-	}
-
-	return nil
-}
-
-func (*mayType) MayUpdate(patch *mayType, r *http.Request) error {
-	mayMu.Lock()
-	defer mayMu.Unlock()
-
-	if !mayUpdateFlag {
-		return errors.New("may not update")
-	}
-
-	return nil
-}
-
-func (*mayType) MayDelete(r *http.Request) error {
-	mayMu.Lock()
-	defer mayMu.Unlock()
-
-	if !mayDeleteFlag {
-		return errors.New("may not delete")
-	}
-
-	return nil
-}
-
 func (*mayType) MayRead(r *http.Request) error {
-	mayMu.Lock()
-	defer mayMu.Unlock()
-
-	if !mayReadFlag {
-		return errors.New("may not read")
+	if r.Header.Get("X-Refuse-Read") != "" {
+		return fmt.Errorf("may not read")
 	}
 
 	return nil
 }
 
-func TestMayCreate(t *testing.T) { //nolint:paralleltest
+func (*mayType) MayWrite(prev *mayType, r *http.Request) error {
+	if r.Header.Get("X-Refuse-Write") != "" {
+		return fmt.Errorf("may not write")
+	}
+
+	return nil
+}
+
+func TestMayWrite(t *testing.T) {
+	t.Parallel()
+
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
 	patchy.Register[mayType](ta.api)
 
 	created := &mayType{}
-
-	mayMu.Lock()
-	mayCreateFlag = true
-	mayReadFlag = true
-	mayMu.Unlock()
 
 	resp, err := ta.r().
 		SetBody(&mayType{}).
@@ -101,40 +48,13 @@ func TestMayCreate(t *testing.T) { //nolint:paralleltest
 	require.False(t, resp.IsError())
 	require.NotEmpty(t, created.ID)
 
-	mayMu.Lock()
-	mayCreateFlag = false
-	mayMu.Unlock()
-
 	resp, err = ta.r().
+		SetHeader("X-Refuse-Write", "x").
 		SetBody(&mayType{}).
 		SetResult(created).
 		Post("maytype")
 	require.Nil(t, err)
 	require.True(t, resp.IsError())
-}
-
-func TestMayReplace(t *testing.T) { //nolint:paralleltest
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
-	patchy.Register[mayType](ta.api)
-
-	created := &mayType{}
-
-	mayMu.Lock()
-	mayCreateFlag = true
-	mayMu.Unlock()
-
-	resp, err := ta.r().
-		SetBody(&mayType{}).
-		SetResult(created).
-		Post("maytype")
-	require.Nil(t, err)
-	require.False(t, resp.IsError())
-
-	mayMu.Lock()
-	mayReplaceFlag = true
-	mayMu.Unlock()
 
 	replaced := &mayType{}
 
@@ -146,42 +66,14 @@ func TestMayReplace(t *testing.T) { //nolint:paralleltest
 	require.Nil(t, err)
 	require.False(t, resp.IsError())
 
-	mayMu.Lock()
-	mayReplaceFlag = false
-	mayMu.Unlock()
-
 	resp, err = ta.r().
+		SetHeader("X-Refuse-Write", "x").
 		SetBody(&mayType{}).
 		SetResult(replaced).
 		SetPathParam("id", created.ID).
 		Put("maytype/{id}")
 	require.Nil(t, err)
 	require.True(t, resp.IsError())
-}
-
-func TestMayUpdate(t *testing.T) { //nolint:paralleltest
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
-	patchy.Register[mayType](ta.api)
-
-	created := &mayType{}
-
-	mayMu.Lock()
-	mayCreateFlag = true
-	mayReadFlag = true
-	mayMu.Unlock()
-
-	resp, err := ta.r().
-		SetBody(&mayType{}).
-		SetResult(created).
-		Post("maytype")
-	require.Nil(t, err)
-	require.False(t, resp.IsError())
-
-	mayMu.Lock()
-	mayUpdateFlag = true
-	mayMu.Unlock()
 
 	updated := &mayType{}
 
@@ -193,52 +85,22 @@ func TestMayUpdate(t *testing.T) { //nolint:paralleltest
 	require.Nil(t, err)
 	require.False(t, resp.IsError(), resp)
 
-	mayMu.Lock()
-	mayUpdateFlag = false
-	mayMu.Unlock()
-
 	resp, err = ta.r().
+		SetHeader("X-Refuse-Write", "x").
 		SetBody(&mayType{}).
 		SetResult(updated).
 		SetPathParam("id", created.ID).
 		Patch("maytype/{id}")
 	require.Nil(t, err)
 	require.True(t, resp.IsError())
-}
-
-func TestMayDelete(t *testing.T) { //nolint:paralleltest
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
-	patchy.Register[mayType](ta.api)
-
-	created := &mayType{}
-
-	mayMu.Lock()
-	mayCreateFlag = true
-	mayMu.Unlock()
-
-	resp, err := ta.r().
-		SetBody(&mayType{}).
-		SetResult(created).
-		Post("maytype")
-	require.Nil(t, err)
-	require.False(t, resp.IsError())
-
-	mayMu.Lock()
-	mayDeleteFlag = false
-	mayMu.Unlock()
 
 	resp, err = ta.r().
+		SetHeader("X-Refuse-Write", "x").
 		SetPathParam("id", created.ID).
 		Delete("maytype/{id}")
 	require.Nil(t, err)
 	require.True(t, resp.IsError())
 
-	mayMu.Lock()
-	mayDeleteFlag = true
-	mayMu.Unlock()
-
 	resp, err = ta.r().
 		SetPathParam("id", created.ID).
 		Delete("maytype/{id}")
@@ -246,17 +108,15 @@ func TestMayDelete(t *testing.T) { //nolint:paralleltest
 	require.False(t, resp.IsError())
 }
 
-func TestMayRead(t *testing.T) { //nolint:paralleltest
+func TestMayRead(t *testing.T) {
+	t.Parallel()
+
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
 	patchy.Register[mayType](ta.api)
 
 	created := &mayType{}
-
-	mayMu.Lock()
-	mayCreateFlag = true
-	mayMu.Unlock()
 
 	resp, err := ta.r().
 		SetBody(&mayType{}).
@@ -266,10 +126,6 @@ func TestMayRead(t *testing.T) { //nolint:paralleltest
 	require.False(t, resp.IsError())
 
 	read := &testType{}
-
-	mayMu.Lock()
-	mayReadFlag = true
-	mayMu.Unlock()
 
 	resp, err = ta.r().
 		SetResult(read).
@@ -287,11 +143,8 @@ func TestMayRead(t *testing.T) { //nolint:paralleltest
 	require.False(t, resp.IsError())
 	resp.RawBody().Close()
 
-	mayMu.Lock()
-	mayReadFlag = false
-	mayMu.Unlock()
-
 	resp, err = ta.r().
+		SetHeader("X-Refuse-Read", "x").
 		SetResult(read).
 		SetPathParam("id", created.ID).
 		Get("maytype/{id}")
@@ -300,6 +153,7 @@ func TestMayRead(t *testing.T) { //nolint:paralleltest
 
 	resp, err = ta.r().
 		SetDoNotParseResponse(true).
+		SetHeader("X-Refuse-Read", "x").
 		SetHeader("Accept", "text/event-stream").
 		SetPathParam("id", created.ID).
 		Get("maytype/{id}")

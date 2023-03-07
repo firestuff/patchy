@@ -36,6 +36,12 @@ func (api *API) put(cfg *config, id string, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	prev, jse := cfg.clone(obj)
+	if jse != nil {
+		jse.Write(w)
+		return
+	}
+
 	replace := cfg.factory()
 
 	jse = jsrest.Read(r, replace)
@@ -51,15 +57,10 @@ func (api *API) put(cfg *config, id string, w http.ResponseWriter, r *http.Reque
 	replaceMD.ID = id
 	replaceMD.Generation = objMD.Generation + 1
 
-	if cfg.mayReplace != nil {
-		err = cfg.mayReplace(obj, replace, r)
-		if err != nil {
-			e := fmt.Errorf("unauthorized %s: %w", id, err)
-			jse := jsrest.FromError(e, jsrest.StatusUnauthorized)
-			jse.Write(w)
-
-			return
-		}
+	replace, jse = cfg.checkWrite(replace, prev, r)
+	if jse != nil {
+		jse.Write(w)
+		return
 	}
 
 	err = api.sb.Write(cfg.typeName, replace)
@@ -71,13 +72,13 @@ func (api *API) put(cfg *config, id string, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	checked, jse := cfg.checkRead(replace, r)
+	replace, jse = cfg.checkRead(replace, r)
 	if jse != nil {
 		jse.Write(w)
 		return
 	}
 
-	jse = jsrest.Write(w, checked)
+	jse = jsrest.Write(w, replace)
 	if jse != nil {
 		jse.Write(w)
 		return

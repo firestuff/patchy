@@ -26,15 +26,10 @@ func (api *API) delete(cfg *config, id string, w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	if cfg.mayDelete != nil {
-		err = cfg.mayDelete(obj, r)
-		if err != nil {
-			e := fmt.Errorf("unauthorized %s: %w", id, err)
-			jse := jsrest.FromError(e, jsrest.StatusUnauthorized)
-			jse.Write(w)
-
-			return
-		}
+	_, jse := cfg.checkWrite(nil, obj, r)
+	if jse != nil {
+		jse.Write(w)
+		return
 	}
 
 	err = api.sb.Delete(cfg.typeName, id)

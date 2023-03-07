@@ -30,13 +30,13 @@ func (api *API) get(cfg *config, id string, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	checked, jse := cfg.checkRead(obj, r)
+	obj, jse := cfg.checkRead(obj, r)
 	if jse != nil {
 		jse.Write(w)
 		return
 	}
 
-	jse = jsrest.Write(w, checked)
+	jse = jsrest.Write(w, obj)
 	if jse != nil {
 		jse.Write(w)
 		return

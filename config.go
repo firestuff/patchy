@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"reflect"
 	"sync"
 
 	"github.com/firestuff/patchy/jsrest"
@@ -19,33 +18,18 @@ type config struct {
 
 	factory func() any
 
-	mayCreate  func(any, *http.Request) error
-	mayReplace func(any, any, *http.Request) error
-	mayUpdate  func(any, any, *http.Request) error
-	mayDelete  func(any, *http.Request) error
-	mayRead    func(any, *http.Request) error
+	mayRead  func(any, *http.Request) error
+	mayWrite func(any, any, *http.Request) error
 
 	mu sync.Mutex
 }
 
-type mayCreate interface {
-	MayCreate(*http.Request) error
-}
-
-type mayReplace[T any] interface {
-	MayReplace(*T, *http.Request) error
-}
-
-type mayUpdate[T any] interface {
-	MayUpdate(*T, *http.Request) error
-}
-
-type mayDelete interface {
-	MayDelete(*http.Request) error
-}
-
 type mayRead interface {
 	MayRead(*http.Request) error
+}
+
+type mayWrite[T any] interface {
+	MayWrite(*T, *http.Request) error
 }
 
 func newConfig[T any](typeName string) *config {
@@ -54,39 +38,23 @@ func newConfig[T any](typeName string) *config {
 		factory:  func() any { return new(T) },
 	}
 
-	obj := new(T)
+	typ := cfg.factory()
 
-	if !metadata.HasMetadata(obj) {
+	if !metadata.HasMetadata(typ) {
 		panic("struct missing patchy.Metadata field")
 	}
 
-	if _, has := any(obj).(mayCreate); has {
-		cfg.mayCreate = func(obj any, r *http.Request) error {
-			return obj.(mayCreate).MayCreate(r)
-		}
-	}
-
-	if _, found := any(obj).(mayReplace[T]); found {
-		cfg.mayReplace = func(obj any, replace any, r *http.Request) error {
-			return obj.(mayReplace[T]).MayReplace(replace.(*T), r)
-		}
-	}
-
-	if _, found := any(obj).(mayUpdate[T]); found {
-		cfg.mayUpdate = func(obj any, patch any, r *http.Request) error {
-			return obj.(mayUpdate[T]).MayUpdate(patch.(*T), r)
-		}
-	}
-
-	if _, has := any(obj).(mayDelete); has {
-		cfg.mayDelete = func(obj any, r *http.Request) error {
-			return obj.(mayDelete).MayDelete(r)
-		}
-	}
-
-	if _, has := any(obj).(mayRead); has {
+	if _, has := typ.(mayRead); has {
 		cfg.mayRead = func(obj any, r *http.Request) error {
+			obj = convert[T](obj)
 			return obj.(mayRead).MayRead(r)
+		}
+	}
+
+	if _, found := typ.(mayWrite[T]); found {
+		cfg.mayWrite = func(obj any, prev any, r *http.Request) error {
+			obj = convert[T](obj)
+			return obj.(mayWrite[T]).MayWrite(convert[T](prev), r)
 		}
 	}
 
@@ -94,31 +62,19 @@ func newConfig[T any](typeName string) *config {
 }
 
 func (cfg *config) isSafe() error {
-	if cfg.mayCreate == nil {
-		return fmt.Errorf("%s: MayCreate: %w", cfg.typeName, ErrMissingAuthCheck)
-	}
-
-	if cfg.mayReplace == nil {
-		return fmt.Errorf("%s: MayReplace: %w", cfg.typeName, ErrMissingAuthCheck)
-	}
-
-	if cfg.mayUpdate == nil {
-		return fmt.Errorf("%s: MayUpdate: %w", cfg.typeName, ErrMissingAuthCheck)
-	}
-
-	if cfg.mayDelete == nil {
-		return fmt.Errorf("%s: MayDelete: %w", cfg.typeName, ErrMissingAuthCheck)
-	}
-
 	if cfg.mayRead == nil {
 		return fmt.Errorf("%s: MayRead: %w", cfg.typeName, ErrMissingAuthCheck)
+	}
+
+	if cfg.mayWrite == nil {
+		return fmt.Errorf("%s: MayWrite: %w", cfg.typeName, ErrMissingAuthCheck)
 	}
 
 	return nil
 }
 
 func (cfg *config) checkRead(obj any, r *http.Request) (any, *jsrest.Error) {
-	ret, err := clone(obj)
+	ret, err := cfg.clone(obj)
 	if err != nil {
 		e := fmt.Errorf("clone failed: %w", err)
 		return nil, jsrest.FromError(e, jsrest.StatusInternalServerError)
@@ -135,19 +91,53 @@ func (cfg *config) checkRead(obj any, r *http.Request) (any, *jsrest.Error) {
 	return ret, nil
 }
 
-func clone(src any) (any, error) {
-	js, err := json.Marshal(src)
-	if err != nil {
-		return nil, err
+func (cfg *config) checkWrite(obj, prev any, r *http.Request) (any, *jsrest.Error) {
+	var ret any
+
+	if obj != nil {
+		var err *jsrest.Error
+
+		ret, err = cfg.clone(obj)
+		if err != nil {
+			e := fmt.Errorf("clone failed: %w", err)
+			return nil, jsrest.FromError(e, jsrest.StatusInternalServerError)
+		}
 	}
 
-	srcVal := reflect.Indirect(reflect.ValueOf(src))
-	dst := reflect.New(srcVal.Type()).Interface()
+	if cfg.mayWrite != nil {
+		err := cfg.mayWrite(ret, prev, r)
+		if err != nil {
+			e := fmt.Errorf("unauthorized: %w", err)
+			return nil, jsrest.FromError(e, jsrest.StatusUnauthorized)
+		}
+	}
+
+	return ret, nil
+}
+
+func (cfg *config) clone(src any) (any, *jsrest.Error) {
+	js, err := json.Marshal(src)
+	if err != nil {
+		e := fmt.Errorf("json marshal: %w", err)
+		return nil, jsrest.FromError(e, jsrest.StatusInternalServerError)
+	}
+
+	dst := cfg.factory()
 
 	err = json.Unmarshal(js, dst)
 	if err != nil {
-		return nil, err
+		e := fmt.Errorf("json unmarshal: %w", err)
+		return nil, jsrest.FromError(e, jsrest.StatusInternalServerError)
 	}
 
 	return dst, nil
+}
+
+func convert[T any](obj any) *T {
+	// Like cast but supports untyped nil
+	if obj == nil {
+		return nil
+	}
+
+	return obj.(*T)
 }
