@@ -20,15 +20,10 @@ func (api *API) post(cfg *config, w http.ResponseWriter, r *http.Request) {
 
 	metadata.GetMetadata(obj).ID = uuid.NewString()
 
-	if cfg.mayCreate != nil {
-		err := cfg.mayCreate(obj, r)
-		if err != nil {
-			e := fmt.Errorf("unauthorized: %w", err)
-			jse := jsrest.FromError(e, jsrest.StatusUnauthorized)
-			jse.Write(w)
-
-			return
-		}
+	obj, jse = cfg.checkWrite(obj, nil, r)
+	if jse != nil {
+		jse.Write(w)
+		return
 	}
 
 	err := api.sb.Write(cfg.typeName, obj)
@@ -40,13 +35,13 @@ func (api *API) post(cfg *config, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	checked, jse := cfg.checkRead(obj, r)
+	obj, jse = cfg.checkRead(obj, r)
 	if jse != nil {
 		jse.Write(w)
 		return
 	}
 
-	jse = jsrest.Write(w, checked)
+	jse = jsrest.Write(w, obj)
 	if jse != nil {
 		jse.Write(w)
 		return

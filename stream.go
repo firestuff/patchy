@@ -40,13 +40,13 @@ func (api *API) stream(cfg *config, id string, w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	checked, jse := cfg.checkRead(obj, r)
+	obj, jse := cfg.checkRead(obj, r)
 	if jse != nil {
 		jse.Write(w)
 		return
 	}
 
-	jse = writeEvent(w, "initial", checked)
+	jse = writeEvent(w, "initial", obj)
 	if jse != nil {
 		_ = writeEvent(w, "error", jse)
 		return
@@ -61,13 +61,13 @@ func (api *API) stream(cfg *config, id string, w http.ResponseWriter, r *http.Re
 
 		case msg, ok := <-v.Chan():
 			if ok {
-				checked, jse = cfg.checkRead(msg, r)
+				msg, jse = cfg.checkRead(msg, r)
 				if jse != nil {
 					jse.Write(w)
 					return
 				}
 
-				jse = writeEvent(w, "update", checked)
+				jse = writeEvent(w, "update", msg)
 				if jse != nil {
 					_ = writeEvent(w, "error", jse)
 					return
