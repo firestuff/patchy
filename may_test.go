@@ -172,25 +172,58 @@ func TestMayRead(t *testing.T) {
 	require.Nil(t, err)
 	require.True(t, resp.IsError())
 
-	// TODO: Test streaming list
-	// TODO: Uncomment non-streaming list test and fix
-	/*
-		list := []*testType{}
+	list := []*testType{}
 
-		resp, err = ta.r().
-			SetResult(&list).
-			Get("maytype")
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
+	resp, err = ta.r().
+		SetResult(&list).
+		Get("maytype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Len(t, list, 1)
 
-		resp, err = ta.r().
-			SetHeader("X-Refuse-Read", "x").
-			SetResult(&list).
-			Get("maytype")
-		require.Nil(t, err)
-		require.True(t, resp.IsError())
-	*/
-} //nolint:wsl
+	resp, err = ta.r().
+		SetHeader("X-Refuse-Read", "x").
+		SetResult(&list).
+		Get("maytype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Len(t, list, 0)
+
+	resp, err = ta.r().
+		SetDoNotParseResponse(true).
+		SetHeader("Accept", "text/event-stream").
+		Get("maytype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+
+	body1 := resp.RawBody()
+	defer body1.Close()
+
+	scan1 := bufio.NewScanner(body1)
+
+	eventType, err := readEvent(scan1, &list)
+	require.Nil(t, err)
+	require.Equal(t, "list", eventType)
+	require.Len(t, list, 1)
+
+	resp, err = ta.r().
+		SetDoNotParseResponse(true).
+		SetHeader("X-Refuse-Read", "x").
+		SetHeader("Accept", "text/event-stream").
+		Get("maytype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+
+	body2 := resp.RawBody()
+	defer body2.Close()
+
+	scan2 := bufio.NewScanner(body2)
+
+	eventType, err = readEvent(scan2, &list)
+	require.Nil(t, err)
+	require.Equal(t, "list", eventType)
+	require.Len(t, list, 0)
+}
 
 func TestMayWriteMutate(t *testing.T) {
 	t.Parallel()

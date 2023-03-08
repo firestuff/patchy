@@ -127,10 +127,9 @@ func filterList(cfg *config, r *http.Request, params *listParams, list []any) ([
 	inter := []any{}
 
 	for _, obj := range list {
-		if cfg.mayRead != nil {
-			if cfg.mayRead(obj, r) != nil {
-				continue
-			}
+		obj, jse := cfg.checkRead(obj, r)
+		if jse != nil {
+			continue
 		}
 
 		matches, err := match(obj, params.filters)
