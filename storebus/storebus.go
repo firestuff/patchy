@@ -1,7 +1,6 @@
 package storebus
 
 import (
-	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -10,13 +9,14 @@ import (
 	"github.com/firestuff/patchy/bus"
 	"github.com/firestuff/patchy/metadata"
 	"github.com/firestuff/patchy/store"
-	"github.com/firestuff/patchy/view"
 )
 
 type StoreBus struct {
 	store store.Storer
 	bus   *bus.Bus
-	mu    sync.RWMutex
+
+	// This lock ensures that no writes interleave with read/subscribe pairs
+	mu sync.RWMutex
 }
 
 func NewStoreBus(st store.Storer) *StoreBus {
@@ -43,7 +43,7 @@ func (sb *StoreBus) Write(t string, obj any) error {
 	return nil
 }
 
-func (sb *StoreBus) Delete(t string, id string) error {
+func (sb *StoreBus) Delete(t, id string) error {
 	sb.mu.Lock()
 	defer sb.mu.Unlock()
 
@@ -56,61 +56,69 @@ func (sb *StoreBus) Delete(t string, id string) error {
 	return nil
 }
 
-func (sb *StoreBus) Read(ctx context.Context, t string, id string, factory func() any) (*view.EphemeralView[any], error) {
-	sb.mu.RLock()
-	defer sb.mu.RUnlock()
-
-	obj, err := sb.store.Read(t, id, factory)
-	if err != nil {
-		return nil, err
-	}
-
-	ev, err := view.NewEphemeralView[any](ctx, obj)
-	if err != nil {
-		return nil, err
-	}
-
-	sb.bus.SubscribeKey(t, id, ev)
-
-	return ev, nil
+func (sb *StoreBus) Read(t, id string, factory func() any) (any, error) {
+	return sb.store.Read(t, id, factory)
 }
 
-func (sb *StoreBus) List(ctx context.Context, t string, factory func() any) (*view.EphemeralView[[]any], error) {
+func (sb *StoreBus) ReadStream(t, id string, factory func() any) (<-chan any, error) {
 	sb.mu.RLock()
 	defer sb.mu.RUnlock()
 
-	l, err := sb.store.List(t, factory)
+	initial, err := sb.store.Read(t, id, factory)
 	if err != nil {
 		return nil, err
 	}
 
-	ret, err := view.NewEphemeralView[[]any](ctx, l)
+	c := sb.bus.SubscribeKey(t, id, initial)
+
+	return c, nil
+}
+
+func (sb *StoreBus) CloseReadStream(t, id string, c <-chan any) {
+	sb.bus.UnsubscribeKey(t, id, c)
+}
+
+func (sb *StoreBus) List(t string, factory func() any) ([]any, error) {
+	return sb.store.List(t, factory)
+}
+
+func (sb *StoreBus) ListStream(t string, factory func() any) (<-chan []any, error) {
+	sb.mu.RLock()
+	defer sb.mu.RUnlock()
+
+	initial, err := sb.store.List(t, factory)
 	if err != nil {
 		return nil, err
 	}
 
-	ev := view.NewEphemeralViewEmpty[any](ctx)
-	sb.bus.SubscribeType(t, ev)
+	c := sb.bus.SubscribeType(t, initial)
+
+	ret := make(chan []any, 100)
 
 	go func() {
-		for range ev.Chan() {
+		defer close(ret)
+		defer sb.bus.UnsubscribeType(t, c)
+
+		for range c {
 			// List() results are always at least (but not exactly) as new as the write that triggered it
 			l, err := sb.store.List(t, factory)
 			if err != nil {
 				break
 			}
 
-			err = ret.Update(l)
-			if err != nil {
-				// Update() closes the channel on failure
-				return
+			select {
+			case ret <- l:
+			default:
+				break
 			}
 		}
-
-		ret.Close()
 	}()
 
 	return ret, nil
+}
+
+func (sb *StoreBus) CloseListStream(t string, c <-chan any) {
+	sb.bus.UnsubscribeType(t, c)
 }
 
 func updateHash(obj any) error {
