@@ -123,28 +123,6 @@ func parseListParams(params url.Values) (*listParams, *jsrest.Error) {
 	return ret, nil
 }
 
-func (api *API) list(cfg *config, r *http.Request, params *listParams) ([]any, *jsrest.Error) {
-	// TODO: Merge this into getlist
-	list, err := api.sb.List(cfg.typeName, cfg.factory)
-	if err != nil {
-		e := fmt.Errorf("failed to read list: %w", err)
-		jse := jsrest.FromError(e, jsrest.StatusInternalServerError)
-
-		return nil, jse
-	}
-
-	// TODO: Push jsrest.Error down into filterList (and path)
-	list, err = filterList(cfg, r, params, list)
-	if err != nil {
-		e := fmt.Errorf("failed to filter list: %w", err)
-		jse := jsrest.FromError(e, jsrest.StatusBadRequest)
-
-		return nil, jse
-	}
-
-	return list, nil
-}
-
 func filterList(cfg *config, r *http.Request, params *listParams, list []any) ([]any, error) {
 	inter := []any{}
 
