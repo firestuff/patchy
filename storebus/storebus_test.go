@@ -30,10 +30,12 @@ func TestStoreBus(t *testing.T) {
 
 	c1, err := sb.ReadStream("storeBusTest", "id1", newStoreBusTest)
 	require.Nil(t, err)
+
 	defer sb.CloseReadStream("storeBusTest", "id1", c1)
 
 	c2, err := sb.ListStream("storeBusTest", newStoreBusTest)
 	require.Nil(t, err)
+
 	defer sb.CloseListStream("storeBusTest", c1)
 
 	out1 := (<-c1).(*storeBusTest)
@@ -123,6 +125,7 @@ func TestStoreBusDelete(t *testing.T) {
 
 	c1, err := sb.ReadStream("storeBusTest", "id1", newStoreBusTest)
 	require.Nil(t, err)
+
 	defer sb.CloseReadStream("storeBusTest", "id1", c1)
 
 	preout := <-c1

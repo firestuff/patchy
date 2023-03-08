@@ -12,7 +12,7 @@ func (api *API) put(cfg *config, id string, w http.ResponseWriter, r *http.Reque
 	cfg.mu.Lock()
 	defer cfg.mu.Unlock()
 
-	v, err := api.sb.Read(r.Context(), cfg.typeName, id, cfg.factory)
+	obj, err := api.sb.Read(cfg.typeName, id, cfg.factory)
 	if err != nil {
 		e := fmt.Errorf("failed to read %s: %w", id, err)
 		jse := jsrest.FromError(e, jsrest.StatusInternalServerError)
@@ -21,7 +21,6 @@ func (api *API) put(cfg *config, id string, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	obj := <-v.Chan()
 	if obj == nil {
 		e := fmt.Errorf("%s: %w", id, ErrNotFound)
 		jse := jsrest.FromError(e, jsrest.StatusNotFound)

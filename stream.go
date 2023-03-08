@@ -22,7 +22,7 @@ func (api *API) stream(cfg *config, id string, w http.ResponseWriter, r *http.Re
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 
-	v, err := api.sb.Read(r.Context(), cfg.typeName, id, cfg.factory)
+	ch, err := api.sb.ReadStream(cfg.typeName, id, cfg.factory)
 	if err != nil {
 		e := fmt.Errorf("failed to read %s: %w", id, err)
 		jse := jsrest.FromError(e, jsrest.StatusInternalServerError)
@@ -31,7 +31,9 @@ func (api *API) stream(cfg *config, id string, w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	obj := <-v.Chan()
+	defer api.sb.CloseReadStream(cfg.typeName, id, ch)
+
+	obj := <-ch
 	if obj == nil {
 		e := fmt.Errorf("%s: %w", id, ErrNotFound)
 		jse := jsrest.FromError(e, jsrest.StatusNotFound)
@@ -59,7 +61,7 @@ func (api *API) stream(cfg *config, id string, w http.ResponseWriter, r *http.Re
 		case <-r.Context().Done():
 			return
 
-		case msg, ok := <-v.Chan():
+		case msg, ok := <-ch:
 			if ok {
 				msg, jse = cfg.checkRead(msg, r)
 				if jse != nil {
