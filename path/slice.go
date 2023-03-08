@@ -6,7 +6,7 @@ func isSlice(v any) bool {
 	return reflect.TypeOf(v).Kind() == reflect.Slice
 }
 
-func anyTrue(v any, cb func(any) bool) bool {
+func anyTrue(v any, cb func(any, int) bool) bool {
 	val := reflect.ValueOf(v)
 
 	for i := 0; i < val.Len(); i++ {
@@ -18,7 +18,7 @@ func anyTrue(v any, cb func(any) bool) bool {
 
 		sub = reflect.Indirect(sub)
 
-		if cb(sub.Interface()) {
+		if cb(sub.Interface(), i) {
 			return true
 		}
 	}
