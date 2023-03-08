@@ -16,7 +16,7 @@ func op(obj any, path string, matchStr string, cb func(any, any, string) bool) (
 	}
 
 	if isSlice(objVal) {
-		return anyTrue(objVal, func(x any) bool { return cb(x, matchVal, matchStr) }), nil
+		return anyTrue(objVal, func(x any, _ int) bool { return cb(x, matchVal, matchStr) }), nil
 	}
 
 	return cb(objVal, matchVal, matchStr), nil
@@ -32,10 +32,10 @@ func opList(obj any, path string, matchStr string, cb func(any, any, string) boo
 		return false, nil
 	}
 
-	// TODO: Store per-item matchStr
 	matchVal := []any{}
+	matchParts := strings.Split(matchStr, ",")
 
-	for _, matchPart := range strings.Split(matchStr, ",") {
+	for _, matchPart := range matchParts {
 		matchTmp, err := parse(matchPart, objVal)
 		if err != nil {
 			return false, err
@@ -44,11 +44,13 @@ func opList(obj any, path string, matchStr string, cb func(any, any, string) boo
 		matchVal = append(matchVal, matchTmp)
 	}
 
-	return anyTrue(matchVal, func(y any) bool {
+	return anyTrue(matchVal, func(y any, i int) bool {
+		str := matchParts[i]
+
 		if isSlice(objVal) {
-			return anyTrue(objVal, func(x any) bool { return cb(x, y, matchStr) })
+			return anyTrue(objVal, func(x any, _ int) bool { return cb(x, y, str) })
 		}
 
-		return cb(objVal, y, matchStr)
+		return cb(objVal, y, str)
 	}), nil
 }
