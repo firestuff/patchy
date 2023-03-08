@@ -171,7 +171,26 @@ func TestMayRead(t *testing.T) {
 		Get("maytype/{id}")
 	require.Nil(t, err)
 	require.True(t, resp.IsError())
-}
+
+	// TODO: Test streaming list
+	// TODO: Uncomment non-streaming list test and fix
+	/*
+		list := []*testType{}
+
+		resp, err = ta.r().
+			SetResult(&list).
+			Get("maytype")
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
+
+		resp, err = ta.r().
+			SetHeader("X-Refuse-Read", "x").
+			SetResult(&list).
+			Get("maytype")
+		require.Nil(t, err)
+		require.True(t, resp.IsError())
+	*/
+} //nolint:wsl
 
 func TestMayWriteMutate(t *testing.T) {
 	t.Parallel()

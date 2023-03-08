@@ -123,8 +123,9 @@ func parseListParams(params url.Values) (*listParams, *jsrest.Error) {
 	return ret, nil
 }
 
-func (api *API) list(cfg *config, r *http.Request, params *listParams) (view.ReadView[[]any], *jsrest.Error) {
-	v, err := api.sb.List(r.Context(), cfg.typeName, cfg.factory)
+func (api *API) list(cfg *config, r *http.Request, params *listParams) ([]any, *jsrest.Error) {
+	// TODO: Merge this into getlist
+	list, err := api.sb.List(cfg.typeName, cfg.factory)
 	if err != nil {
 		e := fmt.Errorf("failed to read list: %w", err)
 		jse := jsrest.FromError(e, jsrest.StatusInternalServerError)
@@ -132,83 +133,89 @@ func (api *API) list(cfg *config, r *http.Request, params *listParams) (view.Rea
 		return nil, jse
 	}
 
-	return filterList(cfg, r, params, v), nil
+	// TODO: Push jsrest.Error down into filterList (and path)
+	list, err = filterList(cfg, r, params, list)
+	if err != nil {
+		e := fmt.Errorf("failed to filter list: %w", err)
+		jse := jsrest.FromError(e, jsrest.StatusBadRequest)
+
+		return nil, jse
+	}
+
+	return list, nil
 }
 
-func filterList(cfg *config, r *http.Request, params *listParams, in view.ReadView[[]any]) *view.FilterView[[]any] {
-	// TODO: Stack FilterViews instead of using one giant one
-	return view.NewFilterView[[]any](in, func(list []any) ([]any, error) {
-		inter := []any{}
+func filterList(cfg *config, r *http.Request, params *listParams, list []any) ([]any, error) {
+	inter := []any{}
 
-		for _, obj := range list {
-			if cfg.mayRead != nil {
-				if cfg.mayRead(obj, r) != nil {
-					continue
-				}
-			}
-
-			matches, err := match(obj, params.filters)
-			if err != nil {
-				return nil, err
-			}
-
-			if !matches {
+	for _, obj := range list {
+		if cfg.mayRead != nil {
+			if cfg.mayRead(obj, r) != nil {
 				continue
-			}
-
-			inter = append(inter, obj)
-		}
-
-		for _, srt := range params.sorts {
-			var err error
-
-			switch {
-			case strings.HasPrefix(srt, "+"):
-				err = path.Sort(inter, strings.TrimPrefix(srt, "+"))
-
-			case strings.HasPrefix(srt, "-"):
-				err = path.SortReverse(inter, strings.TrimPrefix(srt, "-"))
-
-			default:
-				err = path.Sort(inter, srt)
-			}
-
-			if err != nil {
-				return nil, err
 			}
 		}
 
-		ret := []any{}
-
-		after := params.after
-		offset := params.offset
-		limit := params.limit
-
-		for _, obj := range inter {
-			if after != "" {
-				if metadata.GetMetadata(obj).ID == after {
-					after = ""
-				}
-
-				continue
-			}
-
-			if offset > 0 {
-				offset--
-
-				continue
-			}
-
-			limit--
-			if limit < 0 {
-				break
-			}
-
-			ret = append(ret, obj)
+		matches, err := match(obj, params.filters)
+		if err != nil {
+			return nil, err
 		}
 
-		return ret, nil
-	})
+		if !matches {
+			continue
+		}
+
+		inter = append(inter, obj)
+	}
+
+	for _, srt := range params.sorts {
+		var err error
+
+		switch {
+		case strings.HasPrefix(srt, "+"):
+			err = path.Sort(inter, strings.TrimPrefix(srt, "+"))
+
+		case strings.HasPrefix(srt, "-"):
+			err = path.SortReverse(inter, strings.TrimPrefix(srt, "-"))
+
+		default:
+			err = path.Sort(inter, srt)
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	ret := []any{}
+
+	after := params.after
+	offset := params.offset
+	limit := params.limit
+
+	for _, obj := range inter {
+		if after != "" {
+			if metadata.GetMetadata(obj).ID == after {
+				after = ""
+			}
+
+			continue
+		}
+
+		if offset > 0 {
+			offset--
+
+			continue
+		}
+
+		limit--
+		if limit < 0 {
+			break
+		}
+
+		ret = append(ret, obj)
+	}
+
+	return ret, nil
 }
 
 func match(obj any, filters []filter) (bool, error) {
