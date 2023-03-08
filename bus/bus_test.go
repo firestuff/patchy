@@ -1,12 +1,10 @@
 package bus_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/firestuff/patchy/bus"
 	"github.com/firestuff/patchy/metadata"
-	"github.com/firestuff/patchy/view"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,21 +20,30 @@ func TestBus(t *testing.T) {
 		},
 	})
 
-	ev1a := view.NewEphemeralViewEmpty[any](context.Background())
-	ev2a := view.NewEphemeralViewEmpty[any](context.Background())
-	ev2b := view.NewEphemeralViewEmpty[any](context.Background())
-	ev2c := view.NewEphemeralViewEmpty[any](context.Background())
-	evt1 := view.NewEphemeralViewEmpty[any](context.Background())
-	evt2 := view.NewEphemeralViewEmpty[any](context.Background())
-
 	// Complex subscription layout
-	bus.SubscribeKey("busTest1", "id-overlap", ev1a)
-	bus.SubscribeKey("busTest2", "id-overlap", ev2a)
-	bus.SubscribeKey("busTest2", "id-dupe", ev2b)
-	bus.SubscribeKey("busTest2", "id-dupe", ev2c)
+	c1a := bus.SubscribeKey("busTest1", "id-overlap", nil)
+	require.Nil(t, <-c1a)
+	defer bus.UnsubscribeKey("busTest1", "id-overlap", c1a)
 
-	bus.SubscribeType("busTest1", evt1)
-	bus.SubscribeType("busTest2", evt2)
+	c2a := bus.SubscribeKey("busTest2", "id-overlap", nil)
+	require.Nil(t, <-c2a)
+	defer bus.UnsubscribeKey("busTest2", "id-overlap", c2a)
+
+	c2b := bus.SubscribeKey("busTest2", "id-dupe", nil)
+	require.Nil(t, <-c2b)
+	defer bus.UnsubscribeKey("busTest2", "id-dupe", c2b)
+
+	c2c := bus.SubscribeKey("busTest2", "id-dupe", nil)
+	require.Nil(t, <-c2c)
+	defer bus.UnsubscribeKey("busTest2", "id-dupe", c2c)
+
+	ct1 := bus.SubscribeType("busTest1", nil)
+	require.Nil(t, <-ct1)
+	defer bus.UnsubscribeType("busTest1", ct1)
+
+	ct2 := bus.SubscribeType("busTest2", nil)
+	require.Nil(t, <-ct2)
+	defer bus.UnsubscribeType("busTest2", ct2)
 
 	// Overlapping IDs but not types
 	bus.Announce("busTest1", &busTest{
@@ -45,16 +52,16 @@ func TestBus(t *testing.T) {
 		},
 	})
 
-	msg := <-ev1a.Chan()
+	msg := <-c1a
 	require.Equal(t, "id-overlap", msg.(*busTest).ID)
 
-	msg = <-evt1.Chan()
+	msg = <-ct1
 	require.Equal(t, "id-overlap", msg.(*busTest).ID)
 
 	select {
-	case msg := <-ev2a.Chan():
+	case msg := <-c2a:
 		require.Fail(t, "unexpected message", msg)
-	case msg := <-evt2.Chan():
+	case msg := <-ct2:
 		require.Fail(t, "unexpected message", msg)
 	default:
 	}
@@ -66,17 +73,17 @@ func TestBus(t *testing.T) {
 	})
 
 	select {
-	case msg := <-ev1a.Chan():
+	case msg := <-c1a:
 		require.Fail(t, "unexpected message", msg)
-	case msg := <-evt1.Chan():
+	case msg := <-ct1:
 		require.Fail(t, "unexpected message", msg)
 	default:
 	}
 
-	msg = <-ev2a.Chan()
+	msg = <-c2a
 	require.Equal(t, "id-overlap", msg.(*busTest).ID)
 
-	msg = <-evt2.Chan()
+	msg = <-ct2
 	require.Equal(t, "id-overlap", msg.(*busTest).ID)
 
 	bus.Announce("busTest2", &busTest{
@@ -85,13 +92,13 @@ func TestBus(t *testing.T) {
 		},
 	})
 
-	msg = <-ev2b.Chan()
+	msg = <-c2b
 	require.Equal(t, "id-dupe", msg.(*busTest).ID)
 
-	msg = <-ev2c.Chan()
+	msg = <-c2c
 	require.Equal(t, "id-dupe", msg.(*busTest).ID)
 
-	msg = <-evt2.Chan()
+	msg = <-ct2
 	require.Equal(t, "id-dupe", msg.(*busTest).ID)
 }
 
@@ -100,15 +107,13 @@ func TestBusDelete(t *testing.T) {
 
 	bus := bus.NewBus()
 
-	ev, err := view.NewEphemeralView[any](context.Background(), nil)
-	require.Nil(t, err)
-	<-ev.Chan()
-	bus.SubscribeKey("busTest", "id1", ev)
+	c := bus.SubscribeKey("busTest", "id1", nil)
+	require.Nil(t, <-c)
+	defer bus.UnsubscribeKey("busTest", "id1", c)
 
-	evt, err := view.NewEphemeralView[any](context.Background(), nil)
-	require.Nil(t, err)
-	<-evt.Chan()
-	bus.SubscribeType("busTest", evt)
+	ct := bus.SubscribeType("busTest", nil)
+	require.Nil(t, <-ct)
+	defer bus.UnsubscribeType("busTest", ct)
 
 	bus.Announce("busTest", &busTest{
 		Metadata: metadata.Metadata{
@@ -116,18 +121,18 @@ func TestBusDelete(t *testing.T) {
 		},
 	})
 
-	msg := <-ev.Chan()
+	msg := <-c
 	require.Equal(t, "id1", msg.(*busTest).ID)
 
-	msg = <-evt.Chan()
+	msg = <-ct
 	require.Equal(t, "id1", msg.(*busTest).ID)
 
 	bus.Delete("busTest", "id1")
 
-	_, ok := <-ev.Chan()
+	_, ok := <-c
 	require.False(t, ok)
 
-	id := (<-evt.Chan()).(string)
+	id := (<-ct).(string)
 	require.Equal(t, "id1", id)
 }
 

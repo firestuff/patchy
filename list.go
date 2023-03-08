@@ -13,7 +13,6 @@ import (
 	"github.com/firestuff/patchy/jsrest"
 	"github.com/firestuff/patchy/metadata"
 	"github.com/firestuff/patchy/path"
-	"github.com/firestuff/patchy/view"
 )
 
 type listParams struct {
