@@ -86,16 +86,13 @@ func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Reque
 			continue
 
 		case list := <-ch:
-			list, err = filterList(cfg, r, params, list)
-			if err != nil {
-				e := fmt.Errorf("failed to filter list: %w", err)
-				jse := jsrest.FromError(e, jsrest.StatusBadRequest)
+			list, jse := filterList(cfg, r, params, list)
+			if jse != nil {
 				_ = writeEvent(w, "error", jse)
-
 				return
 			}
 
-			jse := writeEvent(w, "list", list)
+			jse = writeEvent(w, "list", list)
 			if jse != nil {
 				_ = writeEvent(w, "error", jse)
 				return
@@ -133,12 +130,9 @@ func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Reque
 			return
 
 		case list := <-ch:
-			list, err = filterList(cfg, r, params, list)
-			if err != nil {
-				e := fmt.Errorf("failed to filter list: %w", err)
-				jse := jsrest.FromError(e, jsrest.StatusBadRequest)
+			list, jse := filterList(cfg, r, params, list)
+			if jse != nil {
 				_ = writeEvent(w, "error", jse)
-
 				return
 			}
 
