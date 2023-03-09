@@ -123,7 +123,7 @@ func parseListParams(params url.Values) (*listParams, *jsrest.Error) {
 	return ret, nil
 }
 
-func filterList(cfg *config, r *http.Request, params *listParams, list []any) ([]any, error) {
+func filterList(cfg *config, r *http.Request, params *listParams, list []any) ([]any, *jsrest.Error) {
 	inter := []any{}
 
 	for _, obj := range list {
@@ -132,9 +132,10 @@ func filterList(cfg *config, r *http.Request, params *listParams, list []any) ([
 			continue
 		}
 
+		// TODO: Push jsrest.Error down into match
 		matches, err := match(obj, params.filters)
 		if err != nil {
-			return nil, err
+			return nil, jsrest.FromError(err, jsrest.StatusBadRequest)
 		}
 
 		if !matches {
@@ -147,6 +148,7 @@ func filterList(cfg *config, r *http.Request, params *listParams, list []any) ([
 	for _, srt := range params.sorts {
 		var err error
 
+		// TODO: Push jsrest.Error down into path
 		switch {
 		case strings.HasPrefix(srt, "+"):
 			err = path.Sort(inter, strings.TrimPrefix(srt, "+"))
@@ -159,7 +161,7 @@ func filterList(cfg *config, r *http.Request, params *listParams, list []any) ([
 		}
 
 		if err != nil {
-			return nil, err
+			return nil, jsrest.FromError(err, jsrest.StatusBadRequest)
 		}
 	}
 

@@ -24,6 +24,7 @@ func (api *API) getList(cfg *config, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO: Push jsrest.Error down into storebus
 	list, err := api.sb.List(cfg.typeName, cfg.factory)
 	if err != nil {
 		e := fmt.Errorf("failed to read list: %w", err)
@@ -33,13 +34,9 @@ func (api *API) getList(cfg *config, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Push jsrest.Error down into filterList (and path)
-	list, err = filterList(cfg, r, parsed, list)
-	if err != nil {
-		e := fmt.Errorf("failed to filter list: %w", err)
-		jse := jsrest.FromError(e, jsrest.StatusBadRequest)
+	list, jse = filterList(cfg, r, parsed, list)
+	if jse != nil {
 		jse.Write(w)
-
 		return
 	}
 
