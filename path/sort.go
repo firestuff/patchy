@@ -2,26 +2,26 @@ package path
 
 import (
 	"errors"
-	"fmt"
 	"reflect"
 	"sort"
 	"time"
 
 	"cloud.google.com/go/civil"
+	"github.com/firestuff/patchy/jsrest"
 )
 
 func Sort(objs any, path string) error {
 	as := newAnySlice(objs, path)
 	sort.Stable(as)
 
-	return as.Error()
+	return as.err
 }
 
 func SortReverse(objs any, path string) error {
 	as := newAnySlice(objs, path)
 	sort.Stable(sort.Reverse(as))
 
-	return as.Error()
+	return as.err
 }
 
 type anySlice struct {
@@ -100,19 +100,11 @@ func (as *anySlice) Less(i, j int) bool {
 		return t1.Before(v2.(civil.Date))
 
 	default:
-		as.err = fmt.Errorf("%T: %w", t1, ErrUnsupportedSortType)
+		as.err = jsrest.Errorf(jsrest.ErrBadRequest, "%s: %T (%w)", as.path, t1, ErrUnsupportedSortType)
 		return i < j
 	}
 }
 
 func (as *anySlice) Swap(i, j int) {
 	as.swapper(i, j)
-}
-
-func (as *anySlice) Error() error {
-	if as.err == nil {
-		return nil
-	}
-
-	return fmt.Errorf("%s: %w", as.path, as.err)
 }

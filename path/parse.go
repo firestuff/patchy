@@ -2,13 +2,13 @@ package path
 
 import (
 	"errors"
-	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
 
 	"cloud.google.com/go/civil"
+	"github.com/firestuff/patchy/jsrest"
 )
 
 type timeVal struct {
@@ -16,7 +16,10 @@ type timeVal struct {
 	precision time.Duration
 }
 
-var ErrUnsupportedType = errors.New("unsupported type")
+var (
+	ErrUnsupportedType   = errors.New("unsupported type")
+	ErrUnknownTimeFormat = errors.New("unknown time format")
+)
 
 func parse(str string, t any) (any, error) {
 	typ := reflect.TypeOf(t)
@@ -64,7 +67,7 @@ func parse(str string, t any) (any, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("%T: %w", t, ErrUnsupportedType)
+	return nil, jsrest.Errorf(jsrest.ErrBadRequest, "%T (%w)", t, ErrUnsupportedType)
 }
 
 func parseInt(str string) (int, error) {
@@ -129,7 +132,7 @@ func parseTime(str string) (*timeVal, error) {
 
 	i, err := strconv.ParseInt(str, 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("unknown time format: %w", err)
+		return nil, jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", str, ErrUnknownTimeFormat)
 	}
 
 	// UNIX Seconds: 2969-05-03
