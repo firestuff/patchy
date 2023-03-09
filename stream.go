@@ -35,12 +35,19 @@ func (api *API) stream(cfg *config, id string, w http.ResponseWriter, r *http.Re
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 
-	// TODO: Wrap another function so we can do streaming errors in return values
-
-	err = writeEvent(w, "initial", obj)
+	err = api.streamInt(cfg, w, r, obj, ch)
 	if err != nil {
-		_ = writeEvent(w, "error", jsrest.ToJSONError(err))
+		writeEvent(w, "error", jsrest.ToJSONError(err))
 		return nil
+	}
+
+	return nil
+}
+
+func (api *API) streamInt(cfg *config, w http.ResponseWriter, r *http.Request, obj any, ch <-chan any) error {
+	err := writeEvent(w, "initial", obj)
+	if err != nil {
+		return jsrest.Errorf(jsrest.ErrInternalServerError, "write initial failed (%w)", err)
 	}
 
 	ticker := time.NewTicker(5 * time.Second)
@@ -54,19 +61,17 @@ func (api *API) stream(cfg *config, id string, w http.ResponseWriter, r *http.Re
 			if ok {
 				msg, err = cfg.checkRead(msg, r)
 				if err != nil {
-					_ = writeEvent(w, "error", jsrest.ToJSONError(err))
-					return nil
+					return jsrest.Errorf(jsrest.ErrUnauthorized, "read check failed (%w)", err)
 				}
 
 				err = writeEvent(w, "update", msg)
 				if err != nil {
-					_ = writeEvent(w, "error", jsrest.ToJSONError(err))
-					return nil
+					return jsrest.Errorf(jsrest.ErrInternalServerError, "write update failed (%w)", err)
 				}
 			} else {
 				err = writeEvent(w, "delete", emptyEvent)
 				if err != nil {
-					_ = writeEvent(w, "error", jsrest.ToJSONError(err))
+					return jsrest.Errorf(jsrest.ErrInternalServerError, "write delete failed (%w)", err)
 				}
 				return nil
 			}
@@ -74,8 +79,7 @@ func (api *API) stream(cfg *config, id string, w http.ResponseWriter, r *http.Re
 		case <-ticker.C:
 			err = writeEvent(w, "heartbeat", emptyEvent)
 			if err != nil {
-				_ = writeEvent(w, "error", jsrest.ToJSONError(err))
-				return nil
+				return jsrest.Errorf(jsrest.ErrInternalServerError, "write heartbeat failed (%w)", err)
 			}
 		}
 	}
