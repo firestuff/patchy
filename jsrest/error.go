@@ -2,7 +2,6 @@ package jsrest
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 )
 
@@ -68,12 +67,29 @@ func FromError(err error, code Code) *Error {
 	e := NewError()
 	e.Code = code
 
-	// TODO: Support multiple error inheritance in Go 1.20
-	for iter := err; iter != nil; iter = errors.Unwrap(iter) {
-		e.Messages = append(e.Messages, iter.Error())
-	}
+	e.importError(err)
 
 	return e
+}
+
+type SingleUnwrap interface {
+	Unwrap() error
+}
+
+type MultiUnwrap interface {
+	Unwrap() []error
+}
+
+func (e *Error) importError(err error) {
+	e.Messages = append(e.Messages, err.Error())
+
+	if unwrap, ok := err.(SingleUnwrap); ok { //nolint:errorlint
+		e.importError(unwrap.Unwrap())
+	} else if unwrap, ok := err.(MultiUnwrap); ok { //nolint:errorlint
+		for _, sub := range unwrap.Unwrap() {
+			e.importError(sub)
+		}
+	}
 }
 
 func (e *Error) SetParam(key string, value any) {
@@ -90,6 +106,7 @@ func (e *Error) Error() string {
 }
 
 func (e *Error) Write(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(int(e.Code))
 
 	enc := json.NewEncoder(w)
