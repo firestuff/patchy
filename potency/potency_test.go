@@ -20,112 +20,119 @@ import (
 func TestGET(t *testing.T) {
 	t.Parallel()
 
-	withServer(t, func(t *testing.T, url string, c *resty.Client) {
-		key1 := uuid.NewString()
+	ts := newTestServer(t)
+	defer ts.shutdown(t)
 
-		resp, err := c.R().
-			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
-			Get(url)
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Equal(t, "bar", resp.Header().Get("X-Response"))
+	key1 := uuid.NewString()
 
-		resp1 := resp.String()
+	resp, err := ts.r().
+		SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
+		Get("")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, "bar", resp.Header().Get("X-Response"))
 
-		resp, err = c.R().
-			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
-			Get(url)
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Equal(t, "bar", resp.Header().Get("X-Response"))
-		require.Equal(t, resp1, resp.String())
+	resp1 := resp.String()
 
-		key2 := uuid.NewString()
+	resp, err = ts.r().
+		SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
+		Get("")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, "bar", resp.Header().Get("X-Response"))
+	require.Equal(t, resp1, resp.String())
 
-		resp, err = c.R().
-			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key2)).
-			Get(url)
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Equal(t, "bar", resp.Header().Get("X-Response"))
+	key2 := uuid.NewString()
 
-		resp2 := resp.String()
+	resp, err = ts.r().
+		SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key2)).
+		Get("")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, "bar", resp.Header().Get("X-Response"))
 
-		require.NotEqual(t, resp2, resp1)
+	resp2 := resp.String()
 
-		resp, err = c.R().
-			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
-			Get(fmt.Sprintf("%sx", url))
-		require.Nil(t, err)
-		require.True(t, resp.IsError())
+	require.NotEqual(t, resp2, resp1)
 
-		resp, err = c.R().
-			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
-			Delete(url)
-		require.Nil(t, err)
-		require.True(t, resp.IsError())
+	resp, err = ts.r().
+		SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
+		Get("x")
+	require.Nil(t, err)
+	require.True(t, resp.IsError())
 
-		resp, err = c.R().
-			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
-			SetHeader("Authorization", "Bearer xyz").
-			Get(url)
-		require.Nil(t, err)
-		require.True(t, resp.IsError())
+	resp, err = ts.r().
+		SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
+		Delete("")
+	require.Nil(t, err)
+	require.True(t, resp.IsError())
 
-		resp, err = c.R().
-			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
-			SetHeader("Accept", "text/xml").
-			Get(url)
-		require.Nil(t, err)
-		require.True(t, resp.IsError())
+	resp, err = ts.r().
+		SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
+		SetHeader("Authorization", "Bearer xyz").
+		Get("")
+	require.Nil(t, err)
+	require.True(t, resp.IsError())
 
-		resp, err = c.R().
-			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
-			SetHeader("X-Test", "foo").
-			Get(url)
-		require.Nil(t, err)
-		require.False(t, resp.IsError())
-		require.Equal(t, "bar", resp.Header().Get("X-Response"))
-		require.Equal(t, resp1, resp.String())
-	})
+	resp, err = ts.r().
+		SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
+		SetHeader("Accept", "text/xml").
+		Get("")
+	require.Nil(t, err)
+	require.True(t, resp.IsError())
+
+	resp, err = ts.r().
+		SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
+		SetHeader("X-Test", "foo").
+		Get("")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, "bar", resp.Header().Get("X-Response"))
+	require.Equal(t, resp1, resp.String())
 }
 
 func TestPOST(t *testing.T) {
 	t.Parallel()
 
-	withServer(t, func(t *testing.T, url string, c *resty.Client) {
-		key1 := uuid.NewString()
+	ts := newTestServer(t)
+	defer ts.shutdown(t)
 
-		resp1a, err := c.R().
-			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
-			SetBody("test1").
-			Post(url)
-		require.Nil(t, err)
-		require.False(t, resp1a.IsError())
+	key1 := uuid.NewString()
 
-		resp1b, err := c.R().
-			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
-			SetBody("test1").
-			Post(url)
-		require.Nil(t, err)
-		require.False(t, resp1b.IsError())
-		require.Equal(t, resp1b.String(), resp1a.String())
+	resp, err := ts.r().
+		SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
+		SetBody("test1").
+		Post("")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
 
-		resp1c, err := c.R().
-			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
-			SetBody("test2").
-			Post(url)
-		require.Nil(t, err)
-		require.True(t, resp1c.IsError())
-	})
+	resp1 := resp.String()
+
+	resp, err = ts.r().
+		SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
+		SetBody("test1").
+		Post("")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, resp1, resp.String())
+
+	resp, err = ts.r().
+		SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
+		SetBody("test2").
+		Post("")
+	require.Nil(t, err)
+	require.True(t, resp.IsError())
 }
 
-func withServer(t *testing.T, cb func(*testing.T, string, *resty.Client)) {
-	// TODO: Switch this from callback to struct/defer Close()
+type testServer struct {
+	dir string
+	srv *http.Server
+	rst *resty.Client
+}
+
+func newTestServer(t *testing.T) *testServer {
 	dir, err := os.MkdirTemp("", "")
 	require.Nil(t, err)
-
-	defer os.RemoveAll(dir)
 
 	store := store.NewFileStore(dir)
 	mux := http.NewServeMux()
@@ -153,13 +160,26 @@ func withServer(t *testing.T, cb func(*testing.T, string, *resty.Client)) {
 		_ = srv.Serve(listener)
 	}()
 
-	url := fmt.Sprintf("http://[::1]:%d/", listener.Addr().(*net.TCPAddr).Port)
+	baseURL := fmt.Sprintf("http://[::1]:%d/", listener.Addr().(*net.TCPAddr).Port)
 
-	c := resty.New().
-		SetHeader("Content-Type", "application/json")
+	rst := resty.New().
+		SetHeader("Content-Type", "application/json").
+		SetBaseURL(baseURL)
 
-	cb(t, url, c)
+	return &testServer{
+		dir: dir,
+		srv: srv,
+		rst: rst,
+	}
+}
 
-	err = srv.Shutdown(context.Background())
+func (ts *testServer) r() *resty.Request {
+	return ts.rst.R()
+}
+
+func (ts *testServer) shutdown(t *testing.T) {
+	err := ts.srv.Shutdown(context.Background())
 	require.Nil(t, err)
+
+	os.RemoveAll(ts.dir)
 }
