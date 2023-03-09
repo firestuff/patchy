@@ -119,7 +119,6 @@ func filterList(cfg *config, r *http.Request, params *listParams, list []any) ([
 			continue
 		}
 
-		// TODO: Push jsrest.Error down into match
 		matches, err := match(obj, params.filters)
 		if err != nil {
 			return nil, jsrest.Errorf(jsrest.ErrBadRequest, "match failed (%w)", err)
@@ -135,7 +134,6 @@ func filterList(cfg *config, r *http.Request, params *listParams, list []any) ([
 	for _, srt := range params.sorts {
 		var err error
 
-		// TODO: Push jsrest.Error down into path
 		switch {
 		case strings.HasPrefix(srt, "+"):
 			err = path.Sort(inter, strings.TrimPrefix(srt, "+"))
@@ -211,10 +209,13 @@ func match(obj any, filters []filter) (bool, error) {
 
 		case "lte":
 			matches, err = path.LessEqual(obj, filter.path, filter.val)
+
+		default:
+			panic(filter.op)
 		}
 
 		if err != nil {
-			return false, err
+			return false, jsrest.Errorf(jsrest.ErrBadRequest, "match operation failed: %s[%s] (%w)", filter.path, filter.op, err)
 		}
 
 		if !matches {

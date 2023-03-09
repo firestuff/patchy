@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+
+	"github.com/firestuff/patchy/jsrest"
 )
 
 var (
@@ -33,14 +35,14 @@ func getAnyRecursive(v reflect.Value, parts []string, prev []string) (any, error
 	}
 
 	if v.Kind() != reflect.Struct {
-		return nil, fmt.Errorf("%s: %w", strings.Join(prev, "."), ErrNotAStruct)
+		return nil, jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", strings.Join(prev, "."), ErrNotAStruct)
 	}
 
 	part := parts[0]
 
 	sub := getField(v, part)
 	if !sub.IsValid() {
-		return nil, fmt.Errorf("%s: %w", errorPath(prev, part), ErrUnknownFieldName)
+		return nil, jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", errorPath(prev, part), ErrUnknownFieldName)
 	}
 
 	newPrev := []string{}
@@ -112,14 +114,14 @@ func setRecursive(v reflect.Value, parts []string, prev []string, val string) er
 	}
 
 	if v.Kind() != reflect.Struct {
-		return fmt.Errorf("%s: %w", strings.Join(prev, "."), ErrNotAStruct)
+		return jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", strings.Join(prev, "."), ErrNotAStruct)
 	}
 
 	part := parts[0]
 
 	sub := getField(v, part)
 	if !sub.IsValid() {
-		return fmt.Errorf("%s: %w", errorPath(prev, part), ErrUnknownFieldName)
+		return jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", errorPath(prev, part), ErrUnknownFieldName)
 	}
 
 	newPrev := []string{}
