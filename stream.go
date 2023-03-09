@@ -2,7 +2,6 @@ package patchy
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -13,21 +12,15 @@ var ErrStreamingNotSupported = errors.New("streaming not supported")
 
 func (api *API) stream(cfg *config, id string, w http.ResponseWriter, r *http.Request) {
 	if _, ok := w.(http.Flusher); !ok {
-		jse := jsrest.FromError(ErrStreamingNotSupported, jsrest.StatusBadRequest)
-		jse.Write(w)
-
+		err := jsrest.Errorf(jsrest.ErrBadRequest, "stream failed (%w)", ErrStreamingNotSupported)
+		jsrest.WriteError(w, err)
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-
 	ch, err := api.sb.ReadStream(cfg.typeName, id, cfg.factory)
 	if err != nil {
-		e := fmt.Errorf("failed to read %s: %w", id, err)
-		jse := jsrest.FromError(e, jsrest.StatusInternalServerError)
-		jse.Write(w)
-
+		err = jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
+		jsrest.WriteError(w, err)
 		return
 	}
 
@@ -35,22 +28,23 @@ func (api *API) stream(cfg *config, id string, w http.ResponseWriter, r *http.Re
 
 	obj := <-ch
 	if obj == nil {
-		e := fmt.Errorf("%s: %w", id, ErrNotFound)
-		jse := jsrest.FromError(e, jsrest.StatusNotFound)
-		jse.Write(w)
-
+		err = jsrest.Errorf(jsrest.ErrNotFound, "%s", id)
+		jsrest.WriteError(w, err)
 		return
 	}
 
-	obj, jse := cfg.checkRead(obj, r)
-	if jse != nil {
-		jse.Write(w)
+	obj, err = cfg.checkRead(obj, r)
+	if err != nil {
+		jsrest.WriteError(w, err)
 		return
 	}
 
-	jse = writeEvent(w, "initial", obj)
-	if jse != nil {
-		_ = writeEvent(w, "error", jse)
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+
+	err = writeEvent(w, "initial", obj)
+	if err != nil {
+		_ = writeEvent(w, "error", jsrest.ToJSONError(err))
 		return
 	}
 
@@ -63,29 +57,29 @@ func (api *API) stream(cfg *config, id string, w http.ResponseWriter, r *http.Re
 
 		case msg, ok := <-ch:
 			if ok {
-				msg, jse = cfg.checkRead(msg, r)
-				if jse != nil {
-					jse.Write(w)
+				msg, err = cfg.checkRead(msg, r)
+				if err != nil {
+					_ = writeEvent(w, "error", jsrest.ToJSONError(err))
 					return
 				}
 
-				jse = writeEvent(w, "update", msg)
-				if jse != nil {
-					_ = writeEvent(w, "error", jse)
+				err = writeEvent(w, "update", msg)
+				if err != nil {
+					_ = writeEvent(w, "error", jsrest.ToJSONError(err))
 					return
 				}
 			} else {
-				jse = writeEvent(w, "delete", emptyEvent)
-				if jse != nil {
-					_ = writeEvent(w, "error", jse)
+				err = writeEvent(w, "delete", emptyEvent)
+				if err != nil {
+					_ = writeEvent(w, "error", jsrest.ToJSONError(err))
 				}
 				return
 			}
 
 		case <-ticker.C:
-			jse = writeEvent(w, "heartbeat", emptyEvent)
-			if jse != nil {
-				_ = writeEvent(w, "error", jse)
+			err = writeEvent(w, "heartbeat", emptyEvent)
+			if err != nil {
+				_ = writeEvent(w, "error", jsrest.ToJSONError(err))
 				return
 			}
 		}

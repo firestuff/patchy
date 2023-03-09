@@ -2,113 +2,98 @@ package jsrest
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 )
 
-type Code int
+var (
+	ErrBadRequest                   = NewHTTPError(http.StatusBadRequest)
+	ErrUnauthorized                 = NewHTTPError(http.StatusUnauthorized)
+	ErrPaymentRequired              = NewHTTPError(http.StatusPaymentRequired)
+	ErrForbidden                    = NewHTTPError(http.StatusForbidden)
+	ErrNotFound                     = NewHTTPError(http.StatusNotFound)
+	ErrMethodNotAllowed             = NewHTTPError(http.StatusMethodNotAllowed)
+	ErrNotAcceptable                = NewHTTPError(http.StatusNotAcceptable)
+	ErrProxyAuthRequired            = NewHTTPError(http.StatusProxyAuthRequired)
+	ErrRequestTimeout               = NewHTTPError(http.StatusRequestTimeout)
+	ErrConflict                     = NewHTTPError(http.StatusConflict)
+	ErrGone                         = NewHTTPError(http.StatusGone)
+	ErrLengthRequired               = NewHTTPError(http.StatusLengthRequired)
+	ErrPreconditionFailed           = NewHTTPError(http.StatusPreconditionFailed)
+	ErrRequestEntityTooLarge        = NewHTTPError(http.StatusRequestEntityTooLarge)
+	ErrRequestURITooLong            = NewHTTPError(http.StatusRequestURITooLong)
+	ErrUnsupportedMediaType         = NewHTTPError(http.StatusUnsupportedMediaType)
+	ErrRequestedRangeNotSatisfiable = NewHTTPError(http.StatusRequestedRangeNotSatisfiable)
+	ErrExpectationFailed            = NewHTTPError(http.StatusExpectationFailed)
+	ErrTeapot                       = NewHTTPError(http.StatusTeapot)
+	ErrMisdirectedRequest           = NewHTTPError(http.StatusMisdirectedRequest)
+	ErrUnprocessableEntity          = NewHTTPError(http.StatusUnprocessableEntity)
+	ErrLocked                       = NewHTTPError(http.StatusLocked)
+	ErrFailedDependency             = NewHTTPError(http.StatusFailedDependency)
+	ErrTooEarly                     = NewHTTPError(http.StatusTooEarly)
+	ErrUpgradeRequired              = NewHTTPError(http.StatusUpgradeRequired)
+	ErrPreconditionRequired         = NewHTTPError(http.StatusPreconditionRequired)
+	ErrTooManyRequests              = NewHTTPError(http.StatusTooManyRequests)
+	ErrRequestHeaderFieldsTooLarge  = NewHTTPError(http.StatusRequestHeaderFieldsTooLarge)
+	ErrUnavailableForLegalReasons   = NewHTTPError(http.StatusUnavailableForLegalReasons)
 
-const (
-	StatusBadRequest                   Code = http.StatusBadRequest
-	StatusUnauthorized                 Code = http.StatusUnauthorized
-	StatusPaymentRequired              Code = http.StatusPaymentRequired
-	StatusForbidden                    Code = http.StatusForbidden
-	StatusNotFound                     Code = http.StatusNotFound
-	StatusMethodNotAllowed             Code = http.StatusMethodNotAllowed
-	StatusNotAcceptable                Code = http.StatusNotAcceptable
-	StatusProxyAuthRequired            Code = http.StatusProxyAuthRequired
-	StatusRequestTimeout               Code = http.StatusRequestTimeout
-	StatusConflict                     Code = http.StatusConflict
-	StatusGone                         Code = http.StatusGone
-	StatusLengthRequired               Code = http.StatusLengthRequired
-	StatusPreconditionFailed           Code = http.StatusPreconditionFailed
-	StatusRequestEntityTooLarge        Code = http.StatusRequestEntityTooLarge
-	StatusRequestURITooLong            Code = http.StatusRequestURITooLong
-	StatusUnsupportedMediaType         Code = http.StatusUnsupportedMediaType
-	StatusRequestedRangeNotSatisfiable Code = http.StatusRequestedRangeNotSatisfiable
-	StatusExpectationFailed            Code = http.StatusExpectationFailed
-	StatusTeapot                       Code = http.StatusTeapot
-	StatusMisdirectedRequest           Code = http.StatusMisdirectedRequest
-	StatusUnprocessableEntity          Code = http.StatusUnprocessableEntity
-	StatusLocked                       Code = http.StatusLocked
-	StatusFailedDependency             Code = http.StatusFailedDependency
-	StatusTooEarly                     Code = http.StatusTooEarly
-	StatusUpgradeRequired              Code = http.StatusUpgradeRequired
-	StatusPreconditionRequired         Code = http.StatusPreconditionRequired
-	StatusTooManyRequests              Code = http.StatusTooManyRequests
-	StatusRequestHeaderFieldsTooLarge  Code = http.StatusRequestHeaderFieldsTooLarge
-	StatusUnavailableForLegalReasons   Code = http.StatusUnavailableForLegalReasons
-
-	StatusInternalServerError           Code = http.StatusInternalServerError
-	StatusNotImplemented                Code = http.StatusNotImplemented
-	StatusBadGateway                    Code = http.StatusBadGateway
-	StatusServiceUnavailable            Code = http.StatusServiceUnavailable
-	StatusGatewayTimeout                Code = http.StatusGatewayTimeout
-	StatusHTTPVersionNotSupported       Code = http.StatusHTTPVersionNotSupported
-	StatusVariantAlsoNegotiates         Code = http.StatusVariantAlsoNegotiates
-	StatusInsufficientStorage           Code = http.StatusInsufficientStorage
-	StatusLoopDetected                  Code = http.StatusLoopDetected
-	StatusNotExtended                   Code = http.StatusNotExtended
-	StatusNetworkAuthenticationRequired Code = http.StatusNetworkAuthenticationRequired
+	ErrInternalServerError           = NewHTTPError(http.StatusInternalServerError)
+	ErrNotImplemented                = NewHTTPError(http.StatusNotImplemented)
+	ErrBadGateway                    = NewHTTPError(http.StatusBadGateway)
+	ErrServiceUnavailable            = NewHTTPError(http.StatusServiceUnavailable)
+	ErrGatewayTimeout                = NewHTTPError(http.StatusGatewayTimeout)
+	ErrHTTPVersionNotSupported       = NewHTTPError(http.StatusHTTPVersionNotSupported)
+	ErrVariantAlsoNegotiates         = NewHTTPError(http.StatusVariantAlsoNegotiates)
+	ErrInsufficientStorage           = NewHTTPError(http.StatusInsufficientStorage)
+	ErrLoopDetected                  = NewHTTPError(http.StatusLoopDetected)
+	ErrNotExtended                   = NewHTTPError(http.StatusNotExtended)
+	ErrNetworkAuthenticationRequired = NewHTTPError(http.StatusNetworkAuthenticationRequired)
 )
 
-type Error struct {
-	Code     Code
-	Messages []string
-	Params   map[string]any
+type HTTPError struct {
+	Code    int
+	Message string
 }
 
-func NewError() *Error {
-	return &Error{
-		Params: map[string]any{},
+func NewHTTPError(code int) *HTTPError {
+	return &HTTPError{
+		Code:    code,
+		Message: http.StatusText(code),
 	}
 }
 
-func FromError(err error, code Code) *Error {
-	e := NewError()
-	e.Code = code
-
-	e.importError(err)
-
-	return e
+func (err *HTTPError) Error() string {
+	return fmt.Sprintf("[%d] %s", err.Code, err.Message)
 }
 
-func Errorf(code Code, format string, a ...any) *Error {
-	err := fmt.Errorf(format, a...) //nolint:goerr113
-	return FromError(err, code)
-}
+func WriteError(w http.ResponseWriter, err error) {
+	je := ToJSONError(err)
 
-func (e *Error) SetParam(key string, value any) {
-	e.Params[key] = value
-}
-
-func (e *Error) Error() string {
-	msg, err := json.Marshal(e.Values())
-	if err != nil {
-		return err.Error()
-	}
-
-	return string(msg)
-}
-
-func (e *Error) Write(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(int(e.Code))
+	w.WriteHeader(je.Code)
 
 	enc := json.NewEncoder(w)
-	enc.Encode(e.Values()) //nolint:errcheck,errchkjson
+	_ = enc.Encode(je)
 }
 
-func (e *Error) Values() map[string]any {
-	vals := map[string]any{
-		"errors": e.Messages,
-	}
+func Errorf(he *HTTPError, format string, a ...any) error {
+	err := fmt.Errorf(format, a...) //nolint:goerr113
+	return errors.Join(he, err)
+}
 
-	for k, v := range e.Params {
-		vals[k] = v
-	}
+type JSONError struct {
+	Code     int      `json:"-"`
+	Messages []string `json:"messages"`
+}
 
-	return vals
+func ToJSONError(err error) *JSONError {
+	je := &JSONError{
+		Code: 500,
+	}
+	je.importError(err)
+
+	return je
 }
 
 type singleUnwrap interface {
@@ -119,14 +104,19 @@ type multiUnwrap interface {
 	Unwrap() []error
 }
 
-func (e *Error) importError(err error) {
-	e.Messages = append(e.Messages, err.Error())
+func (je *JSONError) importError(err error) {
+	je.Messages = append(je.Messages, err.Error())
+
+	// Pre-traversal for error codes, so we get the most detailed in the stack
+	if he, ok := err.(*HTTPError); ok { //nolint:errorlint
+		je.Code = he.Code
+	}
 
 	if unwrap, ok := err.(singleUnwrap); ok { //nolint:errorlint
-		e.importError(unwrap.Unwrap())
+		je.importError(unwrap.Unwrap())
 	} else if unwrap, ok := err.(multiUnwrap); ok { //nolint:errorlint
 		for _, sub := range unwrap.Unwrap() {
-			e.importError(sub)
+			je.importError(sub)
 		}
 	}
 }

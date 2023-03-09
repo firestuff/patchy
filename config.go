@@ -63,72 +63,64 @@ func newConfig[T any](typeName string) *config {
 
 func (cfg *config) isSafe() error {
 	if cfg.mayRead == nil {
-		return fmt.Errorf("%s: MayRead: %w", cfg.typeName, ErrMissingAuthCheck)
+		return fmt.Errorf("%s: MayRead (%w)", cfg.typeName, ErrMissingAuthCheck)
 	}
 
 	if cfg.mayWrite == nil {
-		return fmt.Errorf("%s: MayWrite: %w", cfg.typeName, ErrMissingAuthCheck)
+		return fmt.Errorf("%s: MayWrite (%w)", cfg.typeName, ErrMissingAuthCheck)
 	}
 
 	return nil
 }
 
-func (cfg *config) checkRead(obj any, r *http.Request) (any, *jsrest.Error) {
+func (cfg *config) checkRead(obj any, r *http.Request) (any, error) {
 	ret, err := cfg.clone(obj)
 	if err != nil {
-		// TODO: Replace fmt.Errorf+jsrest.FromError instances with jsrest.Errorf
-		e := fmt.Errorf("clone failed: %w", err)
-		return nil, jsrest.FromError(e, jsrest.StatusInternalServerError)
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "clone failed (%w)", err)
 	}
 
 	if cfg.mayRead != nil {
 		err := cfg.mayRead(ret, r)
 		if err != nil {
-			e := fmt.Errorf("unauthorized: %w", err)
-			return nil, jsrest.FromError(e, jsrest.StatusUnauthorized)
+			return nil, jsrest.Errorf(jsrest.ErrUnauthorized, "not authorized to read (%w)", err)
 		}
 	}
 
 	return ret, nil
 }
 
-func (cfg *config) checkWrite(obj, prev any, r *http.Request) (any, *jsrest.Error) {
+func (cfg *config) checkWrite(obj, prev any, r *http.Request) (any, error) {
 	var ret any
 
 	if obj != nil {
-		var err *jsrest.Error
-
+		var err error
 		ret, err = cfg.clone(obj)
 		if err != nil {
-			e := fmt.Errorf("clone failed: %w", err)
-			return nil, jsrest.FromError(e, jsrest.StatusInternalServerError)
+			return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "clone failed (%w)", err)
 		}
 	}
 
 	if cfg.mayWrite != nil {
 		err := cfg.mayWrite(ret, prev, r)
 		if err != nil {
-			e := fmt.Errorf("unauthorized: %w", err)
-			return nil, jsrest.FromError(e, jsrest.StatusUnauthorized)
+			return nil, jsrest.Errorf(jsrest.ErrUnauthorized, "not authorized to write (%w)", err)
 		}
 	}
 
 	return ret, nil
 }
 
-func (cfg *config) clone(src any) (any, *jsrest.Error) {
+func (cfg *config) clone(src any) (any, error) {
 	js, err := json.Marshal(src)
 	if err != nil {
-		e := fmt.Errorf("json marshal: %w", err)
-		return nil, jsrest.FromError(e, jsrest.StatusInternalServerError)
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "JSON marshal (%w)", err)
 	}
 
 	dst := cfg.factory()
 
 	err = json.Unmarshal(js, dst)
 	if err != nil {
-		e := fmt.Errorf("json unmarshal: %w", err)
-		return nil, jsrest.FromError(e, jsrest.StatusInternalServerError)
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "JSON unmarhsal (%w)", err)
 	}
 
 	return dst, nil

@@ -2,7 +2,7 @@ package jsrest_test
 
 import (
 	"errors"
-	"fmt"
+	"net/http"
 	"testing"
 
 	"github.com/firestuff/patchy/jsrest"
@@ -13,17 +13,17 @@ func TestFromError(t *testing.T) {
 	t.Parallel()
 
 	e1 := errors.New("error 1") //nolint:goerr113
-	e2 := fmt.Errorf("error 2: %w", e1)
+	e2 := jsrest.Errorf(jsrest.ErrBadGateway, "error 2: %w", e1)
 
-	e := jsrest.FromError(e2, jsrest.StatusBadGateway)
+	require.ErrorIs(t, e2, e1)
+	require.ErrorIs(t, e2, jsrest.ErrBadGateway)
 
-	require.Equal(t, e.Code, jsrest.StatusBadGateway)
-	require.Equal(t, e.Messages, []string{"error 2: error 1", "error 1"})
+	je := jsrest.ToJSONError(e2)
 
-	ex := jsrest.Errorf(jsrest.StatusBadGateway, "error 3: %w", e1)
-
-	require.Equal(t, ex.Code, jsrest.StatusBadGateway)
-	require.Equal(t, ex.Messages, []string{"error 3: error 1", "error 1"})
+	require.Equal(t, http.StatusBadGateway, je.Code)
+	require.Contains(t, je.Messages, "error 1")
+	require.Contains(t, je.Messages, "error 2: error 1")
+	require.Contains(t, je.Messages, "[502] Bad Gateway")
 }
 
 func TestFromErrors(t *testing.T) {
@@ -31,28 +31,17 @@ func TestFromErrors(t *testing.T) {
 
 	e1 := errors.New("error 1") //nolint:goerr113
 	e2 := errors.New("error 2") //nolint:goerr113
-	e3 := fmt.Errorf("error 3: %w + %w", e1, e2)
+	e3 := jsrest.Errorf(jsrest.ErrBadGateway, "error 3: %w + %w", e1, e2)
 
-	e := jsrest.FromError(e3, jsrest.StatusBadGateway)
+	require.ErrorIs(t, e3, e1)
+	require.ErrorIs(t, e3, e2)
+	require.ErrorIs(t, e3, jsrest.ErrBadGateway)
 
-	require.Equal(t, e.Code, jsrest.StatusBadGateway)
-	require.Equal(t, e.Messages, []string{"error 3: error 1 + error 2", "error 1", "error 2"})
+	je := jsrest.ToJSONError(e3)
 
-	ex := jsrest.Errorf(jsrest.StatusBadGateway, "error 4: %w + %w", e1, e2)
-
-	require.Equal(t, ex.Code, jsrest.StatusBadGateway)
-	require.Equal(t, ex.Messages, []string{"error 4: error 1 + error 2", "error 1", "error 2"})
-}
-
-func TestParams(t *testing.T) {
-	t.Parallel()
-
-	e1 := errors.New("error 1") //nolint:goerr113
-
-	e := jsrest.FromError(e1, jsrest.StatusUnauthorized)
-	e.SetParam("foo", "bar")
-
-	require.Contains(t, e.Error(), `"error 1"`)
-	require.Contains(t, e.Error(), `"foo":`)
-	require.Contains(t, e.Error(), `"bar"`)
+	require.Equal(t, http.StatusBadGateway, je.Code)
+	require.Contains(t, je.Messages, "error 1")
+	require.Contains(t, je.Messages, "error 2")
+	require.Contains(t, je.Messages, "error 3: error 1 + error 2")
+	require.Contains(t, je.Messages, "[502] Bad Gateway")
 }

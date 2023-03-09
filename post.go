@@ -1,7 +1,6 @@
 package patchy
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/firestuff/patchy/jsrest"
@@ -12,38 +11,38 @@ import (
 func (api *API) post(cfg *config, w http.ResponseWriter, r *http.Request) {
 	obj := cfg.factory()
 
-	jse := jsrest.Read(r, obj)
-	if jse != nil {
-		jse.Write(w)
+	err := jsrest.Read(r, obj)
+	if err != nil {
+		err = jsrest.Errorf(jsrest.ErrInternalServerError, "read request failed (%w)", err)
+		jsrest.WriteError(w, err)
 		return
 	}
 
 	metadata.GetMetadata(obj).ID = uuid.NewString()
 
-	obj, jse = cfg.checkWrite(obj, nil, r)
-	if jse != nil {
-		jse.Write(w)
-		return
-	}
-
-	err := api.sb.Write(cfg.typeName, obj)
+	obj, err = cfg.checkWrite(obj, nil, r)
 	if err != nil {
-		e := fmt.Errorf("failed to write: %w", err)
-		jse := jsrest.FromError(e, jsrest.StatusInternalServerError)
-		jse.Write(w)
-
+		jsrest.WriteError(w, err)
 		return
 	}
 
-	obj, jse = cfg.checkRead(obj, r)
-	if jse != nil {
-		jse.Write(w)
+	err = api.sb.Write(cfg.typeName, obj)
+	if err != nil {
+		err = jsrest.Errorf(jsrest.ErrInternalServerError, "write failed (%w)", err)
+		jsrest.WriteError(w, err)
 		return
 	}
 
-	jse = jsrest.Write(w, obj)
-	if jse != nil {
-		jse.Write(w)
+	obj, err = cfg.checkRead(obj, r)
+	if err != nil {
+		jsrest.WriteError(w, err)
+		return
+	}
+
+	err = jsrest.Write(w, obj)
+	if err != nil {
+		err = jsrest.Errorf(jsrest.ErrInternalServerError, "write response failed (%w)", err)
+		jsrest.WriteError(w, err)
 		return
 	}
 }

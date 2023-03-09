@@ -1,7 +1,6 @@
 package patchy
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/firestuff/patchy/jsrest"
@@ -14,38 +13,37 @@ func (api *API) put(cfg *config, id string, w http.ResponseWriter, r *http.Reque
 
 	obj, err := api.sb.Read(cfg.typeName, id, cfg.factory)
 	if err != nil {
-		e := fmt.Errorf("failed to read %s: %w", id, err)
-		jse := jsrest.FromError(e, jsrest.StatusInternalServerError)
-		jse.Write(w)
-
+		err = jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
+		jsrest.WriteError(w, err)
 		return
 	}
 
 	if obj == nil {
-		e := fmt.Errorf("%s: %w", id, ErrNotFound)
-		jse := jsrest.FromError(e, jsrest.StatusNotFound)
-		jse.Write(w)
-
+		err = jsrest.Errorf(jsrest.ErrNotFound, "%s", id)
+		jsrest.WriteError(w, err)
 		return
 	}
 
-	jse := ifMatch(obj, r)
-	if jse != nil {
-		jse.Write(w)
+	err = ifMatch(obj, r)
+	if err != nil {
+		err = jsrest.Errorf(jsrest.ErrInternalServerError, "match failed (%w)", err)
+		jsrest.WriteError(w, err)
 		return
 	}
 
-	prev, jse := cfg.clone(obj)
-	if jse != nil {
-		jse.Write(w)
+	prev, err := cfg.clone(obj)
+	if err != nil {
+		err = jsrest.Errorf(jsrest.ErrInternalServerError, "clone failed (%w)", err)
+		jsrest.WriteError(w, err)
 		return
 	}
 
 	replace := cfg.factory()
 
-	jse = jsrest.Read(r, replace)
-	if jse != nil {
-		jse.Write(w)
+	err = jsrest.Read(r, replace)
+	if err != nil {
+		err = jsrest.Errorf(jsrest.ErrInternalServerError, "read request failed (%w)", err)
+		jsrest.WriteError(w, err)
 		return
 	}
 
@@ -56,30 +54,29 @@ func (api *API) put(cfg *config, id string, w http.ResponseWriter, r *http.Reque
 	replaceMD.ID = id
 	replaceMD.Generation = objMD.Generation + 1
 
-	replace, jse = cfg.checkWrite(replace, prev, r)
-	if jse != nil {
-		jse.Write(w)
+	replace, err = cfg.checkWrite(replace, prev, r)
+	if err != nil {
+		jsrest.WriteError(w, err)
 		return
 	}
 
 	err = api.sb.Write(cfg.typeName, replace)
 	if err != nil {
-		e := fmt.Errorf("failed to write %s: %w", id, err)
-		jse := jsrest.FromError(e, jsrest.StatusInternalServerError)
-		jse.Write(w)
-
+		err = jsrest.Errorf(jsrest.ErrInternalServerError, "write failed: %s (%w)", id, err)
+		jsrest.WriteError(w, err)
 		return
 	}
 
-	replace, jse = cfg.checkRead(replace, r)
-	if jse != nil {
-		jse.Write(w)
+	replace, err = cfg.checkRead(replace, r)
+	if err != nil {
+		jsrest.WriteError(w, err)
 		return
 	}
 
-	jse = jsrest.Write(w, replace)
-	if jse != nil {
-		jse.Write(w)
+	err = jsrest.Write(w, replace)
+	if err != nil {
+		err = jsrest.Errorf(jsrest.ErrInternalServerError, "write response failed (%w)", err)
+		jsrest.WriteError(w, err)
 		return
 	}
 }

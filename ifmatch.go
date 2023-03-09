@@ -22,7 +22,7 @@ var (
 	ErrGenerationMismatch = fmt.Errorf("generation mismatch: %w", ErrMismatch)
 )
 
-func ifMatch(obj any, r *http.Request) *jsrest.Error {
+func ifMatch(obj any, r *http.Request) error {
 	match := r.Header.Get("If-Match")
 	if match == "" {
 		return nil
@@ -31,10 +31,7 @@ func ifMatch(obj any, r *http.Request) *jsrest.Error {
 	objMD := metadata.GetMetadata(obj)
 
 	if len(match) < 2 || !strings.HasPrefix(match, `"`) || !strings.HasSuffix(match, `"`) {
-		e := fmt.Errorf("%s: %w", match, ErrIfMatchMissingQuotes)
-		jse := jsrest.FromError(e, jsrest.StatusBadRequest)
-
-		return jse
+		return jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", match, ErrIfMatchMissingQuotes)
 	}
 
 	val := strings.TrimPrefix(strings.TrimSuffix(match, `"`), `"`)
@@ -42,11 +39,7 @@ func ifMatch(obj any, r *http.Request) *jsrest.Error {
 	switch {
 	case strings.HasPrefix(val, "etag:"):
 		if val != objMD.ETag {
-			e := fmt.Errorf("%s vs %s: %w", val, objMD.ETag, ErrEtagMismatch)
-			jse := jsrest.FromError(e, jsrest.StatusPreconditionFailed)
-			jse.SetParam("actual_etag", objMD.ETag)
-
-			return jse
+			return jsrest.Errorf(jsrest.ErrPreconditionFailed, "%s vs %s (%w)", val, objMD.ETag, ErrEtagMismatch)
 		}
 
 		return nil
@@ -54,26 +47,16 @@ func ifMatch(obj any, r *http.Request) *jsrest.Error {
 	case strings.HasPrefix(val, "generation:"):
 		gen, err := strconv.ParseInt(strings.TrimPrefix(val, "generation:"), 10, 64)
 		if err != nil {
-			e := fmt.Errorf("%s: %w", match, ErrIfMatchInvalidGeneration)
-			jse := jsrest.FromError(e, jsrest.StatusBadRequest)
-
-			return jse
+			return jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", match, ErrIfMatchInvalidGeneration)
 		}
 
 		if gen != objMD.Generation {
-			e := fmt.Errorf("%d vs %d: %w", gen, objMD.Generation, ErrGenerationMismatch)
-			jse := jsrest.FromError(e, jsrest.StatusPreconditionFailed)
-			jse.SetParam("actual_generation", objMD.Generation)
-
-			return jse
+			return jsrest.Errorf(jsrest.ErrPreconditionFailed, "%d vs %d (%w)", gen, objMD.Generation, ErrGenerationMismatch)
 		}
 
 		return nil
 
 	default:
-		e := fmt.Errorf("%s: %w", match, ErrIfMatchUnknownType)
-		jse := jsrest.FromError(e, jsrest.StatusBadRequest)
-
-		return jse
+		return jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", match, ErrIfMatchUnknownType)
 	}
 }
