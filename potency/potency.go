@@ -26,13 +26,14 @@ type Potency struct {
 type savedResult struct {
 	metadata.Metadata
 
-	Method string `json:"method"`
-	URL    string `json:"url"`
-	Sha256 string `json:"sha256"`
+	Method        string      `json:"method"`
+	URL           string      `json:"url"`
+	RequestHeader http.Header `json:"requestHeader"`
+	Sha256        string      `json:"sha256"`
 
-	StatusCode int         `json:"statusCode"`
-	Header     http.Header `json:"header"`
-	Result     []byte      `json:"result"`
+	StatusCode     int         `json:"statusCode"`
+	ResponseHeader http.Header `json:"responseHeader"`
+	ResponseBody   []byte      `json:"responseBody"`
 }
 
 var (
@@ -41,7 +42,13 @@ var (
 	ErrBodyMismatch   = fmt.Errorf("request body mismatch: %w", ErrMismatch)
 	ErrMethodMismatch = fmt.Errorf("HTTP method mismatch: %w", ErrMismatch)
 	ErrURLMismatch    = fmt.Errorf("URL mismatch: %w", ErrMismatch)
+	ErrHeaderMismatch = fmt.Errorf("Header mismatch: %w", ErrMismatch)
 	ErrInvalidKey     = errors.New("invalid Idempotency-Key")
+
+	criticalHeaders = []string{
+		"Accept",
+		"Authorization",
+	}
 )
 
 func NewPotency(store store.Storer, handler http.Handler) *Potency {
@@ -82,7 +89,7 @@ func (p *Potency) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		saved := rd.(*savedResult)
 
 		if r.Method != saved.Method {
-			e := fmt.Errorf("%s vs %s: %w", r.Method, saved.Method, ErrMethodMismatch)
+			e := fmt.Errorf("%s: %w", r.Method, ErrMethodMismatch)
 			jse := jsrest.FromError(e, jsrest.StatusBadRequest)
 			jse.Write(w)
 
@@ -90,11 +97,21 @@ func (p *Potency) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if r.URL.String() != saved.URL {
-			e := fmt.Errorf("%s vs %s: %w", r.URL.String(), saved.URL, ErrURLMismatch)
+			e := fmt.Errorf("%s: %w", r.URL.String(), ErrURLMismatch)
 			jse := jsrest.FromError(e, jsrest.StatusBadRequest)
 			jse.Write(w)
 
 			return
+		}
+
+		for _, h := range criticalHeaders {
+			if saved.RequestHeader.Get(h) != r.Header.Get(h) {
+				e := fmt.Errorf("%s: %s: %w", h, r.Header.Get(h), ErrHeaderMismatch)
+				jse := jsrest.FromError(e, jsrest.StatusBadRequest)
+				jse.Write(w)
+
+				return
+			}
 		}
 
 		h := sha256.New()
@@ -117,10 +134,12 @@ func (p *Potency) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// TODO: Ability to verify specified headers match (e.g. authentication token) before returning
+		for key, vals := range saved.ResponseHeader {
+			w.Header().Set(key, vals[0])
+		}
 
 		w.WriteHeader(saved.StatusCode)
-		_, _ = w.Write(saved.Result)
+		_, _ = w.Write(saved.ResponseBody)
 
 		return
 	}
@@ -136,6 +155,11 @@ func (p *Potency) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	defer p.unlockKey(key)
 
+	requestHeader := http.Header{}
+	for _, h := range criticalHeaders {
+		requestHeader.Set(h, r.Header.Get(h))
+	}
+
 	bi := newBodyIntercept(r.Body)
 	r.Body = bi
 
@@ -149,13 +173,14 @@ func (p *Potency) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			ID: key,
 		},
 
-		Method: r.Method,
-		URL:    r.URL.String(),
-		Sha256: hex.EncodeToString(bi.sha256.Sum(nil)),
+		Method:        r.Method,
+		URL:           r.URL.String(),
+		RequestHeader: requestHeader,
+		Sha256:        hex.EncodeToString(bi.sha256.Sum(nil)),
 
-		StatusCode: rwi.statusCode,
-		Header:     rwi.Header(),
-		Result:     rwi.buf.Bytes(),
+		StatusCode:     rwi.statusCode,
+		ResponseHeader: rwi.Header(),
+		ResponseBody:   rwi.buf.Bytes(),
 	}
 
 	// Can't really do anything with the error

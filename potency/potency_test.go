@@ -23,39 +23,70 @@ func TestGET(t *testing.T) {
 	withServer(t, func(t *testing.T, url string, c *resty.Client) {
 		key1 := uuid.NewString()
 
-		resp1a, err := c.R().
+		resp, err := c.R().
 			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
 			Get(url)
 		require.Nil(t, err)
-		require.False(t, resp1a.IsError())
+		require.False(t, resp.IsError())
+		require.Equal(t, "bar", resp.Header().Get("X-Response"))
 
-		resp1b, err := c.R().
+		resp1 := resp.String()
+
+		resp, err = c.R().
 			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
 			Get(url)
 		require.Nil(t, err)
-		require.False(t, resp1b.IsError())
-		require.Equal(t, resp1a.String(), resp1b.String())
+		require.False(t, resp.IsError())
+		require.Equal(t, "bar", resp.Header().Get("X-Response"))
+		require.Equal(t, resp1, resp.String())
 
 		key2 := uuid.NewString()
 
-		resp2, err := c.R().
+		resp, err = c.R().
 			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key2)).
 			Get(url)
 		require.Nil(t, err)
-		require.False(t, resp2.IsError())
-		require.NotEqual(t, resp1a.String(), resp2.String())
+		require.False(t, resp.IsError())
+		require.Equal(t, "bar", resp.Header().Get("X-Response"))
 
-		resp1c, err := c.R().
+		resp2 := resp.String()
+
+		require.NotEqual(t, resp2, resp1)
+
+		resp, err = c.R().
 			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
 			Get(fmt.Sprintf("%sx", url))
 		require.Nil(t, err)
-		require.True(t, resp1c.IsError())
+		require.True(t, resp.IsError())
 
-		resp1d, err := c.R().
+		resp, err = c.R().
 			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
 			Delete(url)
 		require.Nil(t, err)
-		require.True(t, resp1d.IsError())
+		require.True(t, resp.IsError())
+
+		resp, err = c.R().
+			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
+			SetHeader("Authorization", "Bearer xyz").
+			Get(url)
+		require.Nil(t, err)
+		require.True(t, resp.IsError())
+
+		resp, err = c.R().
+			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
+			SetHeader("Accept", "text/xml").
+			Get(url)
+		require.Nil(t, err)
+		require.True(t, resp.IsError())
+
+		resp, err = c.R().
+			SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
+			SetHeader("X-Test", "foo").
+			Get(url)
+		require.Nil(t, err)
+		require.False(t, resp.IsError())
+		require.Equal(t, "bar", resp.Header().Get("X-Response"))
+		require.Equal(t, resp1, resp.String())
 	})
 }
 
@@ -90,6 +121,7 @@ func TestPOST(t *testing.T) {
 }
 
 func withServer(t *testing.T, cb func(*testing.T, string, *resty.Client)) {
+	// TODO: Switch this from callback to struct/defer Close()
 	dir, err := os.MkdirTemp("", "")
 	require.Nil(t, err)
 
@@ -105,6 +137,8 @@ func withServer(t *testing.T, cb func(*testing.T, string, *resty.Client)) {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		_, err := io.ReadAll(r.Body)
 		require.Nil(t, err)
+
+		w.Header().Add("X-Response", "bar")
 
 		_, err = w.Write([]byte(uuid.NewString()))
 		require.Nil(t, err)
