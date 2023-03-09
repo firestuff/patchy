@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/firestuff/patchy/bus"
+	"github.com/firestuff/patchy/jsrest"
 	"github.com/firestuff/patchy/metadata"
 	"github.com/firestuff/patchy/store"
 )
@@ -31,11 +32,11 @@ func (sb *StoreBus) Write(t string, obj any) error {
 	defer sb.mu.Unlock()
 
 	if err := updateHash(obj); err != nil {
-		return err
+		return jsrest.Errorf(jsrest.ErrInternalServerError, "hash update failed (%w)", err)
 	}
 
 	if err := sb.store.Write(t, obj); err != nil {
-		return err
+		return jsrest.Errorf(jsrest.ErrInternalServerError, "write failed (%w)", err)
 	}
 
 	sb.bus.Announce(t, obj)
@@ -48,7 +49,7 @@ func (sb *StoreBus) Delete(t, id string) error {
 	defer sb.mu.Unlock()
 
 	if err := sb.store.Delete(t, id); err != nil {
-		return err
+		return jsrest.Errorf(jsrest.ErrInternalServerError, "delete failed (%w)", err)
 	}
 
 	sb.bus.Delete(t, id)
@@ -66,7 +67,7 @@ func (sb *StoreBus) ReadStream(t, id string, factory func() any) (<-chan any, er
 
 	initial, err := sb.store.Read(t, id, factory)
 	if err != nil {
-		return nil, err
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read failed (%w)", err)
 	}
 
 	c := sb.bus.SubscribeKey(t, id, initial)
@@ -88,7 +89,7 @@ func (sb *StoreBus) ListStream(t string, factory func() any) (<-chan []any, erro
 
 	initial, err := sb.store.List(t, factory)
 	if err != nil {
-		return nil, err
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "list failed (%w)", err)
 	}
 
 	c := sb.bus.SubscribeType(t, initial)
@@ -131,7 +132,7 @@ func updateHash(obj any) error {
 	enc := json.NewEncoder(hash)
 
 	if err := enc.Encode(obj); err != nil {
-		return err
+		return jsrest.Errorf(jsrest.ErrInternalServerError, "JSON encode failed (%w)", err)
 	}
 
 	m.ETag = fmt.Sprintf("etag:%x", hash.Sum(nil))
