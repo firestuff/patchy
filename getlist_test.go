@@ -79,6 +79,7 @@ func TestGETList(t *testing.T) {
 		Get("testtype")
 	require.Nil(t, err)
 	require.True(t, resp.IsError())
+	require.Equal(t, 400, resp.StatusCode())
 
 	resp, err = ta.r().
 		SetResult(&list).

@@ -63,4 +63,5 @@ func TestDELETE(t *testing.T) {
 		Get("testtype/{id}")
 	require.Nil(t, err)
 	require.True(t, resp.IsError())
+	require.Equal(t, 404, resp.StatusCode())
 }
