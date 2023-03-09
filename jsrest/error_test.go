@@ -19,6 +19,11 @@ func TestFromError(t *testing.T) {
 
 	require.Equal(t, e.Code, jsrest.StatusBadGateway)
 	require.Equal(t, e.Messages, []string{"error 2: error 1", "error 1"})
+
+	ex := jsrest.Errorf(jsrest.StatusBadGateway, "error 3: %w", e1)
+
+	require.Equal(t, ex.Code, jsrest.StatusBadGateway)
+	require.Equal(t, ex.Messages, []string{"error 3: error 1", "error 1"})
 }
 
 func TestFromErrors(t *testing.T) {
@@ -32,6 +37,11 @@ func TestFromErrors(t *testing.T) {
 
 	require.Equal(t, e.Code, jsrest.StatusBadGateway)
 	require.Equal(t, e.Messages, []string{"error 3: error 1 + error 2", "error 1", "error 2"})
+
+	ex := jsrest.Errorf(jsrest.StatusBadGateway, "error 4: %w + %w", e1, e2)
+
+	require.Equal(t, ex.Code, jsrest.StatusBadGateway)
+	require.Equal(t, ex.Messages, []string{"error 4: error 1 + error 2", "error 1", "error 2"})
 }
 
 func TestParams(t *testing.T) {

@@ -2,6 +2,7 @@ package jsrest
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -72,24 +73,9 @@ func FromError(err error, code Code) *Error {
 	return e
 }
 
-type SingleUnwrap interface {
-	Unwrap() error
-}
-
-type MultiUnwrap interface {
-	Unwrap() []error
-}
-
-func (e *Error) importError(err error) {
-	e.Messages = append(e.Messages, err.Error())
-
-	if unwrap, ok := err.(SingleUnwrap); ok { //nolint:errorlint
-		e.importError(unwrap.Unwrap())
-	} else if unwrap, ok := err.(MultiUnwrap); ok { //nolint:errorlint
-		for _, sub := range unwrap.Unwrap() {
-			e.importError(sub)
-		}
-	}
+func Errorf(code Code, format string, a ...any) *Error {
+	err := fmt.Errorf(format, a...) //nolint:goerr113
+	return FromError(err, code)
 }
 
 func (e *Error) SetParam(key string, value any) {
@@ -123,4 +109,24 @@ func (e *Error) Values() map[string]any {
 	}
 
 	return vals
+}
+
+type singleUnwrap interface {
+	Unwrap() error
+}
+
+type multiUnwrap interface {
+	Unwrap() []error
+}
+
+func (e *Error) importError(err error) {
+	e.Messages = append(e.Messages, err.Error())
+
+	if unwrap, ok := err.(singleUnwrap); ok { //nolint:errorlint
+		e.importError(unwrap.Unwrap())
+	} else if unwrap, ok := err.(multiUnwrap); ok { //nolint:errorlint
+		for _, sub := range unwrap.Unwrap() {
+			e.importError(sub)
+		}
+	}
 }

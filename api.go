@@ -138,8 +138,7 @@ func (api *API) routeListGET(cfg *config, w http.ResponseWriter, r *http.Request
 		api.getList(cfg, w, r)
 
 	default:
-		e := fmt.Errorf("%s: %w", r.Header.Get("Accept"), ErrUnknownAcceptType)
-		jse := jsrest.FromError(e, http.StatusNotAcceptable)
+		jse := jsrest.Errorf(jsrest.StatusNotAcceptable, "%s: %w", r.Header.Get("Accept"), ErrUnknownAcceptType)
 		jse.Write(w)
 	}
 }
@@ -158,8 +157,7 @@ func (api *API) routeSingleGET(cfg *config, id string, w http.ResponseWriter, r 
 		api.get(cfg, id, w, r)
 
 	default:
-		e := fmt.Errorf("%s: %w", r.Header.Get("Accept"), ErrUnknownAcceptType)
-		jse := jsrest.FromError(e, http.StatusNotAcceptable)
+		jse := jsrest.Errorf(jsrest.StatusNotAcceptable, "%s: %w", r.Header.Get("Accept"), ErrUnknownAcceptType)
 		jse.Write(w)
 	}
 }
