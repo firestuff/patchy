@@ -76,6 +76,7 @@ func (cfg *config) isSafe() error {
 func (cfg *config) checkRead(obj any, r *http.Request) (any, *jsrest.Error) {
 	ret, err := cfg.clone(obj)
 	if err != nil {
+		// TODO: Replace fmt.Errorf+jsrest.FromError instances with jsrest.Errorf
 		e := fmt.Errorf("clone failed: %w", err)
 		return nil, jsrest.FromError(e, jsrest.StatusInternalServerError)
 	}

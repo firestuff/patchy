@@ -20,8 +20,7 @@ func Read(r *http.Request, obj any) *Error {
 		break
 
 	default:
-		jse := fmt.Errorf("%s: %w", r.Header.Get("Content-Type"), ErrUnsupportedContentType)
-		return FromError(jse, StatusUnsupportedMediaType)
+		return Errorf(StatusUnsupportedMediaType, "%s: %w", r.Header.Get("Content-Type"), ErrUnsupportedContentType)
 	}
 
 	dec := json.NewDecoder(r.Body)
@@ -29,8 +28,7 @@ func Read(r *http.Request, obj any) *Error {
 
 	err := dec.Decode(obj)
 	if err != nil {
-		jse := fmt.Errorf("failed to decode JSON request body: %w", err)
-		return FromError(jse, StatusBadRequest)
+		return Errorf(StatusBadRequest, "failed to decode JSON request body: %w", err)
 	}
 
 	return nil
@@ -46,8 +44,7 @@ func Write(w http.ResponseWriter, obj any) *Error {
 
 	err := enc.Encode(obj)
 	if err != nil {
-		jse := fmt.Errorf("failed to encode JSON response: %w", err)
-		return FromError(jse, StatusInternalServerError)
+		return Errorf(StatusInternalServerError, "failed to encode JSON response: %w", err)
 	}
 
 	return nil
@@ -60,8 +57,7 @@ func WriteList(w http.ResponseWriter, list []any) *Error {
 
 	err := enc.Encode(list)
 	if err != nil {
-		jse := fmt.Errorf("failed to encode JSON response: %w", err)
-		return FromError(jse, StatusInternalServerError)
+		return Errorf(StatusInternalServerError, "failed to encode JSON response: %w", err)
 	}
 
 	return nil
