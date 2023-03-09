@@ -67,10 +67,8 @@ func (p *Potency) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(val) < 2 || !strings.HasPrefix(val, `"`) || !strings.HasSuffix(val, `"`) {
-		e := fmt.Errorf("%s: %w", val, ErrInvalidKey)
-		jse := jsrest.FromError(e, jsrest.StatusBadRequest)
-		jse.Write(w)
-
+		err := jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", val, ErrInvalidKey)
+		jsrest.WriteError(w, err)
 		return
 	}
 
@@ -78,10 +76,8 @@ func (p *Potency) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	rd, err := p.store.Read("idempotency-key", key, func() any { return &savedResult{} })
 	if err != nil {
-		e := fmt.Errorf("failed to read idempotency key %s: %w", key, err)
-		jse := jsrest.FromError(e, jsrest.StatusInternalServerError)
-		jse.Write(w)
-
+		err = jsrest.Errorf(jsrest.ErrInternalServerError, "read idempotency key failed: %s (%w)", key, err)
+		jsrest.WriteError(w, err)
 		return
 	}
 
@@ -89,27 +85,21 @@ func (p *Potency) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		saved := rd.(*savedResult)
 
 		if r.Method != saved.Method {
-			e := fmt.Errorf("%s: %w", r.Method, ErrMethodMismatch)
-			jse := jsrest.FromError(e, jsrest.StatusBadRequest)
-			jse.Write(w)
-
+			err = jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", r.Method, ErrMethodMismatch)
+			jsrest.WriteError(w, err)
 			return
 		}
 
 		if r.URL.String() != saved.URL {
-			e := fmt.Errorf("%s: %w", r.URL.String(), ErrURLMismatch)
-			jse := jsrest.FromError(e, jsrest.StatusBadRequest)
-			jse.Write(w)
-
+			err = jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", r.URL.String(), ErrURLMismatch)
+			jsrest.WriteError(w, err)
 			return
 		}
 
 		for _, h := range criticalHeaders {
 			if saved.RequestHeader.Get(h) != r.Header.Get(h) {
-				e := fmt.Errorf("%s: %s: %w", h, r.Header.Get(h), ErrHeaderMismatch)
-				jse := jsrest.FromError(e, jsrest.StatusBadRequest)
-				jse.Write(w)
-
+				err = jsrest.Errorf(jsrest.ErrBadRequest, "%s: %s (%w)", h, r.Header.Get(h), ErrHeaderMismatch)
+				jsrest.WriteError(w, err)
 				return
 			}
 		}
@@ -118,19 +108,15 @@ func (p *Potency) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		_, err = io.Copy(h, r.Body)
 		if err != nil {
-			e := fmt.Errorf("failed to hash request body: %w", err)
-			jse := jsrest.FromError(e, jsrest.StatusBadRequest)
-			jse.Write(w)
-
+			err = jsrest.Errorf(jsrest.ErrBadRequest, "hash request body failed (%w)", err)
+			jsrest.WriteError(w, err)
 			return
 		}
 
 		hexed := hex.EncodeToString(h.Sum(nil))
 		if hexed != saved.Sha256 {
-			e := fmt.Errorf("%s vs %s: %w", hexed, saved.Sha256, ErrBodyMismatch)
-			jse := jsrest.FromError(e, jsrest.StatusUnprocessableEntity)
-			jse.Write(w)
-
+			err = jsrest.Errorf(jsrest.ErrUnprocessableEntity, "%s vs %s (%w)", hexed, saved.Sha256, ErrBodyMismatch)
+			jsrest.WriteError(w, err)
 			return
 		}
 
@@ -147,9 +133,8 @@ func (p *Potency) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Store miss, proceed to normal execution with interception
 	err = p.lockKey(key)
 	if err != nil {
-		jse := jsrest.FromError(err, jsrest.StatusConflict)
-		jse.Write(w)
-
+		err = jsrest.Errorf(jsrest.ErrConflict, "%s", key)
+		jsrest.WriteError(w, err)
 		return
 	}
 

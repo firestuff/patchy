@@ -1,4 +1,4 @@
-go := env_var_or_default('GOBIN', 'go')
+go := env_var_or_default('GOCMD', 'go')
 
 default: tidy test
 
@@ -10,5 +10,6 @@ tidy:
 
 test:
 	{{go}} vet {{justfile_directory()}}/...
-	golangci-lint run {{justfile_directory()}}/...
+	# TODO: Re-enable golangci-lint once it's compatible with go 1.20
+	# golangci-lint run {{justfile_directory()}}/...
 	{{go}} test -race -timeout=7s -parallel=10 {{justfile_directory()}}/...

@@ -1,42 +1,34 @@
 package patchy
 
 import (
-	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/firestuff/patchy/jsrest"
 )
 
-var ErrNotFound = errors.New("not found")
-
 func (api *API) get(cfg *config, id string, w http.ResponseWriter, r *http.Request) {
 	obj, err := api.sb.Read(cfg.typeName, id, cfg.factory)
 	if err != nil {
-		e := fmt.Errorf("failed to read %s: %w", id, err)
-		jse := jsrest.FromError(e, jsrest.StatusInternalServerError)
-		jse.Write(w)
-
+		err = jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
+		jsrest.WriteError(w, err)
 		return
 	}
 
 	if obj == nil {
-		e := fmt.Errorf("%s: %w", id, ErrNotFound)
-		jse := jsrest.FromError(e, jsrest.StatusNotFound)
-		jse.Write(w)
-
+		err = jsrest.Errorf(jsrest.ErrNotFound, "%s", id)
+		jsrest.WriteError(w, err)
 		return
 	}
 
-	obj, jse := cfg.checkRead(obj, r)
-	if jse != nil {
-		jse.Write(w)
+	obj, err = cfg.checkRead(obj, r)
+	if err != nil {
+		jsrest.WriteError(w, err)
 		return
 	}
 
-	jse = jsrest.Write(w, obj)
-	if jse != nil {
-		jse.Write(w)
+	err = jsrest.Write(w, obj)
+	if err != nil {
+		jsrest.WriteError(w, err)
 		return
 	}
 }

@@ -2,7 +2,6 @@ package patchy
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"net/url"
 	"time"
@@ -15,27 +14,25 @@ var ErrUnknownStreamFormat = errors.New("unknown _stream format")
 
 func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) {
 	if _, ok := w.(http.Flusher); !ok {
-		jse := jsrest.FromError(ErrStreamingNotSupported, jsrest.StatusBadRequest)
-		jse.Write(w)
-
+		err := jsrest.Errorf(jsrest.ErrBadRequest, "stream failed (%w)", ErrStreamingNotSupported)
+		jsrest.WriteError(w, err)
 		return
 	}
 
 	params, err := url.ParseQuery(r.URL.RawQuery)
 	if err != nil {
-		e := fmt.Errorf("failed to parse URL query: %w", err)
-		jse := jsrest.FromError(e, jsrest.StatusBadRequest)
-		jse.Write(w)
-
+		err = jsrest.Errorf(jsrest.ErrBadRequest, "parse URL query failed (%w)", err)
+		jsrest.WriteError(w, err)
 		return
 	}
 
 	stream := params.Get("_stream")
 	params.Del("_stream")
 
-	parsed, jse := parseListParams(params)
-	if jse != nil {
-		jse.Write(w)
+	parsed, err := parseListParams(params)
+	if err != nil {
+		err = jsrest.Errorf(jsrest.ErrBadRequest, "parse list parameters failed (%w)", err)
+		jsrest.WriteError(w, err)
 		return
 	}
 
@@ -52,9 +49,8 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 		api.streamListDiff(cfg, w, r, parsed)
 
 	default:
-		e := fmt.Errorf("%s: %w", stream, ErrUnknownStreamFormat)
-		jse := jsrest.FromError(e, jsrest.StatusBadRequest)
-		jse.Write(w)
+		err = jsrest.Errorf(jsrest.ErrBadRequest, "_stream=%s (%w)", stream, ErrUnknownStreamFormat)
+		jsrest.WriteError(w, err)
 	}
 }
 
@@ -62,10 +58,8 @@ func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Reque
 	// TODO: Push jsrest.Error down
 	ch, err := api.sb.ListStream(cfg.typeName, cfg.factory)
 	if err != nil {
-		e := fmt.Errorf("failed to read list: %w", err)
-		jse := jsrest.FromError(e, jsrest.StatusInternalServerError)
-		_ = writeEvent(w, "error", jse)
-
+		err = jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
+		_ = writeEvent(w, "error", jsrest.ToJSONError(err))
 		return
 	}
 
@@ -77,24 +71,24 @@ func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Reque
 			return
 
 		case <-ticker.C:
-			jse := writeEvent(w, "heartbeat", emptyEvent)
-			if jse != nil {
-				_ = writeEvent(w, "error", jse)
+			err = writeEvent(w, "heartbeat", emptyEvent)
+			if err != nil {
+				_ = writeEvent(w, "error", jsrest.ToJSONError(err))
 				return
 			}
 
 			continue
 
 		case list := <-ch:
-			list, jse := filterList(cfg, r, params, list)
-			if jse != nil {
-				_ = writeEvent(w, "error", jse)
+			list, err = filterList(cfg, r, params, list)
+			if err != nil {
+				_ = writeEvent(w, "error", jsrest.ToJSONError(err))
 				return
 			}
 
-			jse = writeEvent(w, "list", list)
-			if jse != nil {
-				_ = writeEvent(w, "error", jse)
+			err = writeEvent(w, "list", list)
+			if err != nil {
+				_ = writeEvent(w, "error", jsrest.ToJSONError(err))
 				return
 			}
 		}
@@ -104,10 +98,8 @@ func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Reque
 func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Request, params *listParams) {
 	ch, err := api.sb.ListStream(cfg.typeName, cfg.factory)
 	if err != nil {
-		e := fmt.Errorf("failed to read list: %w", err)
-		jse := jsrest.FromError(e, jsrest.StatusInternalServerError)
-		_ = writeEvent(w, "error", jse)
-
+		err = jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
+		_ = writeEvent(w, "error", jsrest.ToJSONError(err))
 		return
 	}
 
@@ -118,9 +110,9 @@ func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Reque
 	for {
 		select {
 		case <-ticker.C:
-			jse := writeEvent(w, "heartbeat", emptyEvent)
-			if jse != nil {
-				_ = writeEvent(w, "error", jse)
+			err = writeEvent(w, "heartbeat", emptyEvent)
+			if err != nil {
+				_ = writeEvent(w, "error", jsrest.ToJSONError(err))
 				return
 			}
 
@@ -130,9 +122,9 @@ func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Reque
 			return
 
 		case list := <-ch:
-			list, jse := filterList(cfg, r, params, list)
-			if jse != nil {
-				_ = writeEvent(w, "error", jse)
+			list, err := filterList(cfg, r, params, list)
+			if err != nil {
+				_ = writeEvent(w, "error", jsrest.ToJSONError(err))
 				return
 			}
 
@@ -145,16 +137,16 @@ func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Reque
 				if found {
 					lastMD := metadata.GetMetadata(lastObj)
 					if objMD.ETag != lastMD.ETag {
-						jse := writeEvent(w, "update", obj)
-						if jse != nil {
-							_ = writeEvent(w, "error", jse)
+						err = writeEvent(w, "update", obj)
+						if err != nil {
+							_ = writeEvent(w, "error", jsrest.ToJSONError(err))
 							return
 						}
 					}
 				} else {
-					jse := writeEvent(w, "add", obj)
-					if jse != nil {
-						_ = writeEvent(w, "error", jse)
+					err = writeEvent(w, "add", obj)
+					if err != nil {
+						_ = writeEvent(w, "error", jsrest.ToJSONError(err))
 						return
 					}
 				}
@@ -169,9 +161,9 @@ func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Reque
 					continue
 				}
 
-				jse := writeEvent(w, "remove", old)
-				if jse != nil {
-					_ = writeEvent(w, "error", jse)
+				err = writeEvent(w, "remove", old)
+				if err != nil {
+					_ = writeEvent(w, "error", jsrest.ToJSONError(err))
 					return
 				}
 

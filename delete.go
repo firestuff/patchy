@@ -1,7 +1,6 @@
 package patchy
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/firestuff/patchy/jsrest"
@@ -10,33 +9,27 @@ import (
 func (api *API) delete(cfg *config, id string, w http.ResponseWriter, r *http.Request) {
 	obj, err := api.sb.Read(cfg.typeName, id, cfg.factory)
 	if err != nil {
-		e := fmt.Errorf("failed to read %s: %w", id, err)
-		jse := jsrest.FromError(e, jsrest.StatusInternalServerError)
-		jse.Write(w)
-
+		err = jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
+		jsrest.WriteError(w, err)
 		return
 	}
 
 	if obj == nil {
-		e := fmt.Errorf("%s: %w", id, ErrNotFound)
-		jse := jsrest.FromError(e, jsrest.StatusNotFound)
-		jse.Write(w)
-
+		err := jsrest.Errorf(jsrest.ErrNotFound, "%s", id)
+		jsrest.WriteError(w, err)
 		return
 	}
 
-	_, jse := cfg.checkWrite(nil, obj, r)
-	if jse != nil {
-		jse.Write(w)
+	_, err = cfg.checkWrite(nil, obj, r)
+	if err != nil {
+		jsrest.WriteError(w, err)
 		return
 	}
 
 	err = api.sb.Delete(cfg.typeName, id)
 	if err != nil {
-		e := fmt.Errorf("failed to delete %s: %w", id, err)
-		jse := jsrest.FromError(e, jsrest.StatusInternalServerError)
-		jse.Write(w)
-
+		err = jsrest.Errorf(jsrest.ErrInternalServerError, "delete failed: %s (%w)", id, err)
+		jsrest.WriteError(w, err)
 		return
 	}
 

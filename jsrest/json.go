@@ -11,7 +11,7 @@ import (
 
 var ErrUnsupportedContentType = errors.New("unsupported Content-Type")
 
-func Read(r *http.Request, obj any) *Error {
+func Read(r *http.Request, obj any) error {
 	// TODO: Parse semicolon params
 	switch r.Header.Get("Content-Type") {
 	case "":
@@ -20,7 +20,7 @@ func Read(r *http.Request, obj any) *Error {
 		break
 
 	default:
-		return Errorf(StatusUnsupportedMediaType, "%s: %w", r.Header.Get("Content-Type"), ErrUnsupportedContentType)
+		return Errorf(ErrUnsupportedMediaType, "Content-Type: %s", r.Header.Get("Content-Type"))
 	}
 
 	dec := json.NewDecoder(r.Body)
@@ -28,13 +28,13 @@ func Read(r *http.Request, obj any) *Error {
 
 	err := dec.Decode(obj)
 	if err != nil {
-		return Errorf(StatusBadRequest, "failed to decode JSON request body: %w", err)
+		return Errorf(ErrBadRequest, "decode JSON request body failed (%w)", err)
 	}
 
 	return nil
 }
 
-func Write(w http.ResponseWriter, obj any) *Error {
+func Write(w http.ResponseWriter, obj any) error {
 	m := metadata.GetMetadata(obj)
 
 	w.Header().Set("Content-Type", "application/json")
@@ -44,20 +44,20 @@ func Write(w http.ResponseWriter, obj any) *Error {
 
 	err := enc.Encode(obj)
 	if err != nil {
-		return Errorf(StatusInternalServerError, "failed to encode JSON response: %w", err)
+		return Errorf(ErrInternalServerError, "encode JSON response failed (%w)", err)
 	}
 
 	return nil
 }
 
-func WriteList(w http.ResponseWriter, list []any) *Error {
+func WriteList(w http.ResponseWriter, list []any) error {
 	w.Header().Set("Content-Type", "application/json")
 
 	enc := json.NewEncoder(w)
 
 	err := enc.Encode(list)
 	if err != nil {
-		return Errorf(StatusInternalServerError, "failed to encode JSON response: %w", err)
+		return Errorf(ErrInternalServerError, "encode JSON response failed (%w)", err)
 	}
 
 	return nil

@@ -2,7 +2,6 @@ package patchy
 
 import (
 	"errors"
-	"fmt"
 	"math"
 	"net/http"
 	"net/url"
@@ -44,7 +43,7 @@ var (
 	ErrInvalidSort     = errors.New("invalid _sort")
 )
 
-func parseListParams(params url.Values) (*listParams, *jsrest.Error) {
+func parseListParams(params url.Values) (*listParams, error) {
 	ret := &listParams{
 		limit:   math.MaxInt64,
 		sorts:   []string{},
@@ -56,10 +55,7 @@ func parseListParams(params url.Values) (*listParams, *jsrest.Error) {
 	if limit := params.Get("_limit"); limit != "" {
 		ret.limit, err = strconv.ParseInt(limit, 10, 64)
 		if err != nil {
-			e := fmt.Errorf("failed to parse _limit value %s: %w", limit, err)
-			jse := jsrest.FromError(e, jsrest.StatusBadRequest)
-
-			return nil, jse
+			return nil, jsrest.Errorf(jsrest.ErrBadRequest, "parse _limit value failed: %s (%w)", limit, err)
 		}
 
 		params.Del("_limit")
@@ -68,10 +64,7 @@ func parseListParams(params url.Values) (*listParams, *jsrest.Error) {
 	if offset := params.Get("_offset"); offset != "" {
 		ret.offset, err = strconv.ParseInt(offset, 10, 64)
 		if err != nil {
-			e := fmt.Errorf("failed to parse _offset value %s: %w", offset, err)
-			jse := jsrest.FromError(e, jsrest.StatusBadRequest)
-
-			return nil, jse
+			return nil, jsrest.Errorf(jsrest.ErrBadRequest, "parse _offset value failed: %s (%w)", offset, err)
 		}
 
 		params.Del("_offset")
@@ -85,10 +78,7 @@ func parseListParams(params url.Values) (*listParams, *jsrest.Error) {
 	for i := len(sorts) - 1; i >= 0; i-- {
 		srt := sorts[i]
 		if len(srt) == 0 {
-			e := fmt.Errorf("%s: %w", srt, ErrInvalidSort)
-			jse := jsrest.FromError(e, jsrest.StatusBadRequest)
-
-			return nil, jse
+			return nil, jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", srt, ErrInvalidSort)
 		}
 
 		ret.sorts = append(ret.sorts, srt)
@@ -110,10 +100,7 @@ func parseListParams(params url.Values) (*listParams, *jsrest.Error) {
 			}
 
 			if _, valid := validOps[f.op]; !valid {
-				e := fmt.Errorf("%s: %w", f.op, ErrInvalidFilterOp)
-				jse := jsrest.FromError(e, jsrest.StatusBadRequest)
-
-				return nil, jse
+				return nil, jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", f.op, ErrInvalidFilterOp)
 			}
 
 			ret.filters = append(ret.filters, f)
@@ -123,7 +110,7 @@ func parseListParams(params url.Values) (*listParams, *jsrest.Error) {
 	return ret, nil
 }
 
-func filterList(cfg *config, r *http.Request, params *listParams, list []any) ([]any, *jsrest.Error) {
+func filterList(cfg *config, r *http.Request, params *listParams, list []any) ([]any, error) {
 	inter := []any{}
 
 	for _, obj := range list {
@@ -135,7 +122,7 @@ func filterList(cfg *config, r *http.Request, params *listParams, list []any) ([
 		// TODO: Push jsrest.Error down into match
 		matches, err := match(obj, params.filters)
 		if err != nil {
-			return nil, jsrest.FromError(err, jsrest.StatusBadRequest)
+			return nil, jsrest.Errorf(jsrest.ErrBadRequest, "match failed (%w)", err)
 		}
 
 		if !matches {
@@ -161,7 +148,7 @@ func filterList(cfg *config, r *http.Request, params *listParams, list []any) ([
 		}
 
 		if err != nil {
-			return nil, jsrest.FromError(err, jsrest.StatusBadRequest)
+			return nil, jsrest.Errorf(jsrest.ErrBadRequest, "sort failed (%w)", err)
 		}
 	}
 
