@@ -67,6 +67,7 @@ func TestMayWrite(t *testing.T) {
 		Post("maytype")
 	require.Nil(t, err)
 	require.True(t, resp.IsError())
+	require.Equal(t, 401, resp.StatusCode())
 
 	replaced := &mayType{}
 
@@ -86,6 +87,7 @@ func TestMayWrite(t *testing.T) {
 		Put("maytype/{id}")
 	require.Nil(t, err)
 	require.True(t, resp.IsError())
+	require.Equal(t, 401, resp.StatusCode())
 
 	updated := &mayType{}
 
@@ -105,6 +107,7 @@ func TestMayWrite(t *testing.T) {
 		Patch("maytype/{id}")
 	require.Nil(t, err)
 	require.True(t, resp.IsError())
+	require.Equal(t, 401, resp.StatusCode())
 
 	resp, err = ta.r().
 		SetHeader("X-Refuse-Write", "x").
@@ -112,6 +115,7 @@ func TestMayWrite(t *testing.T) {
 		Delete("maytype/{id}")
 	require.Nil(t, err)
 	require.True(t, resp.IsError())
+	require.Equal(t, 401, resp.StatusCode())
 
 	resp, err = ta.r().
 		SetPathParam("id", created.ID).
@@ -162,6 +166,7 @@ func TestMayRead(t *testing.T) {
 		Get("maytype/{id}")
 	require.Nil(t, err)
 	require.True(t, resp.IsError())
+	require.Equal(t, 401, resp.StatusCode())
 
 	resp, err = ta.r().
 		SetDoNotParseResponse(true).
@@ -171,6 +176,7 @@ func TestMayRead(t *testing.T) {
 		Get("maytype/{id}")
 	require.Nil(t, err)
 	require.True(t, resp.IsError())
+	require.Equal(t, 401, resp.StatusCode())
 
 	list := []*testType{}
 
