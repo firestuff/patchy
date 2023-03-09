@@ -89,73 +89,95 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (api *API) registerHandlers(base string, cfg *config) {
 	api.router.GET(
 		base,
-		func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) { api.routeListGET(cfg, w, r) },
+		func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+			api.wrapError(api.routeListGET, cfg, w, r)
+		},
 	)
 
 	api.router.POST(
 		base,
-		func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) { api.post(cfg, w, r) },
+		func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+			api.post(cfg, w, r)
+		},
 	)
 
 	single := fmt.Sprintf("%s/:id", base)
 
 	api.router.PUT(
 		single,
-		func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) { api.put(cfg, ps[0].Value, w, r) },
+		func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+			api.wrapErrorID(api.put, cfg, ps[0].Value, w, r)
+		},
 	)
 
 	api.router.PATCH(
 		single,
-		func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) { api.patch(cfg, ps[0].Value, w, r) },
+		func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+			api.wrapErrorID(api.patch, cfg, ps[0].Value, w, r)
+		},
 	)
 
 	api.router.DELETE(
 		single,
-		func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) { api.delete(cfg, ps[0].Value, w, r) },
+		func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+			api.wrapErrorID(api.delete, cfg, ps[0].Value, w, r)
+		},
 	)
 
 	api.router.GET(
 		single,
 		func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-			api.routeSingleGET(cfg, ps[0].Value, w, r)
+			api.wrapErrorID(api.routeSingleGET, cfg, ps[0].Value, w, r)
 		},
 	)
 }
 
-func (api *API) routeListGET(cfg *config, w http.ResponseWriter, r *http.Request) {
+func (api *API) routeListGET(cfg *config, w http.ResponseWriter, r *http.Request) error {
 	// TODO: Parse Accept preference lists
 	switch r.Header.Get("Accept") {
 	case "text/event-stream":
-		api.streamList(cfg, w, r)
+		return api.streamList(cfg, w, r)
 
 	case "":
 		fallthrough
 	case "*/*":
 		fallthrough
 	case "application/json":
-		api.getList(cfg, w, r)
+		return api.getList(cfg, w, r)
 
 	default:
-		err := jsrest.Errorf(jsrest.ErrNotAcceptable, "Accept: %s (%w)", r.Header.Get("Accept"), ErrUnknownAcceptType)
+		return jsrest.Errorf(jsrest.ErrNotAcceptable, "Accept: %s (%w)", r.Header.Get("Accept"), ErrUnknownAcceptType)
+	}
+}
+
+func (api *API) routeSingleGET(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
+	// TODO: Parse Accept preference lists
+	switch r.Header.Get("Accept") {
+	case "text/event-stream":
+		return api.stream(cfg, id, w, r)
+
+	case "":
+		fallthrough
+	case "*/*":
+		fallthrough
+	case "application/json":
+		return api.get(cfg, id, w, r)
+
+	default:
+		return jsrest.Errorf(jsrest.ErrNotAcceptable, "Accept: %s (%w)", r.Header.Get("Accept"), ErrUnknownAcceptType)
+	}
+}
+
+func (api *API) wrapError(cb func(*config, http.ResponseWriter, *http.Request) error, cfg *config, w http.ResponseWriter, r *http.Request) {
+	err := cb(cfg, w, r)
+	if err != nil {
 		jsrest.WriteError(w, err)
 	}
 }
 
-func (api *API) routeSingleGET(cfg *config, id string, w http.ResponseWriter, r *http.Request) {
-	// TODO: Parse Accept preference lists
-	switch r.Header.Get("Accept") {
-	case "text/event-stream":
-		api.stream(cfg, id, w, r)
-
-	case "":
-		fallthrough
-	case "*/*":
-		fallthrough
-	case "application/json":
-		api.get(cfg, id, w, r)
-
-	default:
-		err := jsrest.Errorf(jsrest.ErrNotAcceptable, "Accept: %s (%w)", r.Header.Get("Accept"), ErrUnknownAcceptType)
+func (api *API) wrapErrorID(cb func(*config, string, http.ResponseWriter, *http.Request) error, cfg *config, id string, w http.ResponseWriter, r *http.Request) {
+	err := cb(cfg, id, w, r)
+	if err != nil {
 		jsrest.WriteError(w, err)
 	}
 }
