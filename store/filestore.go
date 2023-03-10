@@ -23,7 +23,7 @@ func NewFileStore(root string) *FileStore {
 }
 
 func (s *FileStore) Write(t string, obj any) error {
-	id := metadata.GetMetadata(obj).ID
+	id := filepath.FromSlash(metadata.GetMetadata(obj).ID)
 	dir := filepath.Join(s.root, t)
 
 	err := os.MkdirAll(dir, 0o700)
@@ -59,12 +59,14 @@ func (s *FileStore) Write(t string, obj any) error {
 }
 
 func (s *FileStore) Delete(t string, id string) error {
+	id = filepath.FromSlash(id)
 	dir := filepath.Join(s.root, t)
 
 	return os.Remove(filepath.Join(dir, id))
 }
 
 func (s *FileStore) Read(t string, id string, factory func() any) (any, error) {
+	id = filepath.FromSlash(id)
 	dir := filepath.Join(s.root, t)
 
 	obj := factory()
