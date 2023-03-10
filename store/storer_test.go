@@ -25,6 +25,14 @@ func testStorer(t *testing.T, st store.Storer) {
 	})
 	require.Nil(t, err)
 
+	err = st.Write("storeTest", &storeTest{
+		Metadata: metadata.Metadata{
+			ID: "id2",
+		},
+		Opaque: "zig",
+	})
+	require.Nil(t, err)
+
 	out1, err := st.Read("storeTest", "id1", newStoreTest)
 	require.Nil(t, err)
 	require.NotNil(t, out1)
@@ -33,7 +41,7 @@ func testStorer(t *testing.T, st store.Storer) {
 	out2, err := st.Read("storeTest", "id2", newStoreTest)
 	require.Nil(t, err)
 	require.NotNil(t, out1)
-	require.Equal(t, "bar", out2.(*storeTest).Opaque)
+	require.Equal(t, "zig", out2.(*storeTest).Opaque)
 }
 
 func testDelete(t *testing.T, st store.Storer) {

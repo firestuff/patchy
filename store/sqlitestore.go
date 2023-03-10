@@ -36,7 +36,7 @@ func (sls *SQLiteStore) Write(t string, obj any) error {
 		return err
 	}
 
-	_, err = sls.exec("INSERT INTO `%s` (id, obj) VALUES (?,?);", t, id, js)
+	_, err = sls.exec("INSERT INTO `%s` (id, obj) VALUES (?,?) ON CONFLICT(id) DO UPDATE SET obj=?;", t, id, js, js)
 	if err != nil {
 		return err
 	}
