@@ -8,6 +8,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/stretchr/testify v1.8.1
+	github.com/timewasted/go-accept-headers v0.0.0-20130320203746-c78f304b1b09
 	go.uber.org/goleak v1.2.1
 )
 
