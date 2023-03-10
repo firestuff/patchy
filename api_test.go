@@ -134,3 +134,46 @@ func TestCheckSafe(t *testing.T) {
 		api.CheckSafe()
 	})
 }
+
+func TestAccept(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	created := &testType{}
+
+	resp, err := ta.r().
+		SetBody(&testType{
+			Text: "foo",
+		}).
+		SetResult(created).
+		Post("testtype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, "foo", created.Text)
+	require.NotEmpty(t, created.ID)
+
+	read := &testType{}
+
+	resp, err = ta.r().
+		SetHeader("Accept", "text/event-stream;q=0.3, text/xml;q=0.1, application/json;q=0.5").
+		SetResult(read).
+		SetPathParam("id", created.ID).
+		Get("testtype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, "application/json", resp.Header().Get("Content-Type"))
+	require.Equal(t, "foo", read.Text)
+	require.Equal(t, created.ID, read.ID)
+
+	resp, err = ta.r().
+		SetDoNotParseResponse(true).
+		SetHeader("Accept", "text/event-stream;q=0.7, text/xml;q=0.1, application/json;q=0.5").
+		SetPathParam("id", created.ID).
+		Get("testtype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, "text/event-stream", resp.Header().Get("Content-Type"))
+	resp.RawBody().Close()
+}

@@ -16,6 +16,7 @@ import (
 	"github.com/firestuff/patchy/store"
 	"github.com/firestuff/patchy/storebus"
 	"github.com/julienschmidt/httprouter"
+	"github.com/timewasted/go-accept-headers"
 )
 
 type API struct {
@@ -133,36 +134,32 @@ func (api *API) registerHandlers(base string, cfg *config) {
 }
 
 func (api *API) routeListGET(cfg *config, w http.ResponseWriter, r *http.Request) error {
-	// TODO: Parse Accept preference lists
-	switch r.Header.Get("Accept") {
-	case "text/event-stream":
-		return api.streamList(cfg, w, r)
+	ac, err := accept.Negotiate(r.Header.Get("Accept"), "application/json", "text/event-stream")
+	if err != nil {
+		return jsrest.Errorf(jsrest.ErrNotAcceptable, "Accept: %s (%w)", r.Header.Get("Accept"), ErrUnknownAcceptType)
+	}
 
-	case "":
-		fallthrough
-	case "*/*":
-		fallthrough
+	switch ac {
 	case "application/json":
 		return api.getList(cfg, w, r)
-
+	case "text/event-stream":
+		return api.streamList(cfg, w, r)
 	default:
 		return jsrest.Errorf(jsrest.ErrNotAcceptable, "Accept: %s (%w)", r.Header.Get("Accept"), ErrUnknownAcceptType)
 	}
 }
 
 func (api *API) routeSingleGET(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
-	// TODO: Parse Accept preference lists
-	switch r.Header.Get("Accept") {
-	case "text/event-stream":
-		return api.stream(cfg, id, w, r)
+	ac, err := accept.Negotiate(r.Header.Get("Accept"), "application/json", "text/event-stream")
+	if err != nil {
+		return jsrest.Errorf(jsrest.ErrNotAcceptable, "Accept: %s (%w)", r.Header.Get("Accept"), ErrUnknownAcceptType)
+	}
 
-	case "":
-		fallthrough
-	case "*/*":
-		fallthrough
+	switch ac {
 	case "application/json":
 		return api.get(cfg, id, w, r)
-
+	case "text/event-stream":
+		return api.stream(cfg, id, w, r)
 	default:
 		return jsrest.Errorf(jsrest.ErrNotAcceptable, "Accept: %s (%w)", r.Header.Get("Accept"), ErrUnknownAcceptType)
 	}
