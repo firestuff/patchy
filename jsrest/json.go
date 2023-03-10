@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"mime"
 	"net/http"
 
 	"github.com/firestuff/patchy/metadata"
@@ -12,21 +13,25 @@ import (
 var ErrUnsupportedContentType = errors.New("unsupported Content-Type")
 
 func Read(r *http.Request, obj any) error {
-	// TODO: Parse semicolon params
-	switch r.Header.Get("Content-Type") {
+	contentType, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	if err != nil {
+		return Errorf(ErrUnsupportedMediaType, "Content-Type: %s (%w)", r.Header.Get("Content-Type"), err)
+	}
+
+	switch contentType {
 	case "":
 		fallthrough
 	case "application/json":
 		break
 
 	default:
-		return Errorf(ErrUnsupportedMediaType, "Content-Type: %s", r.Header.Get("Content-Type"))
+		return Errorf(ErrUnsupportedMediaType, "Content-Type: %s", contentType)
 	}
 
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 
-	err := dec.Decode(obj)
+	err = dec.Decode(obj)
 	if err != nil {
 		return Errorf(ErrBadRequest, "decode JSON request body failed (%w)", err)
 	}
