@@ -60,6 +60,7 @@ func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
 	}
+	defer api.sb.CloseListStream(cfg.typeName, ch)
 
 	ticker := time.NewTicker(5 * time.Second)
 
@@ -93,6 +94,7 @@ func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
 	}
+	defer api.sb.CloseListStream(cfg.typeName, ch)
 
 	last := map[string]any{}
 

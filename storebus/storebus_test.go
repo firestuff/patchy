@@ -36,7 +36,7 @@ func TestStoreBus(t *testing.T) {
 	c2, err := sb.ListStream("storeBusTest", newStoreBusTest)
 	require.Nil(t, err)
 
-	defer sb.CloseListStream("storeBusTest", c1)
+	defer sb.CloseListStream("storeBusTest", c2)
 
 	out1 := (<-c1).(*storeBusTest)
 	require.Equal(t, "foo", out1.Opaque)
