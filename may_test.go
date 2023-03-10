@@ -177,6 +177,7 @@ func TestMayRead(t *testing.T) {
 	require.Nil(t, err)
 	require.True(t, resp.IsError())
 	require.Equal(t, 401, resp.StatusCode())
+	resp.RawBody().Close()
 
 	list := []*testType{}
 

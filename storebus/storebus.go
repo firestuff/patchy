@@ -17,19 +17,23 @@ type StoreBus struct {
 	bus   *bus.Bus
 
 	// This lock ensures that no writes interleave with read/subscribe pairs
-	mu sync.RWMutex
+	orderMu sync.RWMutex
+
+	chanMap   map[<-chan []any]<-chan any
+	chanMapMu sync.Mutex
 }
 
 func NewStoreBus(st store.Storer) *StoreBus {
 	return &StoreBus{
-		store: st,
-		bus:   bus.NewBus(),
+		store:   st,
+		bus:     bus.NewBus(),
+		chanMap: map[<-chan []any]<-chan any{},
 	}
 }
 
 func (sb *StoreBus) Write(t string, obj any) error {
-	sb.mu.Lock()
-	defer sb.mu.Unlock()
+	sb.orderMu.Lock()
+	defer sb.orderMu.Unlock()
 
 	if err := updateHash(obj); err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "hash update failed (%w)", err)
@@ -45,8 +49,8 @@ func (sb *StoreBus) Write(t string, obj any) error {
 }
 
 func (sb *StoreBus) Delete(t, id string) error {
-	sb.mu.Lock()
-	defer sb.mu.Unlock()
+	sb.orderMu.Lock()
+	defer sb.orderMu.Unlock()
 
 	if err := sb.store.Delete(t, id); err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "delete failed (%w)", err)
@@ -62,8 +66,8 @@ func (sb *StoreBus) Read(t, id string, factory func() any) (any, error) {
 }
 
 func (sb *StoreBus) ReadStream(t, id string, factory func() any) (<-chan any, error) {
-	sb.mu.RLock()
-	defer sb.mu.RUnlock()
+	sb.orderMu.RLock()
+	defer sb.orderMu.RUnlock()
 
 	initial, err := sb.store.Read(t, id, factory)
 	if err != nil {
@@ -84,8 +88,8 @@ func (sb *StoreBus) List(t string, factory func() any) ([]any, error) {
 }
 
 func (sb *StoreBus) ListStream(t string, factory func() any) (<-chan []any, error) {
-	sb.mu.RLock()
-	defer sb.mu.RUnlock()
+	sb.orderMu.RLock()
+	defer sb.orderMu.RUnlock()
 
 	initial, err := sb.store.List(t, factory)
 	if err != nil {
@@ -96,9 +100,10 @@ func (sb *StoreBus) ListStream(t string, factory func() any) (<-chan []any, erro
 
 	ret := make(chan []any, 100)
 
+	sb.registerChan(c, ret)
+
 	go func() {
 		defer close(ret)
-		defer sb.bus.UnsubscribeType(t, c)
 
 		for range c {
 			// List() results are always at least (but not exactly) as new as the write that triggered it
@@ -118,8 +123,20 @@ func (sb *StoreBus) ListStream(t string, factory func() any) (<-chan []any, erro
 	return ret, nil
 }
 
-func (sb *StoreBus) CloseListStream(t string, c <-chan any) {
-	sb.bus.UnsubscribeType(t, c)
+func (sb *StoreBus) CloseListStream(t string, c <-chan []any) {
+	sb.chanMapMu.Lock()
+	defer sb.chanMapMu.Unlock()
+
+	sb.bus.UnsubscribeType(t, sb.chanMap[c])
+
+	delete(sb.chanMap, c)
+}
+
+func (sb *StoreBus) registerChan(in <-chan any, out <-chan []any) {
+	sb.chanMapMu.Lock()
+	defer sb.chanMapMu.Unlock()
+
+	sb.chanMap[out] = in
 }
 
 func updateHash(obj any) error {
