@@ -27,7 +27,6 @@ type testAPI struct {
 }
 
 func newTestAPI(t *testing.T) *testAPI {
-	// TODO: Add goroutine leak detection: https://github.com/uber-go/goleak
 	dir, err := os.MkdirTemp("", "")
 	require.Nil(t, err)
 
