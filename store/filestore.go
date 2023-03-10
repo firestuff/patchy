@@ -1,8 +1,6 @@
 package store
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -25,8 +23,8 @@ func NewFileStore(root string) *FileStore {
 }
 
 func (s *FileStore) Write(t string, obj any) error {
-	id := getSafeID(metadata.GetMetadata(obj).ID)
-	dir := filepath.Join(s.root, t, id[:4])
+	id := metadata.GetMetadata(obj).ID
+	dir := filepath.Join(s.root, t)
 
 	err := os.MkdirAll(dir, 0o700)
 	if err != nil {
@@ -61,19 +59,17 @@ func (s *FileStore) Write(t string, obj any) error {
 }
 
 func (s *FileStore) Delete(t string, id string) error {
-	safeID := getSafeID(id)
-	dir := filepath.Join(s.root, t, safeID[:4])
+	dir := filepath.Join(s.root, t)
 
-	return os.Remove(filepath.Join(dir, safeID))
+	return os.Remove(filepath.Join(dir, id))
 }
 
 func (s *FileStore) Read(t string, id string, factory func() any) (any, error) {
-	safeID := getSafeID(id)
-	dir := filepath.Join(s.root, t, safeID[:4])
+	dir := filepath.Join(s.root, t)
 
 	obj := factory()
 
-	err := s.read(filepath.Join(dir, safeID), obj)
+	err := s.read(filepath.Join(dir, id), obj)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return nil, nil
@@ -138,12 +134,4 @@ func (s *FileStore) read(path string, obj any) error {
 	dec.DisallowUnknownFields()
 
 	return dec.Decode(obj)
-}
-
-func getSafeID(id string) string {
-	// TODO: Make this an hmac to prevent partial collision DoS attacks
-	h := sha256.New()
-	h.Write([]byte(id))
-
-	return hex.EncodeToString(h.Sum(nil))
 }
