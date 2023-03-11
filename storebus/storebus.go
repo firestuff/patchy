@@ -31,6 +31,10 @@ func NewStoreBus(st store.Storer) *StoreBus {
 	}
 }
 
+func (sb *StoreBus) Close() {
+	sb.store.Close()
+}
+
 func (sb *StoreBus) Write(t string, obj any) error {
 	sb.orderMu.Lock()
 	defer sb.orderMu.Unlock()

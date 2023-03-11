@@ -34,6 +34,15 @@ func NewFileStoreAPI(root string) (*API, error) {
 	return NewAPI(store.NewFileStore(root))
 }
 
+func NewSQLiteAPI(dbname string) (*API, error) {
+	st, err := store.NewSQLiteStore(dbname)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewAPI(st)
+}
+
 func NewAPI(st store.Storer) (*API, error) {
 	router := httprouter.New()
 
@@ -85,6 +94,10 @@ func (api *API) CheckSafe() {
 
 func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	api.potency.ServeHTTP(w, r)
+}
+
+func (api *API) Close() {
+	api.sb.Close()
 }
 
 func (api *API) registerHandlers(base string, cfg *config) {
