@@ -56,6 +56,8 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 }
 
 func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Request, params *listParams) error {
+	// TODO: Add query condition pushdown
+
 	ch, err := api.sb.ListStream(cfg.typeName, cfg.factory)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
@@ -90,6 +92,8 @@ func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Reque
 }
 
 func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Request, params *listParams) error {
+	// TODO: Add query condition pushdown
+
 	ch, err := api.sb.ListStream(cfg.typeName, cfg.factory)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
