@@ -16,21 +16,20 @@ import (
 
 	"github.com/firestuff/patchy"
 	"github.com/go-resty/resty/v2"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
 
 type testAPI struct {
-	dir string
 	api *patchy.API
 	srv *http.Server
 	rst *resty.Client
 }
 
 func newTestAPI(t *testing.T) *testAPI {
-	dir, err := os.MkdirTemp("", "")
-	require.Nil(t, err)
+	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uuid.NewString())
 
-	api, err := patchy.NewFileStoreAPI(dir)
+	api, err := patchy.NewSQLiteAPI(dbname)
 	require.Nil(t, err)
 
 	patchy.Register[testType](api)
@@ -58,7 +57,6 @@ func newTestAPI(t *testing.T) *testAPI {
 		SetBaseURL(baseURL)
 
 	return &testAPI{
-		dir: dir,
 		api: api,
 		srv: srv,
 		rst: rst,
@@ -73,7 +71,7 @@ func (ta *testAPI) shutdown(t *testing.T) {
 	err := ta.srv.Shutdown(context.Background())
 	require.Nil(t, err)
 
-	os.RemoveAll(ta.dir)
+	ta.api.Close()
 }
 
 func readEvent(scan *bufio.Scanner, out any) (string, error) {

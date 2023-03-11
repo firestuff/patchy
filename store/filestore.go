@@ -22,6 +22,9 @@ func NewFileStore(root string) *FileStore {
 	}
 }
 
+func (s *FileStore) Close() {
+}
+
 func (s *FileStore) Write(t string, obj any) error {
 	id := filepath.FromSlash(metadata.GetMetadata(obj).ID)
 	dir := filepath.Join(s.root, filepath.FromSlash(t))
