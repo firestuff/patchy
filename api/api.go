@@ -110,8 +110,7 @@ func (api *API) registerHandlers(base string, cfg *config) {
 	api.router.POST(
 		base,
 		func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-			// TODO: Use api.wrapErrror
-			api.post(cfg, w, r)
+			api.wrapError(api.post, cfg, w, r)
 		},
 	)
 
