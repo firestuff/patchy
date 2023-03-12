@@ -17,6 +17,10 @@ type mayType struct {
 }
 
 func (mt *mayType) MayRead(a *api.API, r *http.Request) error {
+	if r == nil {
+		return nil
+	}
+
 	if r.Header.Get("X-Refuse-Read") != "" {
 		return fmt.Errorf("may not read")
 	}
@@ -26,10 +30,22 @@ func (mt *mayType) MayRead(a *api.API, r *http.Request) error {
 		mt.Text1 = text1
 	}
 
+	newText1 := r.Header.Get("X-NewText1")
+	if newText1 != "" {
+		_, err := api.Create(r.Context(), a, &mayType{Text1: newText1})
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
 func (mt *mayType) MayWrite(prev *mayType, a *api.API, r *http.Request) error {
+	if r == nil {
+		return nil
+	}
+
 	if r.Header.Get("X-Refuse-Write") != "" {
 		return fmt.Errorf("may not write")
 	}
@@ -443,4 +459,45 @@ func TestMayReadMutate(t *testing.T) {
 	require.False(t, resp.IsError())
 	require.Len(t, list, 1)
 	require.Equal(t, "5678", list[0].Text1)
+}
+
+func TestMayReadAPI(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	api.Register[mayType](ta.api)
+
+	created := &mayType{}
+
+	resp, err := ta.r().
+		SetBody(&mayType{Text1: "foo"}).
+		SetResult(created).
+		Post("maytype")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.NotEmpty(t, created.ID)
+
+	get := &mayType{}
+
+	resp, err = ta.r().
+		SetHeader("X-NewText1", "abcd").
+		SetResult(get).
+		SetPathParam("id", created.ID).
+		Get("maytype/{id}")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Equal(t, "foo", get.Text1)
+
+	list := []*mayType{}
+
+	resp, err = ta.r().
+		SetQueryParam("_sort", "+text1").
+		SetResult(&list).
+		Get("maytype")
+	require.Nil(t, err)
+	require.Len(t, list, 2)
+	require.Equal(t, "abcd", list[0].Text1)
+	require.Equal(t, "foo", list[1].Text1)
 }
