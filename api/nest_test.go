@@ -1,19 +1,19 @@
-package patchy_test
+package api_test
 
 import (
 	"testing"
 
-	"github.com/firestuff/patchy"
+	"github.com/firestuff/patchy/api"
 )
 
 type Outer struct {
-	patchy.Metadata
+	api.Metadata
 	Text  string
 	Inner []string
 }
 
 type Inner struct {
-	patchy.Metadata
+	api.Metadata
 	Text string
 }
 
@@ -23,8 +23,8 @@ func TestNestedInnerFirst(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	patchy.Register[Inner](ta.api)
-	patchy.Register[Outer](ta.api)
+	api.Register[Inner](ta.api)
+	api.Register[Outer](ta.api)
 }
 
 func TestNestedOuterFirst(t *testing.T) {
@@ -33,6 +33,6 @@ func TestNestedOuterFirst(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	patchy.Register[Outer](ta.api)
-	patchy.Register[Inner](ta.api)
+	api.Register[Outer](ta.api)
+	api.Register[Inner](ta.api)
 }

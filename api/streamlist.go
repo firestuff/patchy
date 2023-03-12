@@ -1,4 +1,4 @@
-package patchy
+package api
 
 import (
 	"errors"
