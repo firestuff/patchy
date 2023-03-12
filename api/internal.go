@@ -12,7 +12,7 @@ import (
 func (api *API) createInt(ctx context.Context, cfg *config, r *http.Request, obj any) (any, error) {
 	metadata.GetMetadata(obj).ID = uuid.NewString()
 
-	obj, err := cfg.checkWrite(obj, nil, r)
+	obj, err := cfg.checkWrite(obj, nil, api, r)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrUnauthorized, "write check failed (%w)", err)
 	}
@@ -22,7 +22,7 @@ func (api *API) createInt(ctx context.Context, cfg *config, r *http.Request, obj
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "write failed (%w)", err)
 	}
 
-	obj, err = cfg.checkRead(obj, r)
+	obj, err = cfg.checkRead(obj, api, r)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrUnauthorized, "read check failed (%w)", err)
 	}
@@ -40,7 +40,7 @@ func (api *API) getInt(ctx context.Context, cfg *config, r *http.Request, id str
 		return nil, nil
 	}
 
-	obj, err = cfg.checkRead(obj, r)
+	obj, err = cfg.checkRead(obj, api, r)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrUnauthorized, "read check failed (%w)", err)
 	}
@@ -60,7 +60,7 @@ func (api *API) listInt(ctx context.Context, cfg *config, r *http.Request, opts 
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
 	}
 
-	list, err = filterList(cfg, r, opts, list)
+	list, err = api.filterList(cfg, r, opts, list)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "filter list failed (%w)", err)
 	}
@@ -98,7 +98,7 @@ func (api *API) replaceInt(ctx context.Context, cfg *config, r *http.Request, id
 	replaceMD.ID = id
 	replaceMD.Generation = objMD.Generation + 1
 
-	replace, err = cfg.checkWrite(replace, prev, r)
+	replace, err = cfg.checkWrite(replace, prev, api, r)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrUnauthorized, "write check failed (%w)", err)
 	}
@@ -108,7 +108,7 @@ func (api *API) replaceInt(ctx context.Context, cfg *config, r *http.Request, id
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "write failed: %s (%w)", id, err)
 	}
 
-	replace, err = cfg.checkRead(replace, r)
+	replace, err = cfg.checkRead(replace, api, r)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrUnauthorized, "read check failed (%w)", err)
 	}
@@ -145,7 +145,7 @@ func (api *API) updateInt(ctx context.Context, cfg *config, r *http.Request, id 
 	merge(obj, patch)
 	metadata.GetMetadata(obj).Generation++
 
-	obj, err = cfg.checkWrite(obj, prev, r)
+	obj, err = cfg.checkWrite(obj, prev, api, r)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrUnauthorized, "write check failed (%w)", err)
 	}
@@ -155,7 +155,7 @@ func (api *API) updateInt(ctx context.Context, cfg *config, r *http.Request, id 
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "write failed: %s (%w)", id, err)
 	}
 
-	obj, err = cfg.checkRead(obj, r)
+	obj, err = cfg.checkRead(obj, api, r)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrUnauthorized, "read check failed (%w)", err)
 	}

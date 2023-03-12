@@ -16,7 +16,7 @@ func (api *API) delete(cfg *config, id string, w http.ResponseWriter, r *http.Re
 		return jsrest.Errorf(jsrest.ErrNotFound, "%s", id)
 	}
 
-	_, err = cfg.checkWrite(nil, obj, r)
+	_, err = cfg.checkWrite(nil, obj, api, r)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrUnauthorized, "write check failed (%w)", err)
 	}

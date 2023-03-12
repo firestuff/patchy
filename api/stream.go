@@ -27,7 +27,7 @@ func (api *API) stream(cfg *config, id string, w http.ResponseWriter, r *http.Re
 		return jsrest.Errorf(jsrest.ErrNotFound, "%s", id)
 	}
 
-	obj, err = cfg.checkRead(obj, r)
+	obj, err = cfg.checkRead(obj, api, r)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrUnauthorized, "read check failed (%w)", err)
 	}
@@ -59,7 +59,7 @@ func (api *API) streamInt(cfg *config, w http.ResponseWriter, r *http.Request, o
 
 		case msg, ok := <-ch:
 			if ok {
-				msg, err = cfg.checkRead(msg, r)
+				msg, err = cfg.checkRead(msg, api, r)
 				if err != nil {
 					return jsrest.Errorf(jsrest.ErrUnauthorized, "read check failed (%w)", err)
 				}

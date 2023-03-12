@@ -32,6 +32,8 @@ func Create[T any](ctx context.Context, c *Client, obj *T) (*T, error) {
 	return CreateName[T](ctx, c, objName(obj), obj)
 }
 
+// TODO: Add Delete()
+
 func FindName[T any](ctx context.Context, c *Client, name, shortID string) (*T, error) {
 	listOpts := &ListOpts{
 		Filters: []*Filter{

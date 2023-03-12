@@ -78,7 +78,7 @@ func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Reque
 			}
 
 		case list := <-ch:
-			list, err = filterList(cfg, r, opts, list)
+			list, err = api.filterList(cfg, r, opts, list)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "filter list failed (%w)", err)
 			}
@@ -118,7 +118,7 @@ func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Reque
 			return nil
 
 		case list := <-ch:
-			list, err := filterList(cfg, r, opts, list)
+			list, err := api.filterList(cfg, r, opts, list)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "filter list failed (%w)", err)
 			}
