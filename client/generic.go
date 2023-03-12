@@ -32,7 +32,26 @@ func Create[T any](ctx context.Context, c *Client, obj *T) (*T, error) {
 	return CreateName[T](ctx, c, objName(obj), obj)
 }
 
-// TODO: Add Delete()
+func DeleteName(ctx context.Context, c *Client, name, id string) error {
+	resp, err := c.rst.R().
+		SetContext(ctx).
+		SetPathParam("name", name).
+		SetPathParam("id", id).
+		Delete("{name}/{id}")
+	if err != nil {
+		return err
+	}
+
+	if resp.IsError() {
+		return errors.New(resp.String())
+	}
+
+	return nil
+}
+
+func Delete[T any](ctx context.Context, c *Client, id string) error {
+	return DeleteName(ctx, c, objName(new(T)), id)
+}
 
 func FindName[T any](ctx context.Context, c *Client, name, shortID string) (*T, error) {
 	listOpts := &ListOpts{

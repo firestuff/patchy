@@ -25,6 +25,24 @@ func Create[T any](ctx context.Context, api *API, obj *T) (*T, error) {
 	return CreateName[T](ctx, api, objName(obj), obj)
 }
 
+func DeleteName(ctx context.Context, api *API, name, id string) error {
+	cfg := api.registry[name]
+	if cfg == nil {
+		return jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
+	}
+
+	err := api.deleteInt(ctx, cfg, nil, id)
+	if err != nil {
+		return jsrest.Errorf(jsrest.ErrInternalServerError, "delete failed (%w)", err)
+	}
+
+	return nil
+}
+
+func Delete[T any](ctx context.Context, api *API, id string) error {
+	return DeleteName(ctx, api, objName(new(T)), id)
+}
+
 func FindName[T any](ctx context.Context, api *API, name, shortID string) (*T, error) {
 	listOpts := &ListOpts{
 		Filters: []*Filter{
