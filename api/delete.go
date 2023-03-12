@@ -7,7 +7,7 @@ import (
 )
 
 func (api *API) delete(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
-	obj, err := api.sb.Read(cfg.typeName, id, cfg.factory)
+	obj, err := api.sb.Read(r.Context(), cfg.typeName, id, cfg.factory)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
 	}
@@ -21,7 +21,7 @@ func (api *API) delete(cfg *config, id string, w http.ResponseWriter, r *http.Re
 		return jsrest.Errorf(jsrest.ErrUnauthorized, "write check failed (%w)", err)
 	}
 
-	err = api.sb.Delete(cfg.typeName, id)
+	err = api.sb.Delete(r.Context(), cfg.typeName, id)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "delete failed: %s (%w)", id, err)
 	}

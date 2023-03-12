@@ -20,7 +20,7 @@ func (api *API) getList(cfg *config, w http.ResponseWriter, r *http.Request) err
 
 	// TODO: Add query condition pushdown
 
-	list, err := api.sb.List(cfg.typeName, cfg.factory)
+	list, err := api.sb.List(r.Context(), cfg.typeName, cfg.factory)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
 	}

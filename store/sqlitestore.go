@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -28,7 +29,7 @@ func (sls *SQLiteStore) Close() {
 	sls.db.Close()
 }
 
-func (sls *SQLiteStore) Write(t string, obj any) error {
+func (sls *SQLiteStore) Write(ctx context.Context, t string, obj any) error {
 	id := metadata.GetMetadata(obj).ID
 
 	js, err := json.Marshal(obj)
@@ -36,7 +37,7 @@ func (sls *SQLiteStore) Write(t string, obj any) error {
 		return err
 	}
 
-	_, err = sls.exec("INSERT INTO `%s` (id, obj) VALUES (?,?) ON CONFLICT(id) DO UPDATE SET obj=?;", t, id, js, js)
+	_, err = sls.exec(ctx, "INSERT INTO `%s` (id, obj) VALUES (?,?) ON CONFLICT(id) DO UPDATE SET obj=?;", t, id, js, js)
 	if err != nil {
 		return err
 	}
@@ -44,8 +45,8 @@ func (sls *SQLiteStore) Write(t string, obj any) error {
 	return nil
 }
 
-func (sls *SQLiteStore) Delete(t string, id string) error {
-	_, err := sls.exec("DELETE FROM `%s` WHERE id=?", t, id)
+func (sls *SQLiteStore) Delete(ctx context.Context, t, id string) error {
+	_, err := sls.exec(ctx, "DELETE FROM `%s` WHERE id=?", t, id)
 	if err != nil {
 		return err
 	}
@@ -53,8 +54,8 @@ func (sls *SQLiteStore) Delete(t string, id string) error {
 	return nil
 }
 
-func (sls *SQLiteStore) Read(t string, id string, factory func() any) (any, error) {
-	rows, err := sls.query("SELECT obj FROM `%s` WHERE id=?;", t, id)
+func (sls *SQLiteStore) Read(ctx context.Context, t, id string, factory func() any) (any, error) {
+	rows, err := sls.query(ctx, "SELECT obj FROM `%s` WHERE id=?;", t, id)
 	if err != nil {
 		return nil, err
 	}
@@ -82,8 +83,8 @@ func (sls *SQLiteStore) Read(t string, id string, factory func() any) (any, erro
 	return nil, nil
 }
 
-func (sls *SQLiteStore) List(t string, factory func() any) ([]any, error) {
-	rows, err := sls.query("SELECT obj FROM `%s`;", t)
+func (sls *SQLiteStore) List(ctx context.Context, t string, factory func() any) ([]any, error) {
+	rows, err := sls.query(ctx, "SELECT obj FROM `%s`;", t)
 	if err != nil {
 		return nil, err
 	}
@@ -113,34 +114,38 @@ func (sls *SQLiteStore) List(t string, factory func() any) ([]any, error) {
 	return ret, nil
 }
 
-func (sls *SQLiteStore) exec(query, t string, args ...any) (sql.Result, error) {
+func (sls *SQLiteStore) exec(ctx context.Context, query, t string, args ...any) (sql.Result, error) {
 	query = fmt.Sprintf(query, t)
 
-	result, err := sls.db.Exec(query, args...)
+	result, err := sls.db.ExecContext(ctx, query, args...)
 	if err == nil {
 		return result, nil
 	}
 
-	_, err = sls.db.Exec(fmt.Sprintf("CREATE TABLE IF NOT EXISTS `%s` (id TEXT NOT NULL PRIMARY KEY, obj TEXT NOT NULL);", t))
+	_, err = sls.db.ExecContext(ctx, sls.tableSQL(t))
 	if err != nil {
 		return nil, err
 	}
 
-	return sls.db.Exec(query, args...)
+	return sls.db.ExecContext(ctx, query, args...)
 }
 
-func (sls *SQLiteStore) query(query, t string, args ...any) (*sql.Rows, error) {
+func (sls *SQLiteStore) query(ctx context.Context, query, t string, args ...any) (*sql.Rows, error) {
 	query = fmt.Sprintf(query, t)
 
-	rows, err := sls.db.Query(query, args...)
+	rows, err := sls.db.QueryContext(ctx, query, args...)
 	if err == nil {
 		return rows, nil
 	}
 
-	_, err = sls.db.Exec(fmt.Sprintf("CREATE TABLE IF NOT EXISTS `%s` (id TEXT NOT NULL PRIMARY KEY, obj TEXT NOT NULL);", t))
+	_, err = sls.db.ExecContext(ctx, sls.tableSQL(t))
 	if err != nil {
 		return nil, err
 	}
 
-	return sls.db.Query(query, args...)
+	return sls.db.QueryContext(ctx, query, args...)
+}
+
+func (sls *SQLiteStore) tableSQL(t string) string {
+	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS `%s` (id TEXT NOT NULL PRIMARY KEY, obj TEXT NOT NULL);", t)
 }

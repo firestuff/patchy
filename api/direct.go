@@ -1,6 +1,8 @@
 package api
 
 import (
+	"context"
+
 	"github.com/firestuff/patchy/jsrest"
 	"github.com/firestuff/patchy/metadata"
 	"github.com/google/uuid"
@@ -8,7 +10,7 @@ import (
 
 // TODO: Add generic wrappers with and without names
 
-func (api *API) Create(name string, obj any) (any, error) {
+func (api *API) Create(ctx context.Context, name string, obj any) (any, error) {
 	cfg := api.registry[name]
 	if cfg == nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
@@ -16,7 +18,7 @@ func (api *API) Create(name string, obj any) (any, error) {
 
 	metadata.GetMetadata(obj).ID = uuid.NewString()
 
-	err := api.sb.Write(cfg.typeName, obj)
+	err := api.sb.Write(ctx, cfg.typeName, obj)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "write failed (%w)", err)
 	}
@@ -24,14 +26,13 @@ func (api *API) Create(name string, obj any) (any, error) {
 	return obj, nil
 }
 
-func (api *API) Get(name, id string) (any, error) {
-	// TODO: Take ctx, pass it all the way down to db.ExecContext()
+func (api *API) Get(ctx context.Context, name, id string) (any, error) {
 	cfg := api.registry[name]
 	if cfg == nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
 	}
 
-	obj, err := api.sb.Read(cfg.typeName, id, cfg.factory)
+	obj, err := api.sb.Read(ctx, cfg.typeName, id, cfg.factory)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
 	}

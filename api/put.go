@@ -11,7 +11,7 @@ func (api *API) put(cfg *config, id string, w http.ResponseWriter, r *http.Reque
 	cfg.mu.Lock()
 	defer cfg.mu.Unlock()
 
-	obj, err := api.sb.Read(cfg.typeName, id, cfg.factory)
+	obj, err := api.sb.Read(r.Context(), cfg.typeName, id, cfg.factory)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
 	}
@@ -49,7 +49,7 @@ func (api *API) put(cfg *config, id string, w http.ResponseWriter, r *http.Reque
 		return jsrest.Errorf(jsrest.ErrUnauthorized, "write check failed (%w)", err)
 	}
 
-	err = api.sb.Write(cfg.typeName, replace)
+	err = api.sb.Write(r.Context(), cfg.typeName, replace)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "write failed: %s (%w)", id, err)
 	}

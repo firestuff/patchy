@@ -15,7 +15,7 @@ func (api *API) stream(cfg *config, id string, w http.ResponseWriter, r *http.Re
 		return jsrest.Errorf(jsrest.ErrBadRequest, "stream failed (%w)", ErrStreamingNotSupported)
 	}
 
-	ch, err := api.sb.ReadStream(cfg.typeName, id, cfg.factory)
+	ch, err := api.sb.ReadStream(r.Context(), cfg.typeName, id, cfg.factory)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
 	}
