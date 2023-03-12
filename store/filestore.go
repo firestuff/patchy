@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -25,7 +26,7 @@ func NewFileStore(root string) *FileStore {
 func (s *FileStore) Close() {
 }
 
-func (s *FileStore) Write(t string, obj any) error {
+func (s *FileStore) Write(_ context.Context, t string, obj any) error {
 	id := filepath.FromSlash(metadata.GetMetadata(obj).ID)
 	dir := filepath.Join(s.root, filepath.FromSlash(t))
 
@@ -61,14 +62,14 @@ func (s *FileStore) Write(t string, obj any) error {
 	return nil
 }
 
-func (s *FileStore) Delete(t string, id string) error {
+func (s *FileStore) Delete(_ context.Context, t, id string) error {
 	id = filepath.FromSlash(id)
 	dir := filepath.Join(s.root, filepath.FromSlash(t))
 
 	return os.Remove(filepath.Join(dir, id))
 }
 
-func (s *FileStore) Read(t string, id string, factory func() any) (any, error) {
+func (s *FileStore) Read(_ context.Context, t, id string, factory func() any) (any, error) {
 	id = filepath.FromSlash(id)
 	dir := filepath.Join(s.root, filepath.FromSlash(t))
 
@@ -86,7 +87,7 @@ func (s *FileStore) Read(t string, id string, factory func() any) (any, error) {
 	return obj, nil
 }
 
-func (s *FileStore) List(t string, factory func() any) ([]any, error) {
+func (s *FileStore) List(_ context.Context, t string, factory func() any) ([]any, error) {
 	dir := filepath.Join(s.root, filepath.FromSlash(t))
 	fsys := os.DirFS(dir)
 

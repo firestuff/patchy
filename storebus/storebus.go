@@ -1,6 +1,7 @@
 package storebus
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -35,7 +36,7 @@ func (sb *StoreBus) Close() {
 	sb.store.Close()
 }
 
-func (sb *StoreBus) Write(t string, obj any) error {
+func (sb *StoreBus) Write(ctx context.Context, t string, obj any) error {
 	sb.orderMu.Lock()
 	defer sb.orderMu.Unlock()
 
@@ -43,7 +44,7 @@ func (sb *StoreBus) Write(t string, obj any) error {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "hash update failed (%w)", err)
 	}
 
-	if err := sb.store.Write(t, obj); err != nil {
+	if err := sb.store.Write(ctx, t, obj); err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "write failed (%w)", err)
 	}
 
@@ -52,11 +53,11 @@ func (sb *StoreBus) Write(t string, obj any) error {
 	return nil
 }
 
-func (sb *StoreBus) Delete(t, id string) error {
+func (sb *StoreBus) Delete(ctx context.Context, t, id string) error {
 	sb.orderMu.Lock()
 	defer sb.orderMu.Unlock()
 
-	if err := sb.store.Delete(t, id); err != nil {
+	if err := sb.store.Delete(ctx, t, id); err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "delete failed (%w)", err)
 	}
 
@@ -65,15 +66,15 @@ func (sb *StoreBus) Delete(t, id string) error {
 	return nil
 }
 
-func (sb *StoreBus) Read(t, id string, factory func() any) (any, error) {
-	return sb.store.Read(t, id, factory)
+func (sb *StoreBus) Read(ctx context.Context, t, id string, factory func() any) (any, error) {
+	return sb.store.Read(ctx, t, id, factory)
 }
 
-func (sb *StoreBus) ReadStream(t, id string, factory func() any) (<-chan any, error) {
+func (sb *StoreBus) ReadStream(ctx context.Context, t, id string, factory func() any) (<-chan any, error) {
 	sb.orderMu.RLock()
 	defer sb.orderMu.RUnlock()
 
-	initial, err := sb.store.Read(t, id, factory)
+	initial, err := sb.store.Read(ctx, t, id, factory)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read failed (%w)", err)
 	}
@@ -87,15 +88,15 @@ func (sb *StoreBus) CloseReadStream(t, id string, c <-chan any) {
 	sb.bus.UnsubscribeKey(t, id, c)
 }
 
-func (sb *StoreBus) List(t string, factory func() any) ([]any, error) {
-	return sb.store.List(t, factory)
+func (sb *StoreBus) List(ctx context.Context, t string, factory func() any) ([]any, error) {
+	return sb.store.List(ctx, t, factory)
 }
 
-func (sb *StoreBus) ListStream(t string, factory func() any) (<-chan []any, error) {
+func (sb *StoreBus) ListStream(ctx context.Context, t string, factory func() any) (<-chan []any, error) {
 	sb.orderMu.RLock()
 	defer sb.orderMu.RUnlock()
 
-	initial, err := sb.store.List(t, factory)
+	initial, err := sb.store.List(ctx, t, factory)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "list failed (%w)", err)
 	}
@@ -111,7 +112,7 @@ func (sb *StoreBus) ListStream(t string, factory func() any) (<-chan []any, erro
 
 		for range c {
 			// List() results are always at least (but not exactly) as new as the write that triggered it
-			l, err := sb.store.List(t, factory)
+			l, err := sb.store.List(ctx, t, factory)
 			if err != nil {
 				break
 			}

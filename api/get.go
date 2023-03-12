@@ -7,7 +7,7 @@ import (
 )
 
 func (api *API) get(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
-	obj, err := api.sb.Read(cfg.typeName, id, cfg.factory)
+	obj, err := api.sb.Read(r.Context(), cfg.typeName, id, cfg.factory)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
 	}

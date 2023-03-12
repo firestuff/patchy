@@ -74,7 +74,7 @@ func (p *Potency) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	key := val[1 : len(val)-1]
 
-	rd, err := p.store.Read("idempotency-key", key, func() any { return &savedResult{} })
+	rd, err := p.store.Read(r.Context(), "idempotency-key", key, func() any { return &savedResult{} })
 	if err != nil {
 		err = jsrest.Errorf(jsrest.ErrInternalServerError, "read idempotency key failed: %s (%w)", key, err)
 		jsrest.WriteError(w, err)
@@ -169,7 +169,7 @@ func (p *Potency) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Can't really do anything with the error
-	_ = p.store.Write("idempotency-key", save)
+	_ = p.store.Write(r.Context(), "idempotency-key", save)
 }
 
 func (p *Potency) lockKey(key string) error {

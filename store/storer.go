@@ -1,9 +1,11 @@
 package store
 
+import "context"
+
 type Storer interface {
 	Close()
-	Write(string, any) error
-	Delete(string, string) error
-	Read(string, string, func() any) (any, error)
-	List(string, func() any) ([]any, error)
+	Write(context.Context, string, any) error
+	Delete(context.Context, string, string) error
+	Read(context.Context, string, string, func() any) (any, error)
+	List(context.Context, string, func() any) ([]any, error)
 }
