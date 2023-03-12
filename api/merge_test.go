@@ -1,5 +1,5 @@
 //nolint:testpackage
-package patchy
+package api
 
 import (
 	"testing"

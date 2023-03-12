@@ -1,4 +1,4 @@
-package patchy_test
+package api_test
 
 import (
 	"bufio"

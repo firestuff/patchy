@@ -1,4 +1,4 @@
-package patchy
+package api
 
 import (
 	"net/http"
@@ -7,7 +7,7 @@ import (
 	"github.com/firestuff/patchy/metadata"
 )
 
-func (api *API) put(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
+func (api *API) patch(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
 	cfg.mu.Lock()
 	defer cfg.mu.Unlock()
 
@@ -30,36 +30,36 @@ func (api *API) put(cfg *config, id string, w http.ResponseWriter, r *http.Reque
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "clone failed (%w)", err)
 	}
 
-	replace := cfg.factory()
+	patch := cfg.factory()
 
-	err = jsrest.Read(r, replace)
+	err = jsrest.Read(r, patch)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read request failed (%w)", err)
 	}
 
 	// Metadata is immutable or server-owned
-	metadata.ClearMetadata(replace)
-	objMD := metadata.GetMetadata(obj)
-	replaceMD := metadata.GetMetadata(replace)
-	replaceMD.ID = id
-	replaceMD.Generation = objMD.Generation + 1
+	metadata.ClearMetadata(patch)
 
-	replace, err = cfg.checkWrite(replace, prev, r)
+	merge(obj, patch)
+
+	metadata.GetMetadata(obj).Generation++
+
+	obj, err = cfg.checkWrite(obj, prev, r)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrUnauthorized, "write check failed (%w)", err)
 	}
 
-	err = api.sb.Write(cfg.typeName, replace)
+	err = api.sb.Write(cfg.typeName, obj)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "write failed: %s (%w)", id, err)
 	}
 
-	replace, err = cfg.checkRead(replace, r)
+	obj, err = cfg.checkRead(obj, r)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrUnauthorized, "read check failed (%w)", err)
 	}
 
-	err = jsrest.Write(w, replace)
+	err = jsrest.Write(w, obj)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "write response failed (%w)", err)
 	}

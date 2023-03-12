@@ -1,4 +1,4 @@
-package patchy_test
+package api_test
 
 import (
 	"bufio"
@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestStream(t *testing.T) {
+func TestDELETE(t *testing.T) {
 	t.Parallel()
 
 	ta := newTestAPI(t)
@@ -43,26 +43,25 @@ func TestStream(t *testing.T) {
 	require.Equal(t, "initial", eventType)
 	require.Equal(t, "foo", initial.Text)
 
-	// Heartbeat (after 5 seconds)
-	eventType, err = readEvent(scan, nil)
-	require.Nil(t, err)
-	require.Equal(t, "heartbeat", eventType)
-
-	updated := &testType{}
-
-	// Round trip PATCH -> SSE
 	resp, err = ta.r().
-		SetBody(&testType{
-			Text: "bar",
-		}).
-		SetResult(updated).
 		SetPathParam("id", created.ID).
-		Patch("testtype/{id}")
+		Delete("testtype/{id}")
 	require.Nil(t, err)
 	require.False(t, resp.IsError())
 
-	eventType, err = readEvent(scan, updated)
+	eventType, err = readEvent(scan, nil)
 	require.Nil(t, err)
-	require.Equal(t, "update", eventType)
-	require.Equal(t, "bar", updated.Text)
+	require.Equal(t, "delete", eventType)
+
+	body.Close()
+
+	read := &testType{}
+
+	resp, err = ta.r().
+		SetResult(read).
+		SetPathParam("id", created.ID).
+		Get("testtype/{id}")
+	require.Nil(t, err)
+	require.True(t, resp.IsError())
+	require.Equal(t, 404, resp.StatusCode())
 }

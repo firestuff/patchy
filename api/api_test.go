@@ -1,4 +1,4 @@
-package patchy_test
+package api_test
 
 import (
 	"bufio"
@@ -14,14 +14,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/firestuff/patchy"
+	"github.com/firestuff/patchy/api"
 	"github.com/go-resty/resty/v2"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
 
 type testAPI struct {
-	api *patchy.API
+	api *api.API
 	srv *http.Server
 	rst *resty.Client
 }
@@ -29,14 +29,14 @@ type testAPI struct {
 func newTestAPI(t *testing.T) *testAPI {
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uuid.NewString())
 
-	api, err := patchy.NewSQLiteAPI(dbname)
+	a, err := api.NewSQLiteAPI(dbname)
 	require.Nil(t, err)
 
-	patchy.Register[testType](api)
+	api.Register[testType](a)
 
 	mux := http.NewServeMux()
 	// Test that prefix stripping works
-	mux.Handle("/api/", http.StripPrefix("/api", api))
+	mux.Handle("/api/", http.StripPrefix("/api", a))
 
 	listener, err := net.Listen("tcp", "[::]:0")
 	require.Nil(t, err)
@@ -57,7 +57,7 @@ func newTestAPI(t *testing.T) *testAPI {
 		SetBaseURL(baseURL)
 
 	return &testAPI{
-		api: api,
+		api: a,
 		srv: srv,
 		rst: rst,
 	}
@@ -106,7 +106,7 @@ func readEvent(scan *bufio.Scanner, out any) (string, error) {
 }
 
 type testType struct {
-	patchy.Metadata
+	api.Metadata
 	Text string `json:"text"`
 	Num  int64  `json:"num"`
 }
@@ -119,17 +119,17 @@ func TestCheckSafe(t *testing.T) {
 
 	defer os.RemoveAll(dir)
 
-	api, err := patchy.NewFileStoreAPI(dir)
+	a, err := api.NewFileStoreAPI(dir)
 	require.Nil(t, err)
 
-	require.Nil(t, api.IsSafe())
+	require.Nil(t, a.IsSafe())
 
-	patchy.Register[testType](api)
+	api.Register[testType](a)
 
-	require.ErrorIs(t, api.IsSafe(), patchy.ErrMissingAuthCheck)
+	require.ErrorIs(t, a.IsSafe(), api.ErrMissingAuthCheck)
 
 	require.Panics(t, func() {
-		api.CheckSafe()
+		a.CheckSafe()
 	})
 }
 

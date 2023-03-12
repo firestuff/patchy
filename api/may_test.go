@@ -1,5 +1,5 @@
 //nolint:goerr113
-package patchy_test
+package api_test
 
 import (
 	"bufio"
@@ -7,12 +7,12 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/firestuff/patchy"
+	"github.com/firestuff/patchy/api"
 	"github.com/stretchr/testify/require"
 )
 
 type mayType struct {
-	patchy.Metadata
+	api.Metadata
 	Text1 string
 }
 
@@ -48,7 +48,7 @@ func TestMayWrite(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	patchy.Register[mayType](ta.api)
+	api.Register[mayType](ta.api)
 
 	created := &mayType{}
 
@@ -130,7 +130,7 @@ func TestMayRead(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	patchy.Register[mayType](ta.api)
+	api.Register[mayType](ta.api)
 
 	created := &mayType{}
 
@@ -238,7 +238,7 @@ func TestMayWriteMutate(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	patchy.Register[mayType](ta.api)
+	api.Register[mayType](ta.api)
 
 	create := &mayType{}
 
@@ -308,7 +308,7 @@ func TestMayReadMutate(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	patchy.Register[mayType](ta.api)
+	api.Register[mayType](ta.api)
 
 	create := &mayType{}
 
