@@ -4,26 +4,20 @@ import (
 	"context"
 
 	"github.com/firestuff/patchy/jsrest"
-	"github.com/firestuff/patchy/metadata"
-	"github.com/google/uuid"
 )
 
 func CreateName[T any](ctx context.Context, api *API, name string, obj *T) (*T, error) {
-	// TODO: Unify into createInt()
-
 	cfg := api.registry[name]
 	if cfg == nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
 	}
 
-	metadata.GetMetadata(obj).ID = uuid.NewString()
-
-	err := api.sb.Write(ctx, cfg.typeName, obj)
+	created, err := api.createInt(ctx, cfg, nil, obj)
 	if err != nil {
-		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "write failed (%w)", err)
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "create failed (%w)", err)
 	}
 
-	return obj, nil
+	return created.(*T), nil
 }
 
 func Create[T any](ctx context.Context, api *API, obj *T) (*T, error) {
@@ -31,16 +25,14 @@ func Create[T any](ctx context.Context, api *API, obj *T) (*T, error) {
 }
 
 func GetName[T any](ctx context.Context, api *API, name, id string) (*T, error) {
-	// TODO: Unify into getInt()
-
 	cfg := api.registry[name]
 	if cfg == nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
 	}
 
-	obj, err := api.sb.Read(ctx, cfg.typeName, id, cfg.factory)
+	obj, err := api.getInt(ctx, cfg, nil, id)
 	if err != nil {
-		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "get failed (%w)", err)
 	}
 
 	return obj.(*T), nil
@@ -51,21 +43,14 @@ func Get[T any](ctx context.Context, api *API, id string) (*T, error) {
 }
 
 func ListName[T any](ctx context.Context, api *API, name string, opts *ListOpts) ([]*T, error) {
-	// TODO: Unify into listInt()
-
 	cfg := api.registry[name]
 	if cfg == nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
 	}
 
-	list, err := api.sb.List(ctx, cfg.typeName, cfg.factory)
+	list, err := api.listInt(ctx, cfg, nil, opts)
 	if err != nil {
-		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
-	}
-
-	list, err = filterList(cfg, nil, opts, list)
-	if err != nil {
-		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "filter list failed (%w)", err)
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "list failed (%w)", err)
 	}
 
 	ret := []*T{}
