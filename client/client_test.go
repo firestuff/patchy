@@ -52,7 +52,7 @@ func TestClient(t *testing.T) {
 
 	c := client.NewClient(baseURL)
 
-	create, err := client.Create[testType](ctx, c, &testType{Text: client.P("foo")})
+	create, err := client.Create(ctx, c, &testType{Text: client.P("foo")})
 	require.Nil(t, err)
 	require.Equal(t, "foo", *create.Text)
 
@@ -60,7 +60,7 @@ func TestClient(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, "foo", *get.Text)
 
-	update, err := client.Update[testType](ctx, c, create.ID, &testType{Text: client.P("bar")})
+	update, err := client.Update(ctx, c, create.ID, &testType{Text: client.P("bar")})
 	require.Nil(t, err)
 	require.Equal(t, "bar", *update.Text)
 
