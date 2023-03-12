@@ -23,6 +23,10 @@ var (
 )
 
 func ifMatch(obj any, r *http.Request) error {
+	if r == nil {
+		return nil
+	}
+
 	match := r.Header.Get("If-Match")
 	if match == "" {
 		return nil
