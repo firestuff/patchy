@@ -7,9 +7,6 @@ import (
 )
 
 func (api *API) patch(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
-	cfg.mu.Lock()
-	defer cfg.mu.Unlock()
-
 	patch := cfg.factory()
 
 	err := jsrest.Read(r, patch)

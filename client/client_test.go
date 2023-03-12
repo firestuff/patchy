@@ -16,7 +16,8 @@ import (
 
 type testType struct {
 	api.Metadata
-	Text *string
+	Text1 *string
+	Text2 *string
 }
 
 func TestClient(t *testing.T) {
@@ -52,24 +53,39 @@ func TestClient(t *testing.T) {
 
 	c := client.NewClient(baseURL)
 
-	create, err := client.Create(ctx, c, &testType{Text: client.P("foo")})
+	create, err := client.Create(ctx, c, &testType{
+		Text1: client.P("foo"),
+		Text2: client.P("zig"),
+	})
 	require.Nil(t, err)
-	require.Equal(t, "foo", *create.Text)
+	require.Equal(t, "foo", *create.Text1)
 
 	get, err := client.Get[testType](ctx, c, create.ID)
 	require.Nil(t, err)
-	require.Equal(t, "foo", *get.Text)
+	require.Equal(t, create.ID, get.ID)
+	require.Equal(t, "foo", *get.Text1)
 
-	update, err := client.Update(ctx, c, create.ID, &testType{Text: client.P("bar")})
+	update, err := client.Update(ctx, c, create.ID, &testType{Text1: client.P("bar")})
 	require.Nil(t, err)
-	require.Equal(t, "bar", *update.Text)
+	require.Equal(t, create.ID, update.ID)
+	require.Equal(t, "bar", *update.Text1)
+	require.Equal(t, "zig", *update.Text2)
 
 	list, err := client.List[testType](ctx, c, nil)
 	require.Nil(t, err)
 	require.Len(t, list, 1)
-	require.Equal(t, "bar", *list[0].Text)
+	require.Equal(t, create.ID, list[0].ID)
+	require.Equal(t, "bar", *list[0].Text1)
+
+	replace, err := client.Replace(ctx, c, create.ID, &testType{Text1: client.P("baz")})
+	require.Nil(t, err)
+	require.Equal(t, create.ID, replace.ID)
+	require.Equal(t, "baz", *replace.Text1)
+	require.Nil(t, replace.Text2)
 
 	find, err := client.Find[testType](ctx, c, create.ID[:4])
 	require.Nil(t, err)
-	require.Equal(t, "bar", *find.Text)
+	require.Equal(t, create.ID, find.ID)
+	require.Equal(t, "baz", *find.Text1)
+	require.Nil(t, find.Text2)
 }

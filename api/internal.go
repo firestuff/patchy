@@ -68,7 +68,58 @@ func (api *API) listInt(ctx context.Context, cfg *config, r *http.Request, opts 
 	return list, nil
 }
 
+func (api *API) replaceInt(ctx context.Context, cfg *config, r *http.Request, id string, replace any) (any, error) {
+	cfg.mu.Lock()
+	defer cfg.mu.Unlock()
+
+	obj, err := api.sb.Read(r.Context(), cfg.typeName, id, cfg.factory)
+	if err != nil {
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
+	}
+
+	if obj == nil {
+		return nil, jsrest.Errorf(jsrest.ErrNotFound, "%s", id)
+	}
+
+	err = ifMatch(obj, r)
+	if err != nil {
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "match failed (%w)", err)
+	}
+
+	prev, err := cfg.clone(obj)
+	if err != nil {
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "clone failed (%w)", err)
+	}
+
+	// Metadata is immutable or server-owned
+	metadata.ClearMetadata(replace)
+	objMD := metadata.GetMetadata(obj)
+	replaceMD := metadata.GetMetadata(replace)
+	replaceMD.ID = id
+	replaceMD.Generation = objMD.Generation + 1
+
+	replace, err = cfg.checkWrite(replace, prev, r)
+	if err != nil {
+		return nil, jsrest.Errorf(jsrest.ErrUnauthorized, "write check failed (%w)", err)
+	}
+
+	err = api.sb.Write(r.Context(), cfg.typeName, replace)
+	if err != nil {
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "write failed: %s (%w)", id, err)
+	}
+
+	replace, err = cfg.checkRead(replace, r)
+	if err != nil {
+		return nil, jsrest.Errorf(jsrest.ErrUnauthorized, "read check failed (%w)", err)
+	}
+
+	return replace, nil
+}
+
 func (api *API) updateInt(ctx context.Context, cfg *config, r *http.Request, id string, patch any) (any, error) {
+	cfg.mu.Lock()
+	defer cfg.mu.Unlock()
+
 	// Metadata is immutable or server-owned
 	metadata.ClearMetadata(patch)
 

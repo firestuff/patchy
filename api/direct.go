@@ -97,6 +97,24 @@ func List[T any](ctx context.Context, api *API, opts *ListOpts) ([]*T, error) {
 	return ListName[T](ctx, api, objName(new(T)), opts)
 }
 
+func ReplaceName[T any](ctx context.Context, api *API, name, id string, obj *T) (*T, error) {
+	cfg := api.registry[name]
+	if cfg == nil {
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
+	}
+
+	replaced, err := api.replaceInt(ctx, cfg, nil, id, obj)
+	if err != nil {
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "replace failed (%w)", err)
+	}
+
+	return replaced.(*T), nil
+}
+
+func Replace[T any](ctx context.Context, api *API, id string, obj *T) (*T, error) {
+	return ReplaceName[T](ctx, api, objName(obj), id, obj)
+}
+
 func UpdateName[T any](ctx context.Context, api *API, name, id string, obj *T) (*T, error) {
 	cfg := api.registry[name]
 	if cfg == nil {
