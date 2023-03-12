@@ -62,9 +62,8 @@ func NewAPI(st store.Storer) (*API, error) {
 }
 
 func Register[T any](api *API) {
-	obj := new(T)
-	t := reflect.TypeOf(*obj)
-	RegisterName[T](api, strings.ToLower(t.Name()))
+	name := strings.ToLower(reflect.TypeOf(*new(T)).Name())
+	RegisterName[T](api, name)
 }
 
 func RegisterName[T any](api *API, typeName string) {

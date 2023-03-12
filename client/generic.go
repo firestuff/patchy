@@ -140,7 +140,6 @@ func Update[T any](ctx context.Context, c *Client, id string, obj *T) (*T, error
 	return UpdateName[T](ctx, c, objName(obj), id, obj)
 }
 
-func objName(obj any) string {
-	// TODO: Try to take obj *any
-	return strings.ToLower(reflect.Indirect(reflect.ValueOf(obj)).Type().Name())
+func objName[T any](obj *T) string {
+	return strings.ToLower(reflect.TypeOf(*obj).Name())
 }
