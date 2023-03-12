@@ -30,6 +30,29 @@ func (api *API) createInt(ctx context.Context, cfg *config, r *http.Request, obj
 	return obj, nil
 }
 
+func (api *API) deleteInt(ctx context.Context, cfg *config, r *http.Request, id string) error {
+	obj, err := api.sb.Read(ctx, cfg.typeName, id, cfg.factory)
+	if err != nil {
+		return jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
+	}
+
+	if obj == nil {
+		return jsrest.Errorf(jsrest.ErrNotFound, "%s", id)
+	}
+
+	_, err = cfg.checkWrite(nil, obj, api, r)
+	if err != nil {
+		return jsrest.Errorf(jsrest.ErrUnauthorized, "write check failed (%w)", err)
+	}
+
+	err = api.sb.Delete(ctx, cfg.typeName, id)
+	if err != nil {
+		return jsrest.Errorf(jsrest.ErrInternalServerError, "delete failed: %s (%w)", id, err)
+	}
+
+	return nil
+}
+
 func (api *API) getInt(ctx context.Context, cfg *config, r *http.Request, id string) (any, error) {
 	obj, err := api.sb.Read(ctx, cfg.typeName, id, cfg.factory)
 	if err != nil {

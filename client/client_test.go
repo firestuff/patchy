@@ -88,4 +88,11 @@ func TestClient(t *testing.T) {
 	require.Equal(t, create.ID, find.ID)
 	require.Equal(t, "baz", *find.Text1)
 	require.Nil(t, find.Text2)
+
+	err = client.Delete[testType](ctx, c, create.ID)
+	require.Nil(t, err)
+
+	list, err = client.List[testType](ctx, c, nil)
+	require.Nil(t, err)
+	require.Len(t, list, 0)
 }

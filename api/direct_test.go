@@ -40,4 +40,11 @@ func TestDirect(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, create.ID, find.ID)
 	require.Equal(t, "bar", find.Text)
+
+	err = api.Delete[testType](ctx, ta.api, create.ID)
+	require.Nil(t, err)
+
+	list, err = api.List[testType](ctx, ta.api, nil)
+	require.Nil(t, err)
+	require.Len(t, list, 0)
 }
