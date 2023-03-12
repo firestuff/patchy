@@ -12,7 +12,10 @@ type (
 	ListOptions = client.ListOptions
 )
 
-var NewClient = client.NewClient
+var (
+	NewClient = client.NewClient
+	P         = client.P
+)
 
 func CreateName[T any](ctx context.Context, c *Client, name string, obj *T) (*T, error) {
 	return client.CreateName[T](ctx, c, name, obj)

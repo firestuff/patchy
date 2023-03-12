@@ -16,7 +16,7 @@ import (
 
 type testType struct {
 	api.Metadata
-	Text string
+	Text *string
 }
 
 func TestClient(t *testing.T) {
@@ -52,24 +52,24 @@ func TestClient(t *testing.T) {
 
 	c := client.NewClient(baseURL)
 
-	create, err := client.Create[testType](ctx, c, &testType{Text: "foo"})
+	create, err := client.Create[testType](ctx, c, &testType{Text: client.P("foo")})
 	require.Nil(t, err)
-	require.Equal(t, "foo", create.Text)
+	require.Equal(t, "foo", *create.Text)
 
 	get, err := client.Get[testType](ctx, c, create.ID)
 	require.Nil(t, err)
-	require.Equal(t, "foo", get.Text)
+	require.Equal(t, "foo", *get.Text)
 
-	update, err := client.Update[testType](ctx, c, create.ID, &testType{Text: "bar"})
+	update, err := client.Update[testType](ctx, c, create.ID, &testType{Text: client.P("bar")})
 	require.Nil(t, err)
-	require.Equal(t, "bar", update.Text)
+	require.Equal(t, "bar", *update.Text)
 
 	list, err := client.List[testType](ctx, c, nil)
 	require.Nil(t, err)
 	require.Len(t, list, 1)
-	require.Equal(t, "bar", list[0].Text)
+	require.Equal(t, "bar", *list[0].Text)
 
 	find, err := client.Find[testType](ctx, c, create.ID[:4])
 	require.Nil(t, err)
-	require.Equal(t, "bar", find.Text)
+	require.Equal(t, "bar", *find.Text)
 }
