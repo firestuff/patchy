@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/firestuff/patchy/api"
 	"github.com/stretchr/testify/require"
 )
 
@@ -15,11 +16,11 @@ func TestDirect(t *testing.T) {
 
 	ctx := context.Background()
 
-	create, err := ta.api.Create(ctx, "testtype", &testType{Text: "foo"})
+	create, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
 	require.Nil(t, err)
-	require.Equal(t, "foo", create.(*testType).Text)
+	require.Equal(t, "foo", create.Text)
 
-	get, err := ta.api.Get(ctx, "testtype", create.(*testType).ID)
+	get, err := api.Get[testType](ctx, ta.api, create.ID)
 	require.Nil(t, err)
-	require.Equal(t, "foo", get.(*testType).Text)
+	require.Equal(t, "foo", get.Text)
 }

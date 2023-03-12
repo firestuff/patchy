@@ -8,9 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// TODO: Add generic wrappers with and without names
-
-func (api *API) Create(ctx context.Context, name string, obj any) (any, error) {
+func CreateName[T any](ctx context.Context, api *API, name string, obj *T) (*T, error) {
 	cfg := api.registry[name]
 	if cfg == nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
@@ -26,7 +24,11 @@ func (api *API) Create(ctx context.Context, name string, obj any) (any, error) {
 	return obj, nil
 }
 
-func (api *API) Get(ctx context.Context, name, id string) (any, error) {
+func Create[T any](ctx context.Context, api *API, obj *T) (*T, error) {
+	return CreateName[T](ctx, api, objName(obj), obj)
+}
+
+func GetName[T any](ctx context.Context, api *API, name, id string) (*T, error) {
 	cfg := api.registry[name]
 	if cfg == nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
@@ -37,7 +39,11 @@ func (api *API) Get(ctx context.Context, name, id string) (any, error) {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
 	}
 
-	return obj, nil
+	return obj.(*T), nil
+}
+
+func Get[T any](ctx context.Context, api *API, id string) (*T, error) {
+	return GetName[T](ctx, api, objName(new(T)), id)
 }
 
 /*
