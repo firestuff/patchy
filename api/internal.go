@@ -121,6 +121,7 @@ func (api *API) replaceInt(ctx context.Context, cfg *config, r *http.Request, id
 	replaceMD.ID = id
 	replaceMD.Generation = objMD.Generation + 1
 
+	// TODO: Calling checkRead/checkWrite while holding the lock causes deadlocks
 	replace, err = cfg.checkWrite(replace, prev, api, r)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrUnauthorized, "write check failed (%w)", err)
@@ -168,6 +169,7 @@ func (api *API) updateInt(ctx context.Context, cfg *config, r *http.Request, id 
 	merge(obj, patch)
 	metadata.GetMetadata(obj).Generation++
 
+	// TODO: Calling checkRead/checkWrite while holding the lock causes deadlocks
 	obj, err = cfg.checkWrite(obj, prev, api, r)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrUnauthorized, "write check failed (%w)", err)
