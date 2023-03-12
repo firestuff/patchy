@@ -21,7 +21,15 @@ type config struct {
 	mayRead  func(any, *API, *http.Request) error
 	mayWrite func(any, any, *API, *http.Request) error
 
-	mu sync.Mutex
+	// Per-key read/modify/write (update and replace) operation locking
+	// This ensures monotonic generation numbers
+	mu    sync.Mutex
+	locks map[string]*lock
+}
+
+type lock struct {
+	mu  sync.Mutex
+	ref int
 }
 
 type mayRead interface {
@@ -36,6 +44,7 @@ func newConfig[T any](typeName string) *config {
 	cfg := &config{
 		typeName: typeName,
 		factory:  func() any { return new(T) },
+		locks:    map[string]*lock{},
 	}
 
 	typ := cfg.factory()
@@ -124,6 +133,35 @@ func (cfg *config) clone(src any) (any, error) {
 	}
 
 	return dst, nil
+}
+
+func (cfg *config) lock(id string) {
+	cfg.mu.Lock()
+
+	entry := cfg.locks[id]
+	if entry == nil {
+		entry = &lock{}
+		cfg.locks[id] = entry
+	}
+	entry.ref++
+
+	cfg.mu.Unlock()
+
+	entry.mu.Lock()
+}
+
+func (cfg *config) unlock(id string) {
+	cfg.mu.Lock()
+
+	entry := cfg.locks[id]
+	entry.ref--
+	if entry.ref == 0 {
+		delete(cfg.locks, id)
+	}
+
+	cfg.mu.Unlock()
+
+	entry.mu.Unlock()
 }
 
 func convert[T any](obj any) *T {

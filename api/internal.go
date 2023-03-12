@@ -92,8 +92,8 @@ func (api *API) listInt(ctx context.Context, cfg *config, r *http.Request, opts 
 }
 
 func (api *API) replaceInt(ctx context.Context, cfg *config, r *http.Request, id string, replace any) (any, error) {
-	cfg.mu.Lock()
-	defer cfg.mu.Unlock()
+	cfg.lock(id)
+	defer cfg.unlock(id)
 
 	obj, err := api.sb.Read(r.Context(), cfg.typeName, id, cfg.factory)
 	if err != nil {
@@ -121,7 +121,6 @@ func (api *API) replaceInt(ctx context.Context, cfg *config, r *http.Request, id
 	replaceMD.ID = id
 	replaceMD.Generation = objMD.Generation + 1
 
-	// TODO: Calling checkRead/checkWrite while holding the lock causes deadlocks
 	replace, err = cfg.checkWrite(replace, prev, api, r)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrUnauthorized, "write check failed (%w)", err)
@@ -141,8 +140,8 @@ func (api *API) replaceInt(ctx context.Context, cfg *config, r *http.Request, id
 }
 
 func (api *API) updateInt(ctx context.Context, cfg *config, r *http.Request, id string, patch any) (any, error) {
-	cfg.mu.Lock()
-	defer cfg.mu.Unlock()
+	cfg.lock(id)
+	defer cfg.unlock(id)
 
 	// Metadata is immutable or server-owned
 	metadata.ClearMetadata(patch)
@@ -169,7 +168,6 @@ func (api *API) updateInt(ctx context.Context, cfg *config, r *http.Request, id 
 	merge(obj, patch)
 	metadata.GetMetadata(obj).Generation++
 
-	// TODO: Calling checkRead/checkWrite while holding the lock causes deadlocks
 	obj, err = cfg.checkWrite(obj, prev, api, r)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrUnauthorized, "write check failed (%w)", err)
