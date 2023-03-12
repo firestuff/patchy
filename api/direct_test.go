@@ -22,5 +22,22 @@ func TestDirect(t *testing.T) {
 
 	get, err := api.Get[testType](ctx, ta.api, create.ID)
 	require.Nil(t, err)
+	require.Equal(t, create.ID, get.ID)
 	require.Equal(t, "foo", get.Text)
+
+	update, err := api.Update(ctx, ta.api, create.ID, &testType{Text: "bar"})
+	require.Nil(t, err)
+	require.Equal(t, create.ID, update.ID)
+	require.Equal(t, "bar", update.Text)
+
+	list, err := api.List[testType](ctx, ta.api, nil)
+	require.Nil(t, err)
+	require.Len(t, list, 1)
+	require.Equal(t, create.ID, list[0].ID)
+	require.Equal(t, "bar", list[0].Text)
+
+	find, err := api.Find[testType](ctx, ta.api, create.ID[:4])
+	require.Nil(t, err)
+	require.Equal(t, create.ID, find.ID)
+	require.Equal(t, "bar", find.Text)
 }
