@@ -18,16 +18,9 @@ func (api *API) getList(cfg *config, w http.ResponseWriter, r *http.Request) err
 		return jsrest.Errorf(jsrest.ErrBadRequest, "parse list parameters failed (%w)", err)
 	}
 
-	// TODO: Add query condition pushdown
-
-	list, err := api.sb.List(r.Context(), cfg.typeName, cfg.factory)
+	list, err := api.listInt(r.Context(), cfg, r, opts)
 	if err != nil {
-		return jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
-	}
-
-	list, err = filterList(cfg, r, opts, list)
-	if err != nil {
-		return jsrest.Errorf(jsrest.ErrInternalServerError, "filter list failed (%w)", err)
+		return jsrest.Errorf(jsrest.ErrInternalServerError, "list failed (%w)", err)
 	}
 
 	err = jsrest.WriteList(w, list)

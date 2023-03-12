@@ -7,18 +7,13 @@ import (
 )
 
 func (api *API) get(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
-	obj, err := api.sb.Read(r.Context(), cfg.typeName, id, cfg.factory)
+	obj, err := api.getInt(r.Context(), cfg, r, id)
 	if err != nil {
-		return jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
+		return jsrest.Errorf(jsrest.ErrInternalServerError, "get failed (%w)", err)
 	}
 
 	if obj == nil {
 		return jsrest.Errorf(jsrest.ErrNotFound, "%s", id)
-	}
-
-	obj, err = cfg.checkRead(obj, r)
-	if err != nil {
-		return jsrest.Errorf(jsrest.ErrUnauthorized, "read check failed (%w)", err)
 	}
 
 	err = jsrest.Write(w, obj)
