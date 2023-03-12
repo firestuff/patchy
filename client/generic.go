@@ -33,8 +33,8 @@ func Create[T any](ctx context.Context, c *Client, obj *T) (*T, error) {
 }
 
 func FindName[T any](ctx context.Context, c *Client, name, shortID string) (*T, error) {
-	listOpts := &ListOptions{
-		Matchers: []*Matcher{
+	listOpts := &ListOpts{
+		Filters: []*Filter{
 			{
 				Path:  "id",
 				Op:    "hp",
@@ -87,7 +87,7 @@ func Get[T any](ctx context.Context, c *Client, id string) (*T, error) {
 	return GetName[T](ctx, c, objName(new(T)), id)
 }
 
-func ListName[T any](ctx context.Context, c *Client, name string, opts *ListOptions) ([]*T, error) {
+func ListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts) ([]*T, error) {
 	objs := []*T{}
 
 	r := c.rst.R().
@@ -96,7 +96,7 @@ func ListName[T any](ctx context.Context, c *Client, name string, opts *ListOpti
 		SetResult(&objs)
 
 	if opts != nil {
-		opts.Apply(r)
+		applyListOpts(opts, r)
 	}
 
 	resp, err := r.Get("{name}")
@@ -111,7 +111,7 @@ func ListName[T any](ctx context.Context, c *Client, name string, opts *ListOpti
 	return objs, nil
 }
 
-func List[T any](ctx context.Context, c *Client, opts *ListOptions) ([]*T, error) {
+func List[T any](ctx context.Context, c *Client, opts *ListOpts) ([]*T, error) {
 	return ListName[T](ctx, c, objName(new(T)), opts)
 }
 

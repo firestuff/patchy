@@ -25,7 +25,7 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 	stream := params.Get("_stream")
 	params.Del("_stream")
 
-	parsed, err := parseListParams(params)
+	opts, err := parseListOpts(params)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrBadRequest, "parse list parameters failed (%w)", err)
 	}
@@ -37,14 +37,14 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 	case "":
 		fallthrough
 	case "full":
-		err = api.streamListFull(cfg, w, r, parsed)
+		err = api.streamListFull(cfg, w, r, opts)
 		if err != nil {
 			writeEvent(w, "error", jsrest.ToJSONError(err))
 		}
 		return nil
 
 	case "diff":
-		err = api.streamListDiff(cfg, w, r, parsed)
+		err = api.streamListDiff(cfg, w, r, opts)
 		if err != nil {
 			writeEvent(w, "error", jsrest.ToJSONError(err))
 		}
@@ -55,7 +55,7 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Request, params *listParams) error {
+func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Request, opts *ListOpts) error {
 	// TODO: Add query condition pushdown
 
 	ch, err := api.sb.ListStream(r.Context(), cfg.typeName, cfg.factory)
@@ -78,7 +78,7 @@ func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Reque
 			}
 
 		case list := <-ch:
-			list, err = filterList(cfg, r, params, list)
+			list, err = filterList(cfg, r, opts, list)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "filter list failed (%w)", err)
 			}
@@ -91,7 +91,7 @@ func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Reque
 	}
 }
 
-func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Request, params *listParams) error {
+func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Request, opts *ListOpts) error {
 	// TODO: Add query condition pushdown
 
 	ch, err := api.sb.ListStream(r.Context(), cfg.typeName, cfg.factory)
@@ -118,7 +118,7 @@ func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Reque
 			return nil
 
 		case list := <-ch:
-			list, err := filterList(cfg, r, params, list)
+			list, err := filterList(cfg, r, opts, list)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "filter list failed (%w)", err)
 			}
