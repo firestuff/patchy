@@ -115,6 +115,31 @@ func List[T any](ctx context.Context, c *Client, opts *ListOpts) ([]*T, error) {
 	return ListName[T](ctx, c, objName(new(T)), opts)
 }
 
+func ReplaceName[T any](ctx context.Context, c *Client, name, id string, obj *T) (*T, error) {
+	replaced := new(T)
+
+	resp, err := c.rst.R().
+		SetContext(ctx).
+		SetPathParam("name", name).
+		SetPathParam("id", id).
+		SetBody(obj).
+		SetResult(replaced).
+		Put("{name}/{id}")
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.IsError() {
+		return nil, errors.New(resp.String())
+	}
+
+	return replaced, nil
+}
+
+func Replace[T any](ctx context.Context, c *Client, id string, obj *T) (*T, error) {
+	return ReplaceName[T](ctx, c, objName(obj), id, obj)
+}
+
 func UpdateName[T any](ctx context.Context, c *Client, name, id string, obj *T) (*T, error) {
 	updated := new(T)
 
@@ -139,8 +164,6 @@ func UpdateName[T any](ctx context.Context, c *Client, name, id string, obj *T) 
 func Update[T any](ctx context.Context, c *Client, id string, obj *T) (*T, error) {
 	return UpdateName[T](ctx, c, objName(obj), id, obj)
 }
-
-// TODO: Add Replace()
 
 func objName[T any](obj *T) string {
 	return strings.ToLower(reflect.TypeOf(*obj).Name())

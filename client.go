@@ -47,6 +47,14 @@ func List[T any](ctx context.Context, c *Client, opts *ListOpts) ([]*T, error) {
 	return client.List[T](ctx, c, opts)
 }
 
+func ReplaceName[T any](ctx context.Context, c *Client, name, id string, obj *T) (*T, error) {
+	return client.ReplaceName[T](ctx, c, name, id, obj)
+}
+
+func Replace[T any](ctx context.Context, c *Client, id string, obj *T) (*T, error) {
+	return client.Replace[T](ctx, c, id, obj)
+}
+
 func UpdateName[T any](ctx context.Context, c *Client, name, id string, obj *T) (*T, error) {
 	return client.UpdateName[T](ctx, c, name, id, obj)
 }
