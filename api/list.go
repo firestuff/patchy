@@ -14,18 +14,18 @@ import (
 	"github.com/firestuff/patchy/path"
 )
 
-type listParams struct {
-	limit   int64
-	offset  int64
-	after   string
-	sorts   []string
-	filters []filter
+type ListOpts struct {
+	Limit   int64
+	Offset  int64
+	After   string
+	Sorts   []string
+	Filters []*Filter
 }
 
-type filter struct {
-	path string
-	op   string
-	val  string
+type Filter struct {
+	Path  string
+	Op    string
+	Value string
 }
 
 var (
@@ -43,17 +43,16 @@ var (
 	ErrInvalidSort     = errors.New("invalid _sort")
 )
 
-func parseListParams(params url.Values) (*listParams, error) {
-	ret := &listParams{
-		limit:   math.MaxInt64,
-		sorts:   []string{},
-		filters: []filter{},
+func parseListOpts(params url.Values) (*ListOpts, error) {
+	ret := &ListOpts{
+		Sorts:   []string{},
+		Filters: []*Filter{},
 	}
 
 	var err error
 
 	if limit := params.Get("_limit"); limit != "" {
-		ret.limit, err = strconv.ParseInt(limit, 10, 64)
+		ret.Limit, err = strconv.ParseInt(limit, 10, 64)
 		if err != nil {
 			return nil, jsrest.Errorf(jsrest.ErrBadRequest, "parse _limit value failed: %s (%w)", limit, err)
 		}
@@ -62,7 +61,7 @@ func parseListParams(params url.Values) (*listParams, error) {
 	}
 
 	if offset := params.Get("_offset"); offset != "" {
-		ret.offset, err = strconv.ParseInt(offset, 10, 64)
+		ret.Offset, err = strconv.ParseInt(offset, 10, 64)
 		if err != nil {
 			return nil, jsrest.Errorf(jsrest.ErrBadRequest, "parse _offset value failed: %s (%w)", offset, err)
 		}
@@ -70,7 +69,7 @@ func parseListParams(params url.Values) (*listParams, error) {
 		params.Del("_offset")
 	}
 
-	if ret.after = params.Get("_after"); ret.after != "" {
+	if ret.After = params.Get("_after"); ret.After != "" {
 		params.Del("_after")
 	}
 
@@ -81,36 +80,37 @@ func parseListParams(params url.Values) (*listParams, error) {
 			return nil, jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", srt, ErrInvalidSort)
 		}
 
-		ret.sorts = append(ret.sorts, srt)
+		ret.Sorts = append(ret.Sorts, srt)
 	}
+
 	params.Del("_sort")
 
 	for path, vals := range params {
 		for _, val := range vals {
-			f := filter{
-				path: path,
-				op:   "eq",
-				val:  val,
+			f := &Filter{
+				Path:  path,
+				Op:    "eq",
+				Value: val,
 			}
 
-			matches := opMatch.FindStringSubmatch(f.path)
+			matches := opMatch.FindStringSubmatch(f.Path)
 			if matches != nil {
-				f.path = matches[1]
-				f.op = matches[2]
+				f.Path = matches[1]
+				f.Op = matches[2]
 			}
 
-			if _, valid := validOps[f.op]; !valid {
-				return nil, jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", f.op, ErrInvalidFilterOp)
+			if _, valid := validOps[f.Op]; !valid {
+				return nil, jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", f.Op, ErrInvalidFilterOp)
 			}
 
-			ret.filters = append(ret.filters, f)
+			ret.Filters = append(ret.Filters, f)
 		}
 	}
 
 	return ret, nil
 }
 
-func filterList(cfg *config, r *http.Request, params *listParams, list []any) ([]any, error) {
+func filterList(cfg *config, r *http.Request, opts *ListOpts, list []any) ([]any, error) {
 	inter := []any{}
 
 	for _, obj := range list {
@@ -119,7 +119,7 @@ func filterList(cfg *config, r *http.Request, params *listParams, list []any) ([
 			continue
 		}
 
-		matches, err := match(obj, params.filters)
+		matches, err := match(obj, opts.Filters)
 		if err != nil {
 			return nil, jsrest.Errorf(jsrest.ErrBadRequest, "match failed (%w)", err)
 		}
@@ -131,7 +131,7 @@ func filterList(cfg *config, r *http.Request, params *listParams, list []any) ([
 		inter = append(inter, obj)
 	}
 
-	for _, srt := range params.sorts {
+	for _, srt := range opts.Sorts {
 		var err error
 
 		switch {
@@ -152,9 +152,13 @@ func filterList(cfg *config, r *http.Request, params *listParams, list []any) ([
 
 	ret := []any{}
 
-	after := params.after
-	offset := params.offset
-	limit := params.limit
+	after := opts.After
+	offset := opts.Offset
+	limit := opts.Limit
+
+	if limit == 0 {
+		limit = math.MaxInt64
+	}
 
 	for _, obj := range inter {
 		if after != "" {
@@ -182,40 +186,40 @@ func filterList(cfg *config, r *http.Request, params *listParams, list []any) ([
 	return ret, nil
 }
 
-func match(obj any, filters []filter) (bool, error) {
+func match(obj any, filters []*Filter) (bool, error) {
 	for _, filter := range filters {
 		var matches bool
 
 		var err error
 
-		switch filter.op {
+		switch filter.Op {
 		case "eq":
-			matches, err = path.Equal(obj, filter.path, filter.val)
+			matches, err = path.Equal(obj, filter.Path, filter.Value)
 
 		case "gt":
-			matches, err = path.Greater(obj, filter.path, filter.val)
+			matches, err = path.Greater(obj, filter.Path, filter.Value)
 
 		case "gte":
-			matches, err = path.GreaterEqual(obj, filter.path, filter.val)
+			matches, err = path.GreaterEqual(obj, filter.Path, filter.Value)
 
 		case "hp":
-			matches, err = path.HasPrefix(obj, filter.path, filter.val)
+			matches, err = path.HasPrefix(obj, filter.Path, filter.Value)
 
 		case "in":
-			matches, err = path.In(obj, filter.path, filter.val)
+			matches, err = path.In(obj, filter.Path, filter.Value)
 
 		case "lt":
-			matches, err = path.Less(obj, filter.path, filter.val)
+			matches, err = path.Less(obj, filter.Path, filter.Value)
 
 		case "lte":
-			matches, err = path.LessEqual(obj, filter.path, filter.val)
+			matches, err = path.LessEqual(obj, filter.Path, filter.Value)
 
 		default:
-			panic(filter.op)
+			return false, jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", filter.Op, ErrInvalidFilterOp)
 		}
 
 		if err != nil {
-			return false, jsrest.Errorf(jsrest.ErrBadRequest, "match operation failed: %s[%s] (%w)", filter.path, filter.op, err)
+			return false, jsrest.Errorf(jsrest.ErrBadRequest, "match operation failed: %s[%s] (%w)", filter.Path, filter.Op, err)
 		}
 
 		if !matches {

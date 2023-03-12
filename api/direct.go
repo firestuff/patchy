@@ -9,6 +9,8 @@ import (
 )
 
 func CreateName[T any](ctx context.Context, api *API, name string, obj *T) (*T, error) {
+	// TODO: Unify into createInt()
+
 	cfg := api.registry[name]
 	if cfg == nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
@@ -29,6 +31,8 @@ func Create[T any](ctx context.Context, api *API, obj *T) (*T, error) {
 }
 
 func GetName[T any](ctx context.Context, api *API, name, id string) (*T, error) {
+	// TODO: Unify into getInt()
+
 	cfg := api.registry[name]
 	if cfg == nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
@@ -46,9 +50,32 @@ func Get[T any](ctx context.Context, api *API, id string) (*T, error) {
 	return GetName[T](ctx, api, objName(new(T)), id)
 }
 
-/*
-func (api *API) List(name string, params *ListOpts) ([]any, error) {
-	// TODO: Expose listParams as ListOps and filter as Match, like client
-	// TODO: Probably import those into client
+func ListName[T any](ctx context.Context, api *API, name string, opts *ListOpts) ([]*T, error) {
+	// TODO: Unify into listInt()
+
+	cfg := api.registry[name]
+	if cfg == nil {
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
+	}
+
+	list, err := api.sb.List(ctx, cfg.typeName, cfg.factory)
+	if err != nil {
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
+	}
+
+	list, err = filterList(cfg, nil, opts, list)
+	if err != nil {
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "filter list failed (%w)", err)
+	}
+
+	ret := []*T{}
+	for _, obj := range list {
+		ret = append(ret, obj.(*T))
+	}
+
+	return ret, nil
 }
-*/
+
+func List[T any](ctx context.Context, api *API, opts *ListOpts) ([]*T, error) {
+	return ListName[T](ctx, api, objName(new(T)), opts)
+}

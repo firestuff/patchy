@@ -13,7 +13,7 @@ func (api *API) getList(cfg *config, w http.ResponseWriter, r *http.Request) err
 		return jsrest.Errorf(jsrest.ErrBadRequest, "parse URL query failed (%w)", err)
 	}
 
-	parsed, err := parseListParams(params)
+	opts, err := parseListOpts(params)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrBadRequest, "parse list parameters failed (%w)", err)
 	}
@@ -25,7 +25,7 @@ func (api *API) getList(cfg *config, w http.ResponseWriter, r *http.Request) err
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
 	}
 
-	list, err = filterList(cfg, r, parsed, list)
+	list, err = filterList(cfg, r, opts, list)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "filter list failed (%w)", err)
 	}

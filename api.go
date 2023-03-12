@@ -7,6 +7,8 @@ import (
 type (
 	API      = api.API
 	Metadata = api.Metadata
+	ListOpts = api.ListOpts
+	Filter   = api.Filter
 )
 
 var (

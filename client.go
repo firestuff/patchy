@@ -7,9 +7,7 @@ import (
 )
 
 type (
-	Client      = client.Client
-	Matcher     = client.Matcher
-	ListOptions = client.ListOptions
+	Client = client.Client
 )
 
 var (
@@ -41,11 +39,11 @@ func Get[T any](ctx context.Context, c *Client, id string) (*T, error) {
 	return client.Get[T](ctx, c, id)
 }
 
-func ListName[T any](ctx context.Context, c *Client, name string, opts *ListOptions) ([]*T, error) {
+func ListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts) ([]*T, error) {
 	return client.ListName[T](ctx, c, name, opts)
 }
 
-func List[T any](ctx context.Context, c *Client, opts *ListOptions) ([]*T, error) {
+func List[T any](ctx context.Context, c *Client, opts *ListOpts) ([]*T, error) {
 	return client.List[T](ctx, c, opts)
 }
 
