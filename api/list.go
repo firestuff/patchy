@@ -110,11 +110,11 @@ func parseListOpts(params url.Values) (*ListOpts, error) {
 	return ret, nil
 }
 
-func filterList(cfg *config, r *http.Request, opts *ListOpts, list []any) ([]any, error) {
+func (api *API) filterList(cfg *config, r *http.Request, opts *ListOpts, list []any) ([]any, error) {
 	inter := []any{}
 
 	for _, obj := range list {
-		obj, jse := cfg.checkRead(obj, r)
+		obj, jse := cfg.checkRead(obj, api, r)
 		if jse != nil {
 			continue
 		}

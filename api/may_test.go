@@ -16,7 +16,7 @@ type mayType struct {
 	Text1 string
 }
 
-func (mt *mayType) MayRead(r *http.Request) error {
+func (mt *mayType) MayRead(a *api.API, r *http.Request) error {
 	if r.Header.Get("X-Refuse-Read") != "" {
 		return fmt.Errorf("may not read")
 	}
@@ -29,7 +29,7 @@ func (mt *mayType) MayRead(r *http.Request) error {
 	return nil
 }
 
-func (mt *mayType) MayWrite(prev *mayType, r *http.Request) error {
+func (mt *mayType) MayWrite(prev *mayType, a *api.API, r *http.Request) error {
 	if r.Header.Get("X-Refuse-Write") != "" {
 		return fmt.Errorf("may not write")
 	}
