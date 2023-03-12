@@ -141,5 +141,6 @@ func Update[T any](ctx context.Context, c *Client, id string, obj *T) (*T, error
 }
 
 func objName(obj any) string {
+	// TODO: Try to take obj *any
 	return strings.ToLower(reflect.Indirect(reflect.ValueOf(obj)).Type().Name())
 }
