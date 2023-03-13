@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/url"
@@ -13,6 +14,8 @@ import (
 var ErrUnknownStreamFormat = errors.New("unknown _stream format")
 
 func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) error {
+	ctx := r.Context()
+
 	if _, ok := w.(http.Flusher); !ok {
 		return jsrest.Errorf(jsrest.ErrBadRequest, "stream failed (%w)", ErrStreamingNotSupported)
 	}
@@ -37,14 +40,14 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 	case "":
 		fallthrough
 	case "full":
-		err = api.streamListFull(cfg, w, r, opts)
+		err = api.streamListFull(ctx, cfg, w, opts)
 		if err != nil {
 			writeEvent(w, "error", jsrest.ToJSONError(err))
 		}
 		return nil
 
 	case "diff":
-		err = api.streamListDiff(cfg, w, r, opts)
+		err = api.streamListDiff(ctx, cfg, w, opts)
 		if err != nil {
 			writeEvent(w, "error", jsrest.ToJSONError(err))
 		}
@@ -55,10 +58,10 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Request, opts *ListOpts) error {
+func (api *API) streamListFull(ctx context.Context, cfg *config, w http.ResponseWriter, opts *ListOpts) error {
 	// TODO: Add query condition pushdown
 
-	ch, err := api.sb.ListStream(r.Context(), cfg.typeName, cfg.factory)
+	ch, err := api.sb.ListStream(ctx, cfg.typeName, cfg.factory)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
 	}
@@ -68,7 +71,7 @@ func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Reque
 
 	for {
 		select {
-		case <-r.Context().Done():
+		case <-ctx.Done():
 			return nil
 
 		case <-ticker.C:
@@ -78,7 +81,7 @@ func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Reque
 			}
 
 		case list := <-ch:
-			list, err = api.filterList(cfg, r, opts, list)
+			list, err = api.filterList(ctx, cfg, opts, list)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "filter list failed (%w)", err)
 			}
@@ -91,10 +94,10 @@ func (api *API) streamListFull(cfg *config, w http.ResponseWriter, r *http.Reque
 	}
 }
 
-func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Request, opts *ListOpts) error {
+func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.ResponseWriter, opts *ListOpts) error {
 	// TODO: Add query condition pushdown
 
-	ch, err := api.sb.ListStream(r.Context(), cfg.typeName, cfg.factory)
+	ch, err := api.sb.ListStream(ctx, cfg.typeName, cfg.factory)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
 	}
@@ -114,11 +117,11 @@ func (api *API) streamListDiff(cfg *config, w http.ResponseWriter, r *http.Reque
 
 			continue
 
-		case <-r.Context().Done():
+		case <-ctx.Done():
 			return nil
 
 		case list := <-ch:
-			list, err := api.filterList(cfg, r, opts, list)
+			list, err := api.filterList(ctx, cfg, opts, list)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "filter list failed (%w)", err)
 			}

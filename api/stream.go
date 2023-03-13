@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"time"
@@ -11,6 +12,8 @@ import (
 var ErrStreamingNotSupported = errors.New("streaming not supported")
 
 func (api *API) stream(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
+	ctx := r.Context()
+
 	if _, ok := w.(http.Flusher); !ok {
 		return jsrest.Errorf(jsrest.ErrBadRequest, "stream failed (%w)", ErrStreamingNotSupported)
 	}
@@ -27,7 +30,7 @@ func (api *API) stream(cfg *config, id string, w http.ResponseWriter, r *http.Re
 		return jsrest.Errorf(jsrest.ErrNotFound, "%s", id)
 	}
 
-	obj, err = cfg.checkRead(obj, api, r)
+	obj, err = cfg.checkRead(ctx, obj, api)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrUnauthorized, "read check failed (%w)", err)
 	}
@@ -35,7 +38,7 @@ func (api *API) stream(cfg *config, id string, w http.ResponseWriter, r *http.Re
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 
-	err = api.streamInt(cfg, w, r, obj, ch)
+	err = api.streamInt(ctx, cfg, w, obj, ch)
 	if err != nil {
 		writeEvent(w, "error", jsrest.ToJSONError(err))
 		return nil
@@ -44,7 +47,7 @@ func (api *API) stream(cfg *config, id string, w http.ResponseWriter, r *http.Re
 	return nil
 }
 
-func (api *API) streamInt(cfg *config, w http.ResponseWriter, r *http.Request, obj any, ch <-chan any) error {
+func (api *API) streamInt(ctx context.Context, cfg *config, w http.ResponseWriter, obj any, ch <-chan any) error {
 	err := writeEvent(w, "initial", obj)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "write initial failed (%w)", err)
@@ -54,12 +57,12 @@ func (api *API) streamInt(cfg *config, w http.ResponseWriter, r *http.Request, o
 
 	for {
 		select {
-		case <-r.Context().Done():
+		case <-ctx.Done():
 			return nil
 
 		case msg, ok := <-ch:
 			if ok {
-				msg, err = cfg.checkRead(msg, api, r)
+				msg, err = cfg.checkRead(ctx, msg, api)
 				if err != nil {
 					return jsrest.Errorf(jsrest.ErrUnauthorized, "read check failed (%w)", err)
 				}

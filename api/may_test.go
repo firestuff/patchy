@@ -3,6 +3,7 @@ package api_test
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"net/http"
 	"testing"
@@ -16,23 +17,20 @@ type mayType struct {
 	Text1 string
 }
 
-func (mt *mayType) MayRead(a *api.API, r *http.Request) error {
-	if r == nil {
-		return nil
-	}
-
-	if r.Header.Get("X-Refuse-Read") != "" {
+func (mt *mayType) MayRead(ctx context.Context, a *api.API) error {
+	if ctx.Value(refuseRead) != nil {
 		return fmt.Errorf("may not read")
 	}
 
-	text1 := r.Header.Get("X-Text1-Read")
-	if text1 != "" {
-		mt.Text1 = text1
+	t1r := ctx.Value(text1Read)
+	if t1r != nil {
+		mt.Text1 = t1r.(string)
 	}
 
-	newText1 := r.Header.Get("X-NewText1")
-	if newText1 != "" {
-		_, err := api.Create(r.Context(), a, &mayType{Text1: newText1})
+	nt1 := ctx.Value(newText1)
+	if nt1 != nil {
+		// Use a separate context so we don't recursively create objects
+		_, err := api.Create(context.Background(), a, &mayType{Text1: nt1.(string)})
 		if err != nil {
 			return err
 		}
@@ -41,21 +39,56 @@ func (mt *mayType) MayRead(a *api.API, r *http.Request) error {
 	return nil
 }
 
-func (mt *mayType) MayWrite(prev *mayType, a *api.API, r *http.Request) error {
-	if r == nil {
-		return nil
-	}
-
-	if r.Header.Get("X-Refuse-Write") != "" {
+func (mt *mayType) MayWrite(ctx context.Context, prev *mayType, a *api.API) error {
+	if ctx.Value(refuseWrite) != nil {
 		return fmt.Errorf("may not write")
 	}
 
-	text1 := r.Header.Get("X-Text1-Write")
-	if text1 != "" {
-		mt.Text1 = text1
+	t1w := ctx.Value(text1Write)
+	if t1w != nil {
+		mt.Text1 = t1w.(string)
 	}
 
 	return nil
+}
+
+type contextKey int
+
+const (
+	refuseRead contextKey = iota
+	refuseWrite
+	text1Read
+	text1Write
+	newText1
+)
+
+func authCallback(r *http.Request) (context.Context, error) {
+	ctx := r.Context()
+
+	if r.Header.Get("X-Refuse-Read") != "" {
+		ctx = context.WithValue(ctx, refuseRead, true)
+	}
+
+	if r.Header.Get("X-Refuse-Write") != "" {
+		ctx = context.WithValue(ctx, refuseWrite, true)
+	}
+
+	t1r := r.Header.Get("X-Text1-Read")
+	if t1r != "" {
+		ctx = context.WithValue(ctx, text1Read, t1r)
+	}
+
+	t1w := r.Header.Get("X-Text1-Write")
+	if t1w != "" {
+		ctx = context.WithValue(ctx, text1Write, t1w)
+	}
+
+	nt1 := r.Header.Get("X-NewText1")
+	if nt1 != "" {
+		ctx = context.WithValue(ctx, newText1, nt1)
+	}
+
+	return ctx, nil
 }
 
 func TestMayWrite(t *testing.T) {
@@ -64,6 +97,7 @@ func TestMayWrite(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
+	ta.api.SetAuthCallback(authCallback)
 	api.Register[mayType](ta.api)
 
 	created := &mayType{}
@@ -146,6 +180,7 @@ func TestMayRead(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
+	ta.api.SetAuthCallback(authCallback)
 	api.Register[mayType](ta.api)
 
 	created := &mayType{}
@@ -254,6 +289,7 @@ func TestMayWriteMutate(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
+	ta.api.SetAuthCallback(authCallback)
 	api.Register[mayType](ta.api)
 
 	create := &mayType{}
@@ -324,6 +360,7 @@ func TestMayReadMutate(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
+	ta.api.SetAuthCallback(authCallback)
 	api.Register[mayType](ta.api)
 
 	create := &mayType{}
@@ -467,6 +504,7 @@ func TestMayReadAPI(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
+	ta.api.SetAuthCallback(authCallback)
 	api.Register[mayType](ta.api)
 
 	created := &mayType{}
