@@ -1,10 +1,10 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 	"sync"
 
 	"github.com/firestuff/patchy/jsrest"
@@ -18,8 +18,8 @@ type config struct {
 
 	factory func() any
 
-	mayRead  func(any, *API, *http.Request) error
-	mayWrite func(any, any, *API, *http.Request) error
+	mayRead  func(context.Context, any, *API) error
+	mayWrite func(context.Context, any, any, *API) error
 
 	// Per-key read/modify/write (update and replace) operation locking
 	// This ensures monotonic generation numbers
@@ -33,11 +33,11 @@ type lock struct {
 }
 
 type mayRead interface {
-	MayRead(*API, *http.Request) error
+	MayRead(context.Context, *API) error
 }
 
 type mayWrite[T any] interface {
-	MayWrite(*T, *API, *http.Request) error
+	MayWrite(context.Context, *T, *API) error
 }
 
 func newConfig[T any](typeName string) *config {
@@ -54,16 +54,16 @@ func newConfig[T any](typeName string) *config {
 	}
 
 	if _, has := typ.(mayRead); has {
-		cfg.mayRead = func(obj any, api *API, r *http.Request) error {
+		cfg.mayRead = func(ctx context.Context, obj any, api *API) error {
 			obj = convert[T](obj)
-			return obj.(mayRead).MayRead(api, r)
+			return obj.(mayRead).MayRead(ctx, api)
 		}
 	}
 
 	if _, found := typ.(mayWrite[T]); found {
-		cfg.mayWrite = func(obj any, prev any, api *API, r *http.Request) error {
+		cfg.mayWrite = func(ctx context.Context, obj any, prev any, api *API) error {
 			obj = convert[T](obj)
-			return obj.(mayWrite[T]).MayWrite(convert[T](prev), api, r)
+			return obj.(mayWrite[T]).MayWrite(ctx, convert[T](prev), api)
 		}
 	}
 
@@ -82,14 +82,14 @@ func (cfg *config) isSafe() error {
 	return nil
 }
 
-func (cfg *config) checkRead(obj any, api *API, r *http.Request) (any, error) {
+func (cfg *config) checkRead(ctx context.Context, obj any, api *API) (any, error) {
 	ret, err := cfg.clone(obj)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "clone failed (%w)", err)
 	}
 
 	if cfg.mayRead != nil {
-		err := cfg.mayRead(ret, api, r)
+		err := cfg.mayRead(ctx, ret, api)
 		if err != nil {
 			return nil, jsrest.Errorf(jsrest.ErrUnauthorized, "not authorized to read (%w)", err)
 		}
@@ -98,7 +98,7 @@ func (cfg *config) checkRead(obj any, api *API, r *http.Request) (any, error) {
 	return ret, nil
 }
 
-func (cfg *config) checkWrite(obj, prev any, api *API, r *http.Request) (any, error) {
+func (cfg *config) checkWrite(ctx context.Context, obj, prev any, api *API) (any, error) {
 	var ret any
 
 	if obj != nil {
@@ -110,7 +110,7 @@ func (cfg *config) checkWrite(obj, prev any, api *API, r *http.Request) (any, er
 	}
 
 	if cfg.mayWrite != nil {
-		err := cfg.mayWrite(ret, prev, api, r)
+		err := cfg.mayWrite(ctx, ret, prev, api)
 		if err != nil {
 			return nil, jsrest.Errorf(jsrest.ErrUnauthorized, "not authorized to write (%w)", err)
 		}

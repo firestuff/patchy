@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
@@ -24,7 +25,10 @@ type API struct {
 	sb       *storebus.StoreBus
 	potency  *potency.Potency
 	registry map[string]*config
+	authCB   AuthCallback
 }
+
+type AuthCallback func(*http.Request) (context.Context, error)
 
 type Metadata = metadata.Metadata
 
@@ -72,6 +76,10 @@ func RegisterName[T any](api *API, typeName string) {
 	api.registerHandlers(fmt.Sprintf("/%s", cfg.typeName), cfg)
 }
 
+func (api *API) SetAuthCallback(cb AuthCallback) {
+	api.authCB = cb
+}
+
 func (api *API) IsSafe() error {
 	for _, cfg := range api.registry {
 		err := cfg.isSafe()
@@ -91,6 +99,17 @@ func (api *API) CheckSafe() {
 }
 
 func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if api.authCB != nil {
+		ctx, err := api.authCB(r)
+		if err != nil {
+			err = jsrest.Errorf(jsrest.ErrInternalServerError, "auth callback failed (%w)", err)
+			jsrest.WriteError(w, err)
+			return
+		}
+
+		r = r.WithContext(ctx)
+	}
+
 	api.potency.ServeHTTP(w, r)
 }
 

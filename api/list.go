@@ -1,9 +1,9 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"math"
-	"net/http"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -110,11 +110,11 @@ func parseListOpts(params url.Values) (*ListOpts, error) {
 	return ret, nil
 }
 
-func (api *API) filterList(cfg *config, r *http.Request, opts *ListOpts, list []any) ([]any, error) {
+func (api *API) filterList(ctx context.Context, cfg *config, opts *ListOpts, list []any) ([]any, error) {
 	inter := []any{}
 
 	for _, obj := range list {
-		obj, jse := cfg.checkRead(obj, api, r)
+		obj, jse := cfg.checkRead(ctx, obj, api)
 		if jse != nil {
 			continue
 		}
