@@ -13,3 +13,6 @@ test:
 	# TODO: Re-enable golangci-lint once it's compatible with go 1.20
 	# golangci-lint run {{justfile_directory()}}/...
 	{{go}} test -race -timeout=7s -parallel=10 {{justfile_directory()}}/...
+
+todo:
+	git -C {{justfile_directory()}} grep -e TODO --and --not -e ignoretodo
