@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
@@ -21,14 +20,14 @@ import (
 )
 
 type API struct {
-	router   *httprouter.Router
-	sb       *storebus.StoreBus
-	potency  *potency.Potency
-	registry map[string]*config
-	authCB   AuthCallback
+	router      *httprouter.Router
+	sb          *storebus.StoreBus
+	potency     *potency.Potency
+	registry    map[string]*config
+	requestHook RequestHook
 }
 
-type AuthCallback func(*http.Request) (context.Context, error)
+type RequestHook func(*http.Request) (*http.Request, error)
 
 type Metadata = metadata.Metadata
 
@@ -76,8 +75,8 @@ func RegisterName[T any](api *API, typeName string) {
 	api.registerHandlers(fmt.Sprintf("/%s", cfg.typeName), cfg)
 }
 
-func (api *API) SetAuthCallback(cb AuthCallback) {
-	api.authCB = cb
+func (api *API) SetRequestHook(hook RequestHook) {
+	api.requestHook = hook
 }
 
 func (api *API) IsSafe() error {
@@ -99,15 +98,14 @@ func (api *API) CheckSafe() {
 }
 
 func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if api.authCB != nil {
-		ctx, err := api.authCB(r)
+	if api.requestHook != nil {
+		var err error
+		r, err = api.requestHook(r)
 		if err != nil {
 			err = jsrest.Errorf(jsrest.ErrInternalServerError, "auth callback failed (%w)", err)
 			jsrest.WriteError(w, err)
 			return
 		}
-
-		r = r.WithContext(ctx)
 	}
 
 	api.potency.ServeHTTP(w, r)

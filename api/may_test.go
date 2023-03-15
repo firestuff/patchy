@@ -62,7 +62,7 @@ const (
 	newText1
 )
 
-func authCallback(r *http.Request) (context.Context, error) {
+func requestHook(r *http.Request) (*http.Request, error) {
 	ctx := r.Context()
 
 	if r.Header.Get("X-Refuse-Read") != "" {
@@ -88,7 +88,7 @@ func authCallback(r *http.Request) (context.Context, error) {
 		ctx = context.WithValue(ctx, newText1, nt1)
 	}
 
-	return ctx, nil
+	return r.WithContext(ctx), nil
 }
 
 func TestMayWrite(t *testing.T) {
@@ -97,7 +97,7 @@ func TestMayWrite(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	ta.api.SetAuthCallback(authCallback)
+	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
 	created := &mayType{}
@@ -180,7 +180,7 @@ func TestMayRead(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	ta.api.SetAuthCallback(authCallback)
+	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
 	created := &mayType{}
@@ -289,7 +289,7 @@ func TestMayWriteMutate(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	ta.api.SetAuthCallback(authCallback)
+	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
 	create := &mayType{}
@@ -360,7 +360,7 @@ func TestMayReadMutate(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	ta.api.SetAuthCallback(authCallback)
+	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
 	create := &mayType{}
@@ -504,7 +504,7 @@ func TestMayReadAPI(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	ta.api.SetAuthCallback(authCallback)
+	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
 	created := &mayType{}
