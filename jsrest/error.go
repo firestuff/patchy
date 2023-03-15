@@ -2,7 +2,6 @@ package jsrest
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 )
@@ -67,6 +66,24 @@ func (err *HTTPError) Error() string {
 	return fmt.Sprintf("[%d] %s", err.Code, err.Message)
 }
 
+type SilentJoinError struct {
+	Wraps []error
+}
+
+func SilentJoin(errs ...error) *SilentJoinError {
+	return &SilentJoinError{
+		Wraps: errs,
+	}
+}
+
+func (err *SilentJoinError) Error() string {
+	return err.Wraps[0].Error()
+}
+
+func (err *SilentJoinError) Unwrap() []error {
+	return err.Wraps
+}
+
 func WriteError(w http.ResponseWriter, err error) {
 	je := ToJSONError(err)
 
@@ -79,7 +96,12 @@ func WriteError(w http.ResponseWriter, err error) {
 
 func Errorf(he *HTTPError, format string, a ...any) error {
 	err := fmt.Errorf(format, a...) //nolint:goerr113
-	return errors.Join(he, err)
+
+	if hasHTTPError(err) {
+		return err
+	} else {
+		return SilentJoin(err, he)
+	}
 }
 
 type JSONError struct {
@@ -104,12 +126,31 @@ type multiUnwrap interface {
 	Unwrap() []error
 }
 
-func (je *JSONError) importError(err error) {
-	je.Messages = append(je.Messages, err.Error())
+func hasHTTPError(err error) bool {
+	if _, has := err.(*HTTPError); has {
+		return true
+	}
 
-	// Pre-traversal for error codes, so we get the most detailed in the stack
+	if unwrap, ok := err.(singleUnwrap); ok { //nolint:errorlint
+		return hasHTTPError(unwrap.Unwrap())
+	} else if unwrap, ok := err.(multiUnwrap); ok { //nolint:errorlint
+		for _, sub := range unwrap.Unwrap() {
+			if hasHTTPError(sub) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func (je *JSONError) importError(err error) {
 	if he, ok := err.(*HTTPError); ok { //nolint:errorlint
 		je.Code = he.Code
+	}
+
+	if _, is := err.(*SilentJoinError); !is { //nolint:errorlint
+		je.Messages = append(je.Messages, err.Error())
 	}
 
 	if unwrap, ok := err.(singleUnwrap); ok { //nolint:errorlint
