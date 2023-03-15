@@ -27,7 +27,7 @@ type API struct {
 	requestHook RequestHook
 }
 
-type RequestHook func(*http.Request) (*http.Request, error)
+type RequestHook func(*http.Request, *API) (*http.Request, error)
 
 type Metadata = metadata.Metadata
 
@@ -100,7 +100,7 @@ func (api *API) CheckSafe() {
 func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if api.requestHook != nil {
 		var err error
-		r, err = api.requestHook(r)
+		r, err = api.requestHook(r, api)
 		if err != nil {
 			err = jsrest.Errorf(jsrest.ErrInternalServerError, "auth callback failed (%w)", err)
 			jsrest.WriteError(w, err)

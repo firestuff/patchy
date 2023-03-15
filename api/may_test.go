@@ -62,7 +62,7 @@ const (
 	newText1
 )
 
-func requestHook(r *http.Request) (*http.Request, error) {
+func requestHook(r *http.Request, _ *api.API) (*http.Request, error) {
 	ctx := r.Context()
 
 	if r.Header.Get("X-Refuse-Read") != "" {
