@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/firestuff/patchy/api"
-	"github.com/firestuff/patchy/client"
 )
 
 type (
@@ -22,8 +21,6 @@ var (
 	NewAPI          = api.NewAPI
 
 	DeleteName = api.DeleteName
-
-	P = client.P
 )
 
 func Register[T any](a *API) {
