@@ -30,3 +30,13 @@ func (c *Client) SetDebug(debug bool) *Client {
 	c.rst.SetDebug(debug)
 	return c
 }
+
+func (c *Client) SetBasicAuth(user, pass string) *Client {
+	c.rst.SetBasicAuth(user, pass)
+	return c
+}
+
+func (c *Client) SetAuthToken(token string) *Client {
+	c.rst.SetAuthToken(token)
+	return c
+}
