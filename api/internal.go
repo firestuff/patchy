@@ -78,6 +78,8 @@ func (api *API) listInt(ctx context.Context, cfg *config, r *http.Request, opts 
 		opts = &ListOpts{}
 	}
 
+	// TODO: Add a hook for the type to mutate opts
+
 	list, err := api.sb.List(ctx, cfg.typeName, cfg.factory)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
