@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dchest/uniuri"
 	"github.com/firestuff/patchy/potency"
 	"github.com/firestuff/patchy/store"
 	"github.com/go-resty/resty/v2"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
 
@@ -23,7 +23,7 @@ func TestGET(t *testing.T) {
 	ts := newTestServer(t)
 	defer ts.shutdown(t)
 
-	key1 := uuid.NewString()
+	key1 := uniuri.New()
 
 	resp, err := ts.r().
 		SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
@@ -42,7 +42,7 @@ func TestGET(t *testing.T) {
 	require.Equal(t, "bar", resp.Header().Get("X-Response"))
 	require.Equal(t, resp1, resp.String())
 
-	key2 := uuid.NewString()
+	key2 := uniuri.New()
 
 	resp, err = ts.r().
 		SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key2)).
@@ -97,7 +97,7 @@ func TestPOST(t *testing.T) {
 	ts := newTestServer(t)
 	defer ts.shutdown(t)
 
-	key1 := uuid.NewString()
+	key1 := uniuri.New()
 
 	resp, err := ts.r().
 		SetHeader("Idempotency-Key", fmt.Sprintf(`"%s"`, key1)).
@@ -147,7 +147,7 @@ func newTestServer(t *testing.T) *testServer {
 
 		w.Header().Add("X-Response", "bar")
 
-		_, err = w.Write([]byte(uuid.NewString()))
+		_, err = w.Write([]byte(uniuri.New()))
 		require.Nil(t, err)
 	})
 

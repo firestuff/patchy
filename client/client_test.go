@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dchest/uniuri"
 	"github.com/firestuff/patchy/api"
 	"github.com/firestuff/patchy/client"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
 
@@ -23,7 +23,7 @@ type testType struct {
 func TestClient(t *testing.T) {
 	ctx := context.Background()
 
-	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uuid.NewString())
+	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
 	a, err := api.NewSQLiteAPI(dbname)
 	require.Nil(t, err)

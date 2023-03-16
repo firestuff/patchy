@@ -4,8 +4,8 @@ go 1.20
 
 require (
 	cloud.google.com/go v0.107.0
+	github.com/dchest/uniuri v1.2.0
 	github.com/go-resty/resty/v2 v2.7.0
-	github.com/google/uuid v1.3.0
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/stretchr/testify v1.8.1

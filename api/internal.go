@@ -4,13 +4,13 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/dchest/uniuri"
 	"github.com/firestuff/patchy/jsrest"
 	"github.com/firestuff/patchy/metadata"
-	"github.com/google/uuid"
 )
 
 func (api *API) createInt(ctx context.Context, cfg *config, r *http.Request, obj any) (any, error) {
-	metadata.GetMetadata(obj).ID = uuid.NewString()
+	metadata.GetMetadata(obj).ID = uniuri.New()
 
 	obj, err := cfg.checkWrite(ctx, obj, nil, api)
 	if err != nil {
