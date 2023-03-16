@@ -21,10 +21,6 @@ var (
 	NewAPI          = api.NewAPI
 
 	DeleteName = api.DeleteName
-
-	IsCreate = api.IsCreate
-	IsUpdate = api.IsUpdate
-	IsDelete = api.IsDelete
 )
 
 func Register[T any](a *API) {
@@ -85,4 +81,16 @@ func UpdateName[T any](ctx context.Context, a *API, name, id string, obj *T) (*T
 
 func Update[T any](ctx context.Context, a *API, id string, obj *T) (*T, error) {
 	return api.Update[T](ctx, a, id, obj)
+}
+
+func IsCreate[T any](obj *T, prev *T) bool {
+	return api.IsCreate[T](obj, prev)
+}
+
+func IsUpdate[T any](obj *T, prev *T) bool {
+	return api.IsUpdate[T](obj, prev)
+}
+
+func IsDelete[T any](obj *T, prev *T) bool {
+	return api.IsDelete[T](obj, prev)
 }
