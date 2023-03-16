@@ -21,6 +21,10 @@ var (
 	NewAPI          = api.NewAPI
 
 	DeleteName = api.DeleteName
+
+	IsCreate = api.IsCreate
+	IsUpdate = api.IsUpdate
+	IsDelete = api.IsDelete
 )
 
 func Register[T any](a *API) {
