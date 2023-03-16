@@ -85,7 +85,7 @@ func GetName[T any](ctx context.Context, api *API, name, id string) (*T, error) 
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "get failed (%w)", err)
 	}
 
-	return obj.(*T), nil
+	return convert[T](obj), nil
 }
 
 func Get[T any](ctx context.Context, api *API, id string) (*T, error) {
