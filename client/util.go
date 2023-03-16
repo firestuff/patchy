@@ -1,5 +1,5 @@
 package client
 
-func P(s string) *string {
-	return &s
+func P[T any](v T) *T {
+	return &v
 }
