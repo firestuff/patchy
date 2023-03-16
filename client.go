@@ -2,4 +2,6 @@ package patchy
 
 import "github.com/firestuff/patchy/client"
 
-var P = client.P
+func P[T any](v T) *T {
+	return client.P(v)
+}
