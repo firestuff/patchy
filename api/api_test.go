@@ -14,9 +14,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dchest/uniuri"
 	"github.com/firestuff/patchy/api"
 	"github.com/go-resty/resty/v2"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
 
@@ -27,7 +27,7 @@ type testAPI struct {
 }
 
 func newTestAPI(t *testing.T) *testAPI {
-	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uuid.NewString())
+	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
 	a, err := api.NewSQLiteAPI(dbname)
 	require.Nil(t, err)
