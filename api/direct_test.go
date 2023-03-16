@@ -47,4 +47,8 @@ func TestDirect(t *testing.T) {
 	list, err = api.List[testType](ctx, ta.api, nil)
 	require.Nil(t, err)
 	require.Len(t, list, 0)
+
+	get, err = api.Get[testType](ctx, ta.api, "junk")
+	require.Nil(t, err)
+	require.Nil(t, get)
 }
