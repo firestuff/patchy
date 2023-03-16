@@ -1,13 +1,13 @@
 package api
 
-func IsCreate(obj any, prev any) bool {
+func IsCreate[T any](obj *T, prev *T) bool {
 	return obj != nil && prev == nil
 }
 
-func IsUpdate(obj any, prev any) bool {
+func IsUpdate[T any](obj *T, prev *T) bool {
 	return obj != nil && prev != nil
 }
 
-func IsDelete(obj any, prev any) bool {
+func IsDelete[T any](obj *T, prev *T) bool {
 	return obj == nil && prev != nil
 }
