@@ -92,6 +92,7 @@ func requestHook(r *http.Request, _ *api.API) (*http.Request, error) {
 }
 
 func TestMayWrite(t *testing.T) {
+	// TODO: Break up test
 	t.Parallel()
 
 	ta := newTestAPI(t)
@@ -175,6 +176,7 @@ func TestMayWrite(t *testing.T) {
 }
 
 func TestMayRead(t *testing.T) {
+	// TODO: Break up test
 	t.Parallel()
 
 	ta := newTestAPI(t)
@@ -284,6 +286,7 @@ func TestMayRead(t *testing.T) {
 }
 
 func TestMayWriteMutate(t *testing.T) {
+	// TODO: Break up test
 	t.Parallel()
 
 	ta := newTestAPI(t)
@@ -355,6 +358,7 @@ func TestMayWriteMutate(t *testing.T) {
 }
 
 func TestMayReadMutate(t *testing.T) {
+	// TODO: Break up test
 	t.Parallel()
 
 	ta := newTestAPI(t)
@@ -499,6 +503,7 @@ func TestMayReadMutate(t *testing.T) {
 }
 
 func TestMayReadAPI(t *testing.T) {
+	// TODO: Break up test
 	t.Parallel()
 
 	ta := newTestAPI(t)

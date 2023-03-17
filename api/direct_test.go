@@ -9,6 +9,7 @@ import (
 )
 
 func TestDirect(t *testing.T) {
+	// TODO: Break up test
 	t.Parallel()
 
 	ta := newTestAPI(t)

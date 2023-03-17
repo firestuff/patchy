@@ -8,6 +8,8 @@ import (
 )
 
 func TestDELETE(t *testing.T) {
+	// TODO: Break up test
+
 	t.Parallel()
 
 	ta := newTestAPI(t)

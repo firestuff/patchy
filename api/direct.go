@@ -150,3 +150,5 @@ func UpdateName[T any](ctx context.Context, api *API, name, id string, obj *T) (
 func Update[T any](ctx context.Context, api *API, id string, obj *T) (*T, error) {
 	return UpdateName[T](ctx, api, objName(obj), id, obj)
 }
+
+// TODO: Add streaming get & list

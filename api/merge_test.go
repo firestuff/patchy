@@ -20,6 +20,7 @@ type NestedType struct {
 }
 
 func TestMerge(t *testing.T) {
+	// TODO: Break up test
 	t.Parallel()
 
 	to := &MergeTestType{
