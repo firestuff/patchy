@@ -186,6 +186,8 @@ func Update[T any](ctx context.Context, c *Client, id string, obj *T) (*T, error
 	return UpdateName[T](ctx, c, objName(obj), id, obj)
 }
 
+// TODO: Add streaming get & list
+
 func objName[T any](obj *T) string {
 	return strings.ToLower(reflect.TypeOf(*obj).Name())
 }

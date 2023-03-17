@@ -6,6 +6,9 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
+// TODO: Rename to patchyc
+// TODO: Add retries
+
 type Client struct {
 	rst *resty.Client
 }

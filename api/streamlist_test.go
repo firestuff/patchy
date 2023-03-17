@@ -8,6 +8,7 @@ import (
 )
 
 func TestStreamList(t *testing.T) {
+	// TODO: Break up test
 	t.Parallel()
 
 	ta := newTestAPI(t)
@@ -131,6 +132,7 @@ func TestStreamList(t *testing.T) {
 }
 
 func TestStreamListDiff(t *testing.T) {
+	// TODO: Break up test
 	t.Parallel()
 
 	ta := newTestAPI(t)

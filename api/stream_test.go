@@ -8,6 +8,7 @@ import (
 )
 
 func TestStream(t *testing.T) {
+	// TODO: Break up test
 	t.Parallel()
 
 	ta := newTestAPI(t)
