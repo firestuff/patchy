@@ -50,7 +50,7 @@ func TestStreamListInitial(t *testing.T) {
 	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
-	stream, err := patchyc.StreamList[testType](ctx, ta.pyc)
+	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, nil)
 	require.NoError(t, err)
 	defer stream.Close()
 
@@ -68,7 +68,7 @@ func TestStreamListAdd(t *testing.T) {
 
 	ctx := context.Background()
 
-	stream, err := patchyc.StreamList[testType](ctx, ta.pyc)
+	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, nil)
 	require.NoError(t, err)
 	defer stream.Close()
 
@@ -96,7 +96,7 @@ func TestStreamListUpdate(t *testing.T) {
 	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	stream, err := patchyc.StreamList[testType](ctx, ta.pyc)
+	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, nil)
 	require.NoError(t, err)
 	defer stream.Close()
 
@@ -125,7 +125,7 @@ func TestStreamListDelete(t *testing.T) {
 	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	stream, err := patchyc.StreamList[testType](ctx, ta.pyc)
+	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, nil)
 	require.NoError(t, err)
 	defer stream.Close()
 
@@ -142,31 +142,29 @@ func TestStreamListDelete(t *testing.T) {
 	require.Len(t, list, 0)
 }
 
-/*
+func TestStreamListOpts(t *testing.T) {
+	t.Parallel()
 
-// TODO: Make StreamList() take ListOpts
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
 
-	resp, err = ta.r().
-		SetDoNotParseResponse(true).
-		SetHeader("Accept", "text/event-stream").
-		SetQueryParam("_limit", "1").
-		Get("testtype")
+	ctx := context.Background()
+
+	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
 
-	body2 := resp.RawBody()
-	defer body2.Close()
-
-	scan2 := bufio.NewScanner(body2)
-
-	eventType, err := readEvent(scan2, &list)
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
-	require.Equal(t, "list", eventType)
 
+	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Limit: 1})
+	require.NoError(t, err)
+	defer stream.Close()
+
+	list := stream.Read()
+	require.NotNil(t, list)
 	require.Len(t, list, 1)
-	require.True(t, list[0].Text == "foo" || list[0].Text == "bar")
+	require.Contains(t, []string{"foo", "bar"}, list[0].Text)
 }
-*/
 
 func TestStreamListDiff(t *testing.T) {
 	// TODO: Break up test

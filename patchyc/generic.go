@@ -238,12 +238,17 @@ func StreamGet[T any](ctx context.Context, c *Client, id string) (*GetStream[T],
 	return StreamGetName[T](ctx, c, objName(new(T)), id)
 }
 
-func StreamListName[T any](ctx context.Context, c *Client, name string) (*ListStream[T], error) {
-	resp, err := c.rst.R().
+func StreamListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts) (*ListStream[T], error) {
+	r := c.rst.R().
 		SetDoNotParseResponse(true).
 		SetHeader("Accept", "text/event-stream").
-		SetPathParam("name", name).
-		Get("{name}")
+		SetPathParam("name", name)
+
+	if opts != nil {
+		applyListOpts(opts, r)
+	}
+
+	resp, err := r.Get("{name}")
 	if err != nil {
 		return nil, err
 	}
@@ -280,8 +285,8 @@ func StreamListName[T any](ctx context.Context, c *Client, name string) (*ListSt
 	}, nil
 }
 
-func StreamList[T any](ctx context.Context, c *Client) (*ListStream[T], error) {
-	return StreamListName[T](ctx, c, objName(new(T)))
+func StreamList[T any](ctx context.Context, c *Client, opts *ListOpts) (*ListStream[T], error) {
+	return StreamListName[T](ctx, c, objName(new(T)), opts)
 }
 
 func objName[T any](obj *T) string {

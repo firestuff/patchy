@@ -251,6 +251,10 @@ func (api *API) streamGetInt(ctx context.Context, cfg *config, id string) (*getS
 }
 
 func (api *API) streamListInt(ctx context.Context, cfg *config, opts *ListOpts) (*listStreamInt, error) {
+	if opts == nil {
+		opts = &ListOpts{}
+	}
+
 	in, err := api.sb.ListStream(ctx, cfg.typeName, cfg.factory)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
