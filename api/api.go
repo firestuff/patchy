@@ -102,7 +102,7 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		var err error
 		r, err = api.requestHook(r, api)
 		if err != nil {
-			err = jsrest.Errorf(jsrest.ErrInternalServerError, "auth callback failed (%w)", err)
+			err = jsrest.Errorf(jsrest.ErrInternalServerError, "request hook failed (%w)", err)
 			jsrest.WriteError(w, err)
 			return
 		}
