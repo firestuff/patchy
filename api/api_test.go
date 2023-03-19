@@ -139,6 +139,7 @@ func TestCheckSafe(t *testing.T) {
 }
 
 func TestAccept(t *testing.T) {
+	// TODO: Break up test
 	t.Parallel()
 
 	ta := newTestAPI(t)
@@ -179,4 +180,23 @@ func TestAccept(t *testing.T) {
 	require.False(t, resp.IsError())
 	require.Equal(t, "text/event-stream", resp.Header().Get("Content-Type"))
 	resp.RawBody().Close()
+}
+
+func TestDebug(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	dbg := map[string]any{}
+
+	resp, err := ta.r().
+		SetResult(&dbg).
+		Get("_debug")
+	require.Nil(t, err)
+	require.False(t, resp.IsError())
+	require.Contains(t, dbg, "server")
+	require.Contains(t, dbg, "ip")
+	require.Contains(t, dbg, "http")
+	require.Contains(t, dbg, "tls")
 }
