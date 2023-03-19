@@ -33,6 +33,36 @@ func TestDeleteSuccess(t *testing.T) {
 	require.Nil(t, get)
 }
 
+func TestDeleteInvalidID(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	err := patchyc.Delete[testType](ctx, ta.pyc, "doesnotexist")
+	require.Error(t, err)
+}
+
+func TestDeleteTwice(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.Nil(t, err)
+
+	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID)
+	require.Nil(t, err)
+
+	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID)
+	require.Error(t, err)
+}
+
 func TestDeleteStream(t *testing.T) {
 	t.Parallel()
 
