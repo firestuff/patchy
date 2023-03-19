@@ -7,18 +7,13 @@ import (
 	"github.com/firestuff/patchy/jsrest"
 )
 
-type ObjectStream[T any] struct {
-	ch  <-chan *T
-	ios *intObjectStream
-}
-
 func CreateName[T any](ctx context.Context, api *API, name string, obj *T) (*T, error) {
 	cfg := api.registry[name]
 	if cfg == nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
 	}
 
-	created, err := api.createInt(ctx, cfg, nil, obj)
+	created, err := api.createInt(ctx, cfg, obj)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "create failed (%w)", err)
 	}
@@ -36,7 +31,7 @@ func DeleteName(ctx context.Context, api *API, name, id string) error {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
 	}
 
-	err := api.deleteInt(ctx, cfg, nil, id)
+	err := api.deleteInt(ctx, cfg, id)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "delete failed (%w)", err)
 	}
@@ -85,7 +80,7 @@ func GetName[T any](ctx context.Context, api *API, name, id string) (*T, error) 
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
 	}
 
-	obj, err := api.getInt(ctx, cfg, nil, id)
+	obj, err := api.getInt(ctx, cfg, id)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "get failed (%w)", err)
 	}
@@ -103,7 +98,7 @@ func ListName[T any](ctx context.Context, api *API, name string, opts *ListOpts)
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
 	}
 
-	list, err := api.listInt(ctx, cfg, nil, opts)
+	list, err := api.listInt(ctx, cfg, opts)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "list failed (%w)", err)
 	}
@@ -126,7 +121,7 @@ func ReplaceName[T any](ctx context.Context, api *API, name, id string, obj *T) 
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
 	}
 
-	replaced, err := api.replaceInt(ctx, cfg, nil, id, obj)
+	replaced, err := api.replaceInt(ctx, cfg, "", id, obj)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "replace failed (%w)", err)
 	}
@@ -144,7 +139,7 @@ func UpdateName[T any](ctx context.Context, api *API, name, id string, obj *T) (
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
 	}
 
-	updated, err := api.updateInt(ctx, cfg, nil, id, obj)
+	updated, err := api.updateInt(ctx, cfg, "", id, obj)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "update failed (%w)", err)
 	}
@@ -162,7 +157,7 @@ func GetStreamName[T any](ctx context.Context, api *API, name, id string) (*Obje
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
 	}
 
-	ios, err := api.getStreamInt(ctx, cfg, nil, id)
+	ios, err := api.getStreamInt(ctx, cfg, id)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "getSteam failed (%w)", err)
 	}
@@ -187,16 +182,39 @@ func GetStream[T any](ctx context.Context, api *API, id string) (*ObjectStream[T
 	return GetStreamName[T](ctx, api, objName(new(T)), id)
 }
 
-func (os *ObjectStream[T]) Close() {
-	os.ios.Close()
+func ListStreamName[T any](ctx context.Context, api *API, name string, opts *ListOpts) (*ObjectListStream[T], error) {
+	cfg := api.registry[name]
+	if cfg == nil {
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
+	}
+
+	iols, err := api.listStreamInt(ctx, cfg, opts)
+	if err != nil {
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "getSteam failed (%w)", err)
+	}
+
+	out := make(chan []*T, 100)
+
+	go func() {
+		defer close(out)
+
+		for list := range iols.Chan() {
+			typeList := []*T{}
+
+			for _, obj := range list {
+				typeList = append(typeList, convert[T](obj))
+			}
+
+			out <- typeList
+		}
+	}()
+
+	return &ObjectListStream[T]{
+		ch:   out,
+		iols: iols,
+	}, nil
 }
 
-func (os *ObjectStream[T]) Chan() <-chan *T {
-	return os.ch
+func ListStream[T any](ctx context.Context, api *API, opts *ListOpts) (*ObjectListStream[T], error) {
+	return ListStreamName[T](ctx, api, objName(new(T)), opts)
 }
-
-func (os *ObjectStream[T]) Read() *T {
-	return <-os.Chan()
-}
-
-// TODO: Add streaming list

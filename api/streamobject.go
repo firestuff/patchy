@@ -18,7 +18,7 @@ func (api *API) streamObject(cfg *config, id string, w http.ResponseWriter, r *h
 		return jsrest.Errorf(jsrest.ErrBadRequest, "stream failed (%w)", ErrStreamingNotSupported)
 	}
 
-	ios, err := api.getStreamInt(ctx, cfg, r, id)
+	ios, err := api.getStreamInt(ctx, cfg, id)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
 	}

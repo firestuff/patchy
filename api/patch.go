@@ -14,7 +14,7 @@ func (api *API) patch(cfg *config, id string, w http.ResponseWriter, r *http.Req
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read request failed (%w)", err)
 	}
 
-	obj, err := api.updateInt(r.Context(), cfg, r, id, patch)
+	obj, err := api.updateInt(r.Context(), cfg, r.Header.Get("If-Match"), id, patch)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "update failed (%w)", err)
 	}

@@ -18,7 +18,7 @@ func (api *API) getList(cfg *config, w http.ResponseWriter, r *http.Request) err
 		return jsrest.Errorf(jsrest.ErrBadRequest, "parse list parameters failed (%w)", err)
 	}
 
-	list, err := api.listInt(r.Context(), cfg, r, opts)
+	list, err := api.listInt(r.Context(), cfg, opts)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "list failed (%w)", err)
 	}

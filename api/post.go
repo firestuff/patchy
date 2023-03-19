@@ -14,7 +14,7 @@ func (api *API) post(cfg *config, w http.ResponseWriter, r *http.Request) error 
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read request failed (%w)", err)
 	}
 
-	created, err := api.createInt(r.Context(), cfg, r, obj)
+	created, err := api.createInt(r.Context(), cfg, obj)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "create failed (%w)", err)
 	}

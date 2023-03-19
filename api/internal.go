@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/dchest/uniuri"
 	"github.com/firestuff/patchy/jsrest"
@@ -18,7 +17,16 @@ type intObjectStream struct {
 	sbChan <-chan any
 }
 
-func (api *API) createInt(ctx context.Context, cfg *config, r *http.Request, obj any) (any, error) {
+type intObjectListStream struct {
+	ch <-chan []any
+
+	api    *API
+	cfg    *config
+	sbChan <-chan []any
+}
+
+func (api *API) createInt(ctx context.Context, cfg *config, obj any) (any, error) {
+	// TODO: Remove http.Request argument from all these functions
 	metadata.GetMetadata(obj).ID = uniuri.New()
 
 	obj, err := cfg.checkWrite(ctx, obj, nil, api)
@@ -39,7 +47,7 @@ func (api *API) createInt(ctx context.Context, cfg *config, r *http.Request, obj
 	return obj, nil
 }
 
-func (api *API) deleteInt(ctx context.Context, cfg *config, r *http.Request, id string) error {
+func (api *API) deleteInt(ctx context.Context, cfg *config, id string) error {
 	obj, err := api.sb.Read(ctx, cfg.typeName, id, cfg.factory)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
@@ -62,7 +70,7 @@ func (api *API) deleteInt(ctx context.Context, cfg *config, r *http.Request, id 
 	return nil
 }
 
-func (api *API) getInt(ctx context.Context, cfg *config, r *http.Request, id string) (any, error) {
+func (api *API) getInt(ctx context.Context, cfg *config, id string) (any, error) {
 	obj, err := api.sb.Read(ctx, cfg.typeName, id, cfg.factory)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
@@ -80,7 +88,7 @@ func (api *API) getInt(ctx context.Context, cfg *config, r *http.Request, id str
 	return obj, nil
 }
 
-func (api *API) listInt(ctx context.Context, cfg *config, r *http.Request, opts *ListOpts) ([]any, error) {
+func (api *API) listInt(ctx context.Context, cfg *config, opts *ListOpts) ([]any, error) {
 	// TODO: Add query condition pushdown
 
 	if opts == nil {
@@ -102,11 +110,11 @@ func (api *API) listInt(ctx context.Context, cfg *config, r *http.Request, opts 
 	return list, nil
 }
 
-func (api *API) replaceInt(ctx context.Context, cfg *config, r *http.Request, id string, replace any) (any, error) {
+func (api *API) replaceInt(ctx context.Context, cfg *config, ifmatch, id string, replace any) (any, error) {
 	cfg.lock(id)
 	defer cfg.unlock(id)
 
-	obj, err := api.sb.Read(r.Context(), cfg.typeName, id, cfg.factory)
+	obj, err := api.sb.Read(ctx, cfg.typeName, id, cfg.factory)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
 	}
@@ -115,7 +123,7 @@ func (api *API) replaceInt(ctx context.Context, cfg *config, r *http.Request, id
 		return nil, jsrest.Errorf(jsrest.ErrNotFound, "%s", id)
 	}
 
-	err = ifMatch(obj, r)
+	err = ifMatch(obj, ifmatch)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "match failed (%w)", err)
 	}
@@ -137,7 +145,7 @@ func (api *API) replaceInt(ctx context.Context, cfg *config, r *http.Request, id
 		return nil, jsrest.Errorf(jsrest.ErrUnauthorized, "write check failed (%w)", err)
 	}
 
-	err = api.sb.Write(r.Context(), cfg.typeName, replace)
+	err = api.sb.Write(ctx, cfg.typeName, replace)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "write failed: %s (%w)", id, err)
 	}
@@ -150,7 +158,7 @@ func (api *API) replaceInt(ctx context.Context, cfg *config, r *http.Request, id
 	return replace, nil
 }
 
-func (api *API) updateInt(ctx context.Context, cfg *config, r *http.Request, id string, patch any) (any, error) {
+func (api *API) updateInt(ctx context.Context, cfg *config, ifmatch, id string, patch any) (any, error) {
 	cfg.lock(id)
 	defer cfg.unlock(id)
 
@@ -166,7 +174,7 @@ func (api *API) updateInt(ctx context.Context, cfg *config, r *http.Request, id 
 		return nil, jsrest.Errorf(jsrest.ErrNotFound, "%s", id)
 	}
 
-	err = ifMatch(obj, r)
+	err = ifMatch(obj, ifmatch)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "match failed (%w)", err)
 	}
@@ -197,7 +205,7 @@ func (api *API) updateInt(ctx context.Context, cfg *config, r *http.Request, id 
 	return obj, nil
 }
 
-func (api *API) getStreamInt(ctx context.Context, cfg *config, r *http.Request, id string) (*intObjectStream, error) {
+func (api *API) getStreamInt(ctx context.Context, cfg *config, id string) (*intObjectStream, error) {
 	in, err := api.sb.ReadStream(ctx, cfg.typeName, id, cfg.factory)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
@@ -242,10 +250,47 @@ func (api *API) getStreamInt(ctx context.Context, cfg *config, r *http.Request, 
 	}, nil
 }
 
+func (api *API) listStreamInt(ctx context.Context, cfg *config, opts *ListOpts) (*intObjectListStream, error) {
+	in, err := api.sb.ListStream(ctx, cfg.typeName, cfg.factory)
+	if err != nil {
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
+	}
+
+	out := make(chan []any, 100)
+
+	go func() {
+		defer close(out)
+
+		for list := range in {
+			list, err = api.filterList(ctx, cfg, opts, list)
+			if err != nil {
+				break
+			}
+
+			out <- list
+		}
+	}()
+
+	return &intObjectListStream{
+		ch:     out,
+		api:    api,
+		cfg:    cfg,
+		sbChan: in,
+	}, nil
+}
+
 func (ios *intObjectStream) Close() {
 	ios.api.sb.CloseReadStream(ios.cfg.typeName, ios.id, ios.sbChan)
 }
 
 func (ios *intObjectStream) Chan() <-chan any {
 	return ios.ch
+}
+
+func (iols *intObjectListStream) Close() {
+	iols.api.sb.CloseListStream(iols.cfg.typeName, iols.sbChan)
+}
+
+func (iols *intObjectListStream) Chan() <-chan []any {
+	return iols.ch
 }
