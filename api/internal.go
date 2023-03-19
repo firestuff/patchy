@@ -245,3 +245,7 @@ func (api *API) getStreamInt(ctx context.Context, cfg *config, r *http.Request, 
 func (ios *intObjectStream) Close() {
 	ios.api.sb.CloseReadStream(ios.cfg.typeName, ios.id, ios.sbChan)
 }
+
+func (ios *intObjectStream) Chan() <-chan any {
+	return ios.ch
+}
