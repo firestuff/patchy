@@ -210,22 +210,7 @@ func (api *API) streamGetInt(ctx context.Context, cfg *config, id string) (*getS
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
 	}
 
-	// Pull the first item out of the channel and convert issues with it to errors
-
-	obj := <-in
-	if obj == nil {
-		api.sb.CloseReadStream(cfg.typeName, id, in)
-		return nil, jsrest.Errorf(jsrest.ErrNotFound, "%s", id)
-	}
-
-	obj, err = cfg.checkRead(ctx, obj, api)
-	if err != nil {
-		api.sb.CloseReadStream(cfg.typeName, id, in)
-		return nil, jsrest.Errorf(jsrest.ErrUnauthorized, "read check failed (%w)", err)
-	}
-
 	out := make(chan any, 100)
-	out <- obj
 
 	go func() {
 		defer close(out)
@@ -233,7 +218,7 @@ func (api *API) streamGetInt(ctx context.Context, cfg *config, id string) (*getS
 		for obj := range in {
 			obj, err = cfg.checkRead(ctx, obj, api)
 			if err != nil {
-				break
+				continue
 			}
 
 			out <- obj
