@@ -54,7 +54,7 @@ func TestDirect(t *testing.T) {
 	require.Nil(t, get)
 }
 
-func TestDirectGetStreamNotFound(t *testing.T) {
+func TestDirectStreamGetNotFound(t *testing.T) {
 	t.Parallel()
 
 	ta := newTestAPI(t)
@@ -62,12 +62,12 @@ func TestDirectGetStreamNotFound(t *testing.T) {
 
 	ctx := context.Background()
 
-	stream, err := api.GetStream[testType](ctx, ta.api, "junk")
+	stream, err := api.StreamGet[testType](ctx, ta.api, "junk")
 	require.Error(t, err)
 	require.Nil(t, stream)
 }
 
-func TestDirectGetStreamInitial(t *testing.T) {
+func TestDirectStreamGetInitial(t *testing.T) {
 	t.Parallel()
 
 	ta := newTestAPI(t)
@@ -78,7 +78,7 @@ func TestDirectGetStreamInitial(t *testing.T) {
 	create, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	stream, err := api.GetStream[testType](ctx, ta.api, create.ID)
+	stream, err := api.StreamGet[testType](ctx, ta.api, create.ID)
 	require.NoError(t, err)
 	require.NotNil(t, stream)
 
@@ -89,7 +89,7 @@ func TestDirectGetStreamInitial(t *testing.T) {
 	require.Equal(t, "foo", obj.Text)
 }
 
-func TestDirectGetStreamUpdate(t *testing.T) {
+func TestDirectStreamGetUpdate(t *testing.T) {
 	t.Parallel()
 
 	ta := newTestAPI(t)
@@ -100,7 +100,7 @@ func TestDirectGetStreamUpdate(t *testing.T) {
 	create, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	stream, err := api.GetStream[testType](ctx, ta.api, create.ID)
+	stream, err := api.StreamGet[testType](ctx, ta.api, create.ID)
 	require.NoError(t, err)
 	require.NotNil(t, stream)
 

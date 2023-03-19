@@ -1,35 +1,35 @@
 package api
 
-type ObjectStream[T any] struct {
+type GetStream[T any] struct {
 	ch  <-chan *T
-	ios *intObjectStream
+	gsi *getStreamInt
 }
 
-func (os *ObjectStream[T]) Close() {
-	os.ios.Close()
+func (gs *GetStream[T]) Close() {
+	gs.gsi.Close()
 }
 
-func (os *ObjectStream[T]) Chan() <-chan *T {
-	return os.ch
+func (gs *GetStream[T]) Chan() <-chan *T {
+	return gs.ch
 }
 
-func (os *ObjectStream[T]) Read() *T {
-	return <-os.Chan()
+func (gs *GetStream[T]) Read() *T {
+	return <-gs.Chan()
 }
 
-type ObjectListStream[T any] struct {
-	ch   <-chan []*T
-	iols *intObjectListStream
+type ListStream[T any] struct {
+	ch  <-chan []*T
+	lsi *listStreamInt
 }
 
-func (ols *ObjectListStream[T]) Close() {
-	ols.iols.Close()
+func (ls *ListStream[T]) Close() {
+	ls.lsi.Close()
 }
 
-func (ols *ObjectListStream[T]) Chan() <-chan []*T {
-	return ols.ch
+func (ls *ListStream[T]) Chan() <-chan []*T {
+	return ls.ch
 }
 
-func (ols *ObjectListStream[T]) Read() []*T {
-	return <-ols.Chan()
+func (ls *ListStream[T]) Read() []*T {
+	return <-ls.Chan()
 }

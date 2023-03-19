@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestStream(t *testing.T) {
+func TestStreamGet(t *testing.T) {
 	// TODO: Break up test
 	t.Parallel()
 
