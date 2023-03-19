@@ -33,7 +33,7 @@ func newTestAPI(t *testing.T) *testAPI {
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
 	a, err := api.NewSQLiteAPI(dbname)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	api.Register[testType](a)
 
@@ -42,7 +42,7 @@ func newTestAPI(t *testing.T) *testAPI {
 	mux.Handle("/api/", http.StripPrefix("/api", a))
 
 	listener, err := net.Listen("tcp", "[::]:0")
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	srv := &http.Server{
 		Handler:           mux,
@@ -75,7 +75,7 @@ func (ta *testAPI) r() *resty.Request {
 
 func (ta *testAPI) shutdown(t *testing.T) {
 	err := ta.srv.Shutdown(context.Background())
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	ta.api.Close()
 }
@@ -117,70 +117,195 @@ type testType struct {
 	Num  int64  `json:"num"`
 }
 
-func TestCheckSafe(t *testing.T) {
+type testType2 struct {
+	api.Metadata
+	Text string `json:"text"`
+}
+
+func (tt *testType) MayRead(context.Context, *api.API) error {
+	return nil
+}
+
+func (tt *testType2) MayWrite(context.Context, *testType2, *api.API) error {
+	return nil
+}
+
+func TestFileStoreAPI(t *testing.T) {
 	t.Parallel()
 
 	dir, err := os.MkdirTemp("", "")
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	defer os.RemoveAll(dir)
 
 	a, err := api.NewFileStoreAPI(dir)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
-	require.Nil(t, a.IsSafe())
+	api.Register[testType](a)
+
+	ctx := context.Background()
+
+	created, err := api.Create(ctx, a, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	get, err := api.Get[testType](ctx, a, created.ID)
+	require.NoError(t, err)
+	require.NotNil(t, get)
+	require.Equal(t, "foo", get.Text)
+}
+
+func TestIsSafeWithoutWrite(t *testing.T) {
+	t.Parallel()
+
+	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
+
+	a, err := api.NewSQLiteAPI(dbname)
+	require.NoError(t, err)
+
+	defer a.Close()
+
+	require.NoError(t, a.IsSafe())
 
 	api.Register[testType](a)
 
 	require.ErrorIs(t, a.IsSafe(), api.ErrMissingAuthCheck)
-
-	require.Panics(t, func() {
-		a.CheckSafe()
-	})
 }
 
-func TestAccept(t *testing.T) {
-	// TODO: Break up test
+func TestIsSafeWithoutRead(t *testing.T) {
+	t.Parallel()
+
+	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
+
+	a, err := api.NewSQLiteAPI(dbname)
+	require.NoError(t, err)
+
+	defer a.Close()
+
+	require.NoError(t, a.IsSafe())
+
+	api.Register[testType2](a)
+
+	require.ErrorIs(t, a.IsSafe(), api.ErrMissingAuthCheck)
+}
+
+func TestCheckSafeWithoutWrite(t *testing.T) {
+	t.Parallel()
+
+	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
+
+	a, err := api.NewSQLiteAPI(dbname)
+	require.NoError(t, err)
+
+	defer a.Close()
+
+	require.NotPanics(t, a.CheckSafe)
+
+	api.Register[testType](a)
+
+	require.Panics(t, a.CheckSafe)
+}
+
+func TestCheckSafeWithoutRead(t *testing.T) {
+	t.Parallel()
+
+	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
+
+	a, err := api.NewSQLiteAPI(dbname)
+	require.NoError(t, err)
+
+	defer a.Close()
+
+	require.NotPanics(t, a.CheckSafe)
+
+	api.Register[testType2](a)
+
+	require.Panics(t, a.CheckSafe)
+}
+
+func TestAcceptJSON(t *testing.T) {
 	t.Parallel()
 
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	created := &testType{}
+	ctx := context.Background()
 
-	resp, err := ta.r().
-		SetBody(&testType{
-			Text: "foo",
-		}).
-		SetResult(created).
-		Post("testtype")
-	require.Nil(t, err)
-	require.False(t, resp.IsError())
-	require.Equal(t, "foo", created.Text)
-	require.NotEmpty(t, created.ID)
+	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.NoError(t, err)
 
 	read := &testType{}
 
-	resp, err = ta.r().
+	resp, err := ta.r().
 		SetHeader("Accept", "text/event-stream;q=0.3, text/xml;q=0.1, application/json;q=0.5").
 		SetResult(read).
 		SetPathParam("id", created.ID).
 		Get("testtype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, "application/json", resp.Header().Get("Content-Type"))
 	require.Equal(t, "foo", read.Text)
 	require.Equal(t, created.ID, read.ID)
+}
 
-	resp, err = ta.r().
+func TestAcceptEventStream(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	resp, err := ta.r().
 		SetDoNotParseResponse(true).
 		SetHeader("Accept", "text/event-stream;q=0.7, text/xml;q=0.1, application/json;q=0.5").
 		SetPathParam("id", created.ID).
 		Get("testtype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, "text/event-stream", resp.Header().Get("Content-Type"))
 	resp.RawBody().Close()
+}
+
+func TestAcceptFailure(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	resp, err := ta.r().
+		SetHeader("Accept", "unsupported").
+		SetPathParam("id", created.ID).
+		Get("testtype/{id}")
+	require.NoError(t, err)
+	require.True(t, resp.IsError())
+	require.Equal(t, http.StatusNotAcceptable, resp.StatusCode())
+}
+
+func TestAcceptListFailure(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	resp, err := ta.r().
+		SetHeader("Accept", "unsupported").
+		Get("testtype")
+	require.NoError(t, err)
+	require.True(t, resp.IsError())
+	require.Equal(t, http.StatusNotAcceptable, resp.StatusCode())
 }
 
 func TestDebug(t *testing.T) {
@@ -194,7 +319,7 @@ func TestDebug(t *testing.T) {
 	resp, err := ta.r().
 		SetResult(&dbg).
 		Get("_debug")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Contains(t, dbg, "server")
 	require.Contains(t, dbg, "ip")
