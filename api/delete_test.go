@@ -2,31 +2,51 @@ package api_test
 
 import (
 	"bufio"
+	"context"
 	"testing"
 
+	"github.com/firestuff/patchy/patchyc"
 	"github.com/stretchr/testify/require"
 )
 
-func TestDELETE(t *testing.T) {
-	// TODO: Break up test
-
+func TestDeleteSuccess(t *testing.T) {
 	t.Parallel()
 
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	created := &testType{}
+	ctx := context.Background()
+
+	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.Nil(t, err)
+
+	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID)
+	require.Nil(t, err)
+	require.NotNil(t, get)
+	require.Equal(t, "foo", get.Text)
+
+	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID)
+	require.Nil(t, err)
+
+	get, err = patchyc.Get[testType](ctx, ta.pyc, created.ID)
+	require.Nil(t, err)
+	require.Nil(t, get)
+}
+
+func TestDeleteStream(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.Nil(t, err)
+
+	// TODO: Convert to using all patchyc once that supports streaming
 
 	resp, err := ta.r().
-		SetBody(&testType{
-			Text: "foo",
-		}).
-		SetResult(created).
-		Post("testtype")
-	require.Nil(t, err)
-	require.False(t, resp.IsError())
-
-	resp, err = ta.r().
 		SetDoNotParseResponse(true).
 		SetHeader("Accept", "text/event-stream").
 		SetPathParam("id", created.ID).
@@ -45,25 +65,10 @@ func TestDELETE(t *testing.T) {
 	require.Equal(t, "initial", eventType)
 	require.Equal(t, "foo", initial.Text)
 
-	resp, err = ta.r().
-		SetPathParam("id", created.ID).
-		Delete("testtype/{id}")
+	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID)
 	require.Nil(t, err)
-	require.False(t, resp.IsError())
 
 	eventType, err = readEvent(scan, nil)
 	require.Nil(t, err)
 	require.Equal(t, "delete", eventType)
-
-	body.Close()
-
-	read := &testType{}
-
-	resp, err = ta.r().
-		SetResult(read).
-		SetPathParam("id", created.ID).
-		Get("testtype/{id}")
-	require.Nil(t, err)
-	require.True(t, resp.IsError())
-	require.Equal(t, 404, resp.StatusCode())
 }
