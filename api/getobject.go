@@ -7,7 +7,7 @@ import (
 )
 
 func (api *API) getObject(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
-	obj, err := api.getInt(r.Context(), cfg, r, id)
+	obj, err := api.getInt(r.Context(), cfg, id)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "get failed (%w)", err)
 	}

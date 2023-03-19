@@ -61,11 +61,11 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 func (api *API) streamListFull(ctx context.Context, cfg *config, w http.ResponseWriter, opts *ListOpts) error {
 	// TODO: Add query condition pushdown
 
-	ch, err := api.sb.ListStream(ctx, cfg.typeName, cfg.factory)
+	iols, err := api.listStreamInt(ctx, cfg, opts)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
 	}
-	defer api.sb.CloseListStream(cfg.typeName, ch)
+	defer iols.Close()
 
 	ticker := time.NewTicker(5 * time.Second)
 
@@ -80,12 +80,7 @@ func (api *API) streamListFull(ctx context.Context, cfg *config, w http.Response
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "write heartbeat failed (%w)", err)
 			}
 
-		case list := <-ch:
-			list, err = api.filterList(ctx, cfg, opts, list)
-			if err != nil {
-				return jsrest.Errorf(jsrest.ErrInternalServerError, "filter list failed (%w)", err)
-			}
-
+		case list := <-iols.Chan():
 			err = writeEvent(w, "list", list)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "write list failed (%w)", err)
@@ -97,11 +92,11 @@ func (api *API) streamListFull(ctx context.Context, cfg *config, w http.Response
 func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.ResponseWriter, opts *ListOpts) error {
 	// TODO: Add query condition pushdown
 
-	ch, err := api.sb.ListStream(ctx, cfg.typeName, cfg.factory)
+	iols, err := api.listStreamInt(ctx, cfg, opts)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
 	}
-	defer api.sb.CloseListStream(cfg.typeName, ch)
+	defer iols.Close()
 
 	last := map[string]any{}
 
@@ -120,12 +115,7 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 		case <-ctx.Done():
 			return nil
 
-		case list := <-ch:
-			list, err := api.filterList(ctx, cfg, opts, list)
-			if err != nil {
-				return jsrest.Errorf(jsrest.ErrInternalServerError, "filter list failed (%w)", err)
-			}
-
+		case list := <-iols.Chan():
 			cur := map[string]any{}
 
 			for _, obj := range list {

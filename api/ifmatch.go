@@ -3,7 +3,6 @@ package api
 import (
 	"errors"
 	"fmt"
-	"net/http"
 	"strconv"
 	"strings"
 
@@ -22,12 +21,9 @@ var (
 	ErrGenerationMismatch = fmt.Errorf("generation mismatch: %w", ErrMismatch)
 )
 
-func ifMatch(obj any, r *http.Request) error {
-	if r == nil {
-		return nil
-	}
+func ifMatch(obj any, match string) error {
+	// TODO: Support a better intermediate representation for If-Match values, so they can be used by direct clients easily
 
-	match := r.Header.Get("If-Match")
 	if match == "" {
 		return nil
 	}

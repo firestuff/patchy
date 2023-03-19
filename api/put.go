@@ -14,7 +14,7 @@ func (api *API) put(cfg *config, id string, w http.ResponseWriter, r *http.Reque
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read request failed (%w)", err)
 	}
 
-	replace, err = api.replaceInt(r.Context(), cfg, r, id, replace)
+	replace, err = api.replaceInt(r.Context(), cfg, r.Header.Get("If-Match"), id, replace)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "replace failed (%w)", err)
 	}
