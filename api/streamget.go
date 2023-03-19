@@ -11,24 +11,24 @@ import (
 
 var ErrStreamingNotSupported = errors.New("streaming not supported")
 
-func (api *API) streamObject(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
+func (api *API) streamGet(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 
 	if _, ok := w.(http.Flusher); !ok {
 		return jsrest.Errorf(jsrest.ErrBadRequest, "stream failed (%w)", ErrStreamingNotSupported)
 	}
 
-	ios, err := api.getStreamInt(ctx, cfg, id)
+	gsi, err := api.streamGetInt(ctx, cfg, id)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
 	}
 
-	defer ios.Close()
+	defer gsi.Close()
 
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 
-	err = api.streamObjectInt(ctx, cfg, w, ios.ch)
+	err = api.streamGetWrite(ctx, cfg, w, gsi.ch)
 	if err != nil {
 		writeEvent(w, "error", jsrest.ToJSONError(err))
 		return nil
@@ -37,7 +37,7 @@ func (api *API) streamObject(cfg *config, id string, w http.ResponseWriter, r *h
 	return nil
 }
 
-func (api *API) streamObjectInt(ctx context.Context, cfg *config, w http.ResponseWriter, ch <-chan any) error {
+func (api *API) streamGetWrite(ctx context.Context, cfg *config, w http.ResponseWriter, ch <-chan any) error {
 	eventType := "initial"
 
 	ticker := time.NewTicker(5 * time.Second)

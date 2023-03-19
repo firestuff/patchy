@@ -61,11 +61,11 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 func (api *API) streamListFull(ctx context.Context, cfg *config, w http.ResponseWriter, opts *ListOpts) error {
 	// TODO: Add query condition pushdown
 
-	iols, err := api.listStreamInt(ctx, cfg, opts)
+	lsi, err := api.streamListInt(ctx, cfg, opts)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
 	}
-	defer iols.Close()
+	defer lsi.Close()
 
 	ticker := time.NewTicker(5 * time.Second)
 
@@ -80,7 +80,7 @@ func (api *API) streamListFull(ctx context.Context, cfg *config, w http.Response
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "write heartbeat failed (%w)", err)
 			}
 
-		case list := <-iols.Chan():
+		case list := <-lsi.Chan():
 			err = writeEvent(w, "list", list)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "write list failed (%w)", err)
@@ -92,11 +92,11 @@ func (api *API) streamListFull(ctx context.Context, cfg *config, w http.Response
 func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.ResponseWriter, opts *ListOpts) error {
 	// TODO: Add query condition pushdown
 
-	iols, err := api.listStreamInt(ctx, cfg, opts)
+	lsi, err := api.streamListInt(ctx, cfg, opts)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
 	}
-	defer iols.Close()
+	defer lsi.Close()
 
 	last := map[string]any{}
 
@@ -115,7 +115,7 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 		case <-ctx.Done():
 			return nil
 
-		case list := <-iols.Chan():
+		case list := <-lsi.Chan():
 			cur := map[string]any{}
 
 			for _, obj := range list {

@@ -8,7 +8,7 @@ import (
 	"github.com/firestuff/patchy/metadata"
 )
 
-type intObjectStream struct {
+type getStreamInt struct {
 	ch <-chan any
 
 	api    *API
@@ -17,7 +17,7 @@ type intObjectStream struct {
 	sbChan <-chan any
 }
 
-type intObjectListStream struct {
+type listStreamInt struct {
 	ch <-chan []any
 
 	api    *API
@@ -205,7 +205,7 @@ func (api *API) updateInt(ctx context.Context, cfg *config, ifmatch, id string, 
 	return obj, nil
 }
 
-func (api *API) getStreamInt(ctx context.Context, cfg *config, id string) (*intObjectStream, error) {
+func (api *API) streamGetInt(ctx context.Context, cfg *config, id string) (*getStreamInt, error) {
 	in, err := api.sb.ReadStream(ctx, cfg.typeName, id, cfg.factory)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
@@ -241,7 +241,7 @@ func (api *API) getStreamInt(ctx context.Context, cfg *config, id string) (*intO
 		}
 	}()
 
-	return &intObjectStream{
+	return &getStreamInt{
 		ch:     out,
 		api:    api,
 		cfg:    cfg,
@@ -250,7 +250,7 @@ func (api *API) getStreamInt(ctx context.Context, cfg *config, id string) (*intO
 	}, nil
 }
 
-func (api *API) listStreamInt(ctx context.Context, cfg *config, opts *ListOpts) (*intObjectListStream, error) {
+func (api *API) streamListInt(ctx context.Context, cfg *config, opts *ListOpts) (*listStreamInt, error) {
 	in, err := api.sb.ListStream(ctx, cfg.typeName, cfg.factory)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
@@ -271,7 +271,7 @@ func (api *API) listStreamInt(ctx context.Context, cfg *config, opts *ListOpts) 
 		}
 	}()
 
-	return &intObjectListStream{
+	return &listStreamInt{
 		ch:     out,
 		api:    api,
 		cfg:    cfg,
@@ -279,18 +279,18 @@ func (api *API) listStreamInt(ctx context.Context, cfg *config, opts *ListOpts) 
 	}, nil
 }
 
-func (ios *intObjectStream) Close() {
-	ios.api.sb.CloseReadStream(ios.cfg.typeName, ios.id, ios.sbChan)
+func (gsi *getStreamInt) Close() {
+	gsi.api.sb.CloseReadStream(gsi.cfg.typeName, gsi.id, gsi.sbChan)
 }
 
-func (ios *intObjectStream) Chan() <-chan any {
-	return ios.ch
+func (gsi *getStreamInt) Chan() <-chan any {
+	return gsi.ch
 }
 
-func (iols *intObjectListStream) Close() {
-	iols.api.sb.CloseListStream(iols.cfg.typeName, iols.sbChan)
+func (lsi *listStreamInt) Close() {
+	lsi.api.sb.CloseListStream(lsi.cfg.typeName, lsi.sbChan)
 }
 
-func (iols *intObjectListStream) Chan() <-chan []any {
-	return iols.ch
+func (lsi *listStreamInt) Chan() <-chan []any {
+	return lsi.ch
 }

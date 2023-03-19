@@ -151,13 +151,13 @@ func Update[T any](ctx context.Context, api *API, id string, obj *T) (*T, error)
 	return UpdateName[T](ctx, api, objName(obj), id, obj)
 }
 
-func GetStreamName[T any](ctx context.Context, api *API, name, id string) (*ObjectStream[T], error) {
+func StreamGetName[T any](ctx context.Context, api *API, name, id string) (*GetStream[T], error) {
 	cfg := api.registry[name]
 	if cfg == nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
 	}
 
-	ios, err := api.getStreamInt(ctx, cfg, id)
+	gsi, err := api.streamGetInt(ctx, cfg, id)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "getSteam failed (%w)", err)
 	}
@@ -167,28 +167,28 @@ func GetStreamName[T any](ctx context.Context, api *API, name, id string) (*Obje
 	go func() {
 		defer close(out)
 
-		for obj := range ios.Chan() {
+		for obj := range gsi.Chan() {
 			out <- convert[T](obj)
 		}
 	}()
 
-	return &ObjectStream[T]{
+	return &GetStream[T]{
 		ch:  out,
-		ios: ios,
+		gsi: gsi,
 	}, nil
 }
 
-func GetStream[T any](ctx context.Context, api *API, id string) (*ObjectStream[T], error) {
-	return GetStreamName[T](ctx, api, objName(new(T)), id)
+func StreamGet[T any](ctx context.Context, api *API, id string) (*GetStream[T], error) {
+	return StreamGetName[T](ctx, api, objName(new(T)), id)
 }
 
-func ListStreamName[T any](ctx context.Context, api *API, name string, opts *ListOpts) (*ObjectListStream[T], error) {
+func StreamListName[T any](ctx context.Context, api *API, name string, opts *ListOpts) (*ListStream[T], error) {
 	cfg := api.registry[name]
 	if cfg == nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
 	}
 
-	iols, err := api.listStreamInt(ctx, cfg, opts)
+	lsi, err := api.streamListInt(ctx, cfg, opts)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "getSteam failed (%w)", err)
 	}
@@ -198,7 +198,7 @@ func ListStreamName[T any](ctx context.Context, api *API, name string, opts *Lis
 	go func() {
 		defer close(out)
 
-		for list := range iols.Chan() {
+		for list := range lsi.Chan() {
 			typeList := []*T{}
 
 			for _, obj := range list {
@@ -209,12 +209,12 @@ func ListStreamName[T any](ctx context.Context, api *API, name string, opts *Lis
 		}
 	}()
 
-	return &ObjectListStream[T]{
-		ch:   out,
-		iols: iols,
+	return &ListStream[T]{
+		ch:  out,
+		lsi: lsi,
 	}, nil
 }
 
-func ListStream[T any](ctx context.Context, api *API, opts *ListOpts) (*ObjectListStream[T], error) {
-	return ListStreamName[T](ctx, api, objName(new(T)), opts)
+func StreamList[T any](ctx context.Context, api *API, opts *ListOpts) (*ListStream[T], error) {
+	return StreamListName[T](ctx, api, objName(new(T)), opts)
 }
