@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/dchest/uniuri"
+	"github.com/firestuff/patchy"
 	"github.com/firestuff/patchy/api"
 	"github.com/firestuff/patchy/patchyc"
 	"github.com/go-resty/resty/v2"
@@ -199,4 +200,21 @@ func TestDebug(t *testing.T) {
 	require.Contains(t, dbg, "ip")
 	require.Contains(t, dbg, "http")
 	require.Contains(t, dbg, "tls")
+}
+
+func TestRequestHookError(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	ta.api.SetRequestHook(func(*http.Request, *patchy.API) (*http.Request, error) {
+		return nil, fmt.Errorf("test reject")
+	})
+
+	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.Error(t, err)
+	require.Nil(t, created)
 }
