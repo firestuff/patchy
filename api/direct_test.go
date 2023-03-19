@@ -9,8 +9,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDirect(t *testing.T) {
-	// TODO: Break up test
+func TestDirectGetNotFound(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	get, err := api.Get[testType](ctx, ta.api, "doesnotexist")
+	require.NoError(t, err)
+	require.Nil(t, get)
+}
+
+func TestDirectCreateGet(t *testing.T) {
 	t.Parallel()
 
 	ta := newTestAPI(t)
@@ -26,33 +38,102 @@ func TestDirect(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, create.ID, get.ID)
 	require.Equal(t, "foo", get.Text)
+}
+
+func TestDirectUpdate(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	create, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	get, err := api.Get[testType](ctx, ta.api, create.ID)
+	require.NoError(t, err)
+	require.Equal(t, "foo", get.Text)
 
 	update, err := api.Update(ctx, ta.api, create.ID, &testType{Text: "bar"})
 	require.NoError(t, err)
 	require.Equal(t, create.ID, update.ID)
 	require.Equal(t, "bar", update.Text)
 
-	list, err := api.List[testType](ctx, ta.api, nil)
+	get, err = api.Get[testType](ctx, ta.api, create.ID)
 	require.NoError(t, err)
-	require.Len(t, list, 1)
-	require.Equal(t, create.ID, list[0].ID)
-	require.Equal(t, "bar", list[0].Text)
+	require.Equal(t, "bar", get.Text)
+}
 
-	find, err := api.Find[testType](ctx, ta.api, create.ID[:4])
+func TestDirectDelete(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	create, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
-	require.Equal(t, create.ID, find.ID)
-	require.Equal(t, "bar", find.Text)
+
+	_, err = api.Get[testType](ctx, ta.api, create.ID)
+	require.NoError(t, err)
 
 	err = api.Delete[testType](ctx, ta.api, create.ID)
 	require.NoError(t, err)
 
-	list, err = api.List[testType](ctx, ta.api, nil)
-	require.NoError(t, err)
-	require.Len(t, list, 0)
-
-	get, err = api.Get[testType](ctx, ta.api, "junk")
+	get, err := api.Get[testType](ctx, ta.api, create.ID)
 	require.NoError(t, err)
 	require.Nil(t, get)
+}
+
+func TestDirectDeleteNotFound(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	err := api.Delete[testType](ctx, ta.api, "doesnotexist")
+	require.Error(t, err)
+}
+
+func TestDirectList(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	_, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	_, err = api.Create(ctx, ta.api, &testType{Text: "bar"})
+	require.NoError(t, err)
+
+	list, err := api.List[testType](ctx, ta.api, nil)
+	require.NoError(t, err)
+	require.Len(t, list, 2)
+	require.ElementsMatch(t, []string{"foo", "bar"}, []string{list[0].Text, list[1].Text})
+}
+
+func TestDirectFind(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	create, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	find, err := api.Find[testType](ctx, ta.api, create.ID[:4])
+	require.NoError(t, err)
+	require.Equal(t, create.ID, find.ID)
+	require.Equal(t, "foo", find.Text)
 }
 
 func TestDirectStreamGetNotFound(t *testing.T) {
