@@ -18,10 +18,10 @@ func TestCert(t *testing.T) {
 	t.Parallel()
 
 	conf, err := selfcert.NewTLSConfigFromHostPort("localhost:0")
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	listener, err := tls.Listen("tcp", "localhost:0", conf)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	baseURL := fmt.Sprintf("https://localhost:%d/", listener.Addr().(*net.TCPAddr).Port)
 
@@ -40,10 +40,10 @@ func TestCert(t *testing.T) {
 	})
 
 	resp, err := cli.R().Get("/")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.True(t, resp.IsError())
 	require.Equal(t, resp.StatusCode(), 404)
 
 	err = srv.Shutdown(context.Background())
-	require.Nil(t, err)
+	require.NoError(t, err)
 }

@@ -22,7 +22,7 @@ func TestStreamList(t *testing.T) {
 		}).
 		SetResult(created1).
 		Post("testtype")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 
 	created2 := &testType{}
@@ -33,14 +33,14 @@ func TestStreamList(t *testing.T) {
 		}).
 		SetResult(created2).
 		Post("testtype")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 
 	resp, err = ta.r().
 		SetDoNotParseResponse(true).
 		SetHeader("Accept", "text/event-stream").
 		Get("testtype")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 
 	body := resp.RawBody()
@@ -51,7 +51,7 @@ func TestStreamList(t *testing.T) {
 	list := []*testType{}
 
 	eventType, err := readEvent(scan, &list)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "list", eventType)
 
 	require.Len(t, list, 2)
@@ -59,7 +59,7 @@ func TestStreamList(t *testing.T) {
 
 	// Heartbeat (after 5 seconds)
 	eventType, err = readEvent(scan, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "heartbeat", eventType)
 
 	created3 := &testType{}
@@ -70,11 +70,11 @@ func TestStreamList(t *testing.T) {
 		}).
 		SetResult(created3).
 		Post("testtype")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 
 	eventType, err = readEvent(scan, &list)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "list", eventType)
 
 	require.Len(t, list, 3)
@@ -87,11 +87,11 @@ func TestStreamList(t *testing.T) {
 		SetResult(created3).
 		SetPathParam("id", created3.ID).
 		Patch("testtype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 
 	eventType, err = readEvent(scan, &list)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "list", eventType)
 
 	require.Len(t, list, 3)
@@ -100,11 +100,11 @@ func TestStreamList(t *testing.T) {
 	resp, err = ta.r().
 		SetPathParam("id", created3.ID).
 		Delete("testtype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 
 	eventType, err = readEvent(scan, &list)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "list", eventType)
 
 	require.Len(t, list, 2)
@@ -115,7 +115,7 @@ func TestStreamList(t *testing.T) {
 		SetHeader("Accept", "text/event-stream").
 		SetQueryParam("_limit", "1").
 		Get("testtype")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 
 	body2 := resp.RawBody()
@@ -124,7 +124,7 @@ func TestStreamList(t *testing.T) {
 	scan2 := bufio.NewScanner(body2)
 
 	eventType, err = readEvent(scan2, &list)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "list", eventType)
 
 	require.Len(t, list, 1)
@@ -146,7 +146,7 @@ func TestStreamListDiff(t *testing.T) {
 		}).
 		SetResult(created1).
 		Post("testtype")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 
 	created2 := &testType{}
@@ -157,7 +157,7 @@ func TestStreamListDiff(t *testing.T) {
 		}).
 		SetResult(created2).
 		Post("testtype")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 
 	resp, err = ta.r().
@@ -165,7 +165,7 @@ func TestStreamListDiff(t *testing.T) {
 		SetHeader("Accept", "text/event-stream").
 		SetQueryParam("_stream", "diff").
 		Get("testtype")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 
 	body := resp.RawBody()
@@ -180,7 +180,7 @@ func TestStreamListDiff(t *testing.T) {
 		SetQueryParam("_sort", "text").
 		SetQueryParam("_limit", "1").
 		Get("testtype")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp2.IsError())
 
 	body2 := resp2.RawBody()
@@ -191,18 +191,18 @@ func TestStreamListDiff(t *testing.T) {
 	obj1 := testType{}
 
 	eventType, err := readEvent(scan, &obj1)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "add", eventType)
 
 	obj2 := testType{}
 
 	eventType, err = readEvent(scan, &obj2)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "add", eventType)
 	require.ElementsMatch(t, []string{"foo", "bar"}, []string{obj1.Text, obj2.Text})
 
 	eventType, err = readEvent(scan2, &obj1)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "add", eventType)
 	require.Equal(t, "bar", obj1.Text)
 
@@ -213,23 +213,23 @@ func TestStreamListDiff(t *testing.T) {
 		SetResult(created2).
 		SetPathParam("id", created2.ID).
 		Patch("testtype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 
 	eventType, err = readEvent(scan, &obj1)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "update", eventType)
 	require.Equal(t, created2.ID, obj1.ID)
 	require.Equal(t, "zig", obj1.Text)
 
 	eventType, err = readEvent(scan2, &obj1)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "add", eventType)
 	require.Equal(t, created1.ID, obj1.ID)
 	require.Equal(t, "foo", obj1.Text)
 
 	eventType, err = readEvent(scan2, &obj1)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "remove", eventType)
 	require.Equal(t, created2.ID, obj1.ID)
 	require.Equal(t, "bar", obj1.Text)
@@ -237,23 +237,23 @@ func TestStreamListDiff(t *testing.T) {
 	resp, err = ta.r().
 		SetPathParam("id", created1.ID).
 		Delete("testtype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 
 	eventType, err = readEvent(scan, &obj1)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "remove", eventType)
 	require.Equal(t, created1.ID, obj1.ID)
 	require.Equal(t, "foo", obj1.Text)
 
 	eventType, err = readEvent(scan2, &obj1)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "add", eventType)
 	require.Equal(t, created2.ID, obj1.ID)
 	require.Equal(t, "zig", obj1.Text)
 
 	eventType, err = readEvent(scan2, &obj1)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "remove", eventType)
 	require.Equal(t, created1.ID, obj1.ID)
 	require.Equal(t, "foo", obj1.Text)

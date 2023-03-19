@@ -12,7 +12,7 @@ func TestFileStore(t *testing.T) {
 	t.Parallel()
 
 	dir, err := os.MkdirTemp("", "")
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	defer os.RemoveAll(dir)
 
@@ -25,7 +25,7 @@ func TestFileStoreDelete(t *testing.T) {
 	t.Parallel()
 
 	dir, err := os.MkdirTemp("", "")
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	defer os.RemoveAll(dir)
 
@@ -38,7 +38,7 @@ func TestFileStoreList(t *testing.T) {
 	t.Parallel()
 
 	dir, err := os.MkdirTemp("", "")
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	defer os.RemoveAll(dir)
 

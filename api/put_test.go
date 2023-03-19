@@ -23,7 +23,7 @@ func TestPUT(t *testing.T) {
 		}).
 		SetResult(created).
 		Post("testtype")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, int64(0), created.Generation)
 
@@ -36,7 +36,7 @@ func TestPUT(t *testing.T) {
 		SetResult(replaced).
 		SetPathParam("id", created.ID).
 		Put("testtype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, "bar", replaced.Text)
 	require.Equal(t, created.ID, replaced.ID)
@@ -48,7 +48,7 @@ func TestPUT(t *testing.T) {
 		SetResult(read).
 		SetPathParam("id", created.ID).
 		Get("testtype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, "bar", read.Text)
 	require.Equal(t, int64(0), read.Num)
@@ -71,7 +71,7 @@ func TestPUTIfMatch(t *testing.T) {
 		}).
 		SetResult(created).
 		Post("testtype")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, int64(0), created.Generation)
 
@@ -88,7 +88,7 @@ func TestPUTIfMatch(t *testing.T) {
 		SetResult(replaced).
 		SetPathParam("id", created.ID).
 		Put("testtype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, int64(1), replaced.Generation)
 
@@ -103,7 +103,7 @@ func TestPUTIfMatch(t *testing.T) {
 		}).
 		SetPathParam("id", created.ID).
 		Put("testtype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.True(t, resp.IsError())
 	require.Equal(t, 400, resp.StatusCode())
 
@@ -114,7 +114,7 @@ func TestPUTIfMatch(t *testing.T) {
 		}).
 		SetPathParam("id", created.ID).
 		Put("testtype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.True(t, resp.IsError())
 	require.Equal(t, 412, resp.StatusCode())
 
@@ -126,7 +126,7 @@ func TestPUTIfMatch(t *testing.T) {
 		SetResult(replaced).
 		SetPathParam("id", created.ID).
 		Put("testtype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, int64(2), replaced.Generation)
 	require.Equal(t, "zig", replaced.Text)
@@ -138,7 +138,7 @@ func TestPUTIfMatch(t *testing.T) {
 		}).
 		SetPathParam("id", created.ID).
 		Put("testtype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.True(t, resp.IsError())
 	require.Equal(t, 412, resp.StatusCode())
 }

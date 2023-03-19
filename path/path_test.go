@@ -52,24 +52,24 @@ func TestSet(t *testing.T) {
 
 	tt1 := &testType1{}
 	err := path.Set(tt1, "int64", "1234")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, int64(1234), tt1.Int64)
 
 	err = path.Set(tt1, "time", "2022-11-01-08:00")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, int64(1667289600), tt1.Time.Unix())
 
 	tt2 := &testType2{}
 	err = path.Set(tt2, "tt1p.bool2", "true")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, true, tt2.Tt1p.Bool)
 
 	err = path.Set(tt2, "tt1p.string2", "foo")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "foo", tt2.Tt1p.String)
 
 	err = path.Set(tt2, "tt1.boolp", "true")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, true, *tt2.Tt1.BoolP)
 }
 
@@ -78,6 +78,6 @@ func TestEmbed(t *testing.T) {
 
 	tt3 := &testType3{}
 	err := path.Set(tt3, "int", "1234")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, 1234, tt3.Int)
 }

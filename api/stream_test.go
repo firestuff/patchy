@@ -22,7 +22,7 @@ func TestStream(t *testing.T) {
 		}).
 		SetResult(created).
 		Post("testtype")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 
 	resp, err = ta.r().
@@ -30,7 +30,7 @@ func TestStream(t *testing.T) {
 		SetHeader("Accept", "text/event-stream").
 		SetPathParam("id", created.ID).
 		Get("testtype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 
 	body := resp.RawBody()
@@ -40,13 +40,13 @@ func TestStream(t *testing.T) {
 
 	initial := &testType{}
 	eventType, err := readEvent(scan, initial)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "initial", eventType)
 	require.Equal(t, "foo", initial.Text)
 
 	// Heartbeat (after 5 seconds)
 	eventType, err = readEvent(scan, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "heartbeat", eventType)
 
 	updated := &testType{}
@@ -59,11 +59,11 @@ func TestStream(t *testing.T) {
 		SetResult(updated).
 		SetPathParam("id", created.ID).
 		Patch("testtype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 
 	eventType, err = readEvent(scan, updated)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "update", eventType)
 	require.Equal(t, "bar", updated.Text)
 }

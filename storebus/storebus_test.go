@@ -15,7 +15,7 @@ func TestStoreBus(t *testing.T) {
 	t.Parallel()
 
 	dir, err := os.MkdirTemp("", "")
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	defer os.RemoveAll(dir)
 
@@ -29,15 +29,15 @@ func TestStoreBus(t *testing.T) {
 		},
 		Opaque: "foo",
 	})
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	c1, err := sb.ReadStream(ctx, "storeBusTest", "id1", newStoreBusTest)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	defer sb.CloseReadStream("storeBusTest", "id1", c1)
 
 	c2, err := sb.ListStream(ctx, "storeBusTest", newStoreBusTest)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	defer sb.CloseListStream("storeBusTest", c2)
 
@@ -56,7 +56,7 @@ func TestStoreBus(t *testing.T) {
 		},
 		Opaque: "bar",
 	})
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	out2 := (<-c1).(*storeBusTest)
 	require.Equal(t, "bar", out2.Opaque)
@@ -68,13 +68,13 @@ func TestStoreBus(t *testing.T) {
 	require.Equal(t, "etag:906fda69e9893280ca9294bd04eb276794da9a8904fc0b671c69175f08cc03c6", l2[0].(*storeBusTest).ETag)
 
 	l2a, err := sb.List(ctx, "storeBusTest", newStoreBusTest)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Len(t, l2a, 1)
 	require.Equal(t, "bar", l2a[0].(*storeBusTest).Opaque)
 	require.Equal(t, "etag:906fda69e9893280ca9294bd04eb276794da9a8904fc0b671c69175f08cc03c6", l2a[0].(*storeBusTest).ETag)
 
 	out2a, err := sb.Read(ctx, "storeBusTest", "id1", newStoreBusTest)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "bar", out2a.(*storeBusTest).Opaque)
 	require.Equal(t, "etag:906fda69e9893280ca9294bd04eb276794da9a8904fc0b671c69175f08cc03c6", out2a.(*storeBusTest).ETag)
 
@@ -84,7 +84,7 @@ func TestStoreBus(t *testing.T) {
 		},
 		Opaque: "zig",
 	})
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	l3 := <-c2
 	require.Len(t, l3, 2)
@@ -101,7 +101,7 @@ func TestStoreBus(t *testing.T) {
 	)
 
 	l3a, err := sb.List(ctx, "storeBusTest", newStoreBusTest)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Len(t, l3a, 2)
 	require.ElementsMatch(
 		t,
@@ -120,7 +120,7 @@ func TestStoreBusDelete(t *testing.T) {
 	t.Parallel()
 
 	dir, err := os.MkdirTemp("", "")
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	defer os.RemoveAll(dir)
 
@@ -129,7 +129,7 @@ func TestStoreBusDelete(t *testing.T) {
 	sb := storebus.NewStoreBus(store.NewFileStore(dir))
 
 	c1, err := sb.ReadStream(ctx, "storeBusTest", "id1", newStoreBusTest)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	defer sb.CloseReadStream("storeBusTest", "id1", c1)
 
@@ -142,13 +142,13 @@ func TestStoreBusDelete(t *testing.T) {
 		},
 		Opaque: "foo",
 	})
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	out := (<-c1).(*storeBusTest)
 	require.Equal(t, "foo", out.Opaque)
 
 	err = sb.Delete(ctx, "storeBusTest", "id1")
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	_, ok := <-c1
 	require.False(t, ok)
