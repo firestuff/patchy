@@ -22,7 +22,7 @@ func TestPATCH(t *testing.T) {
 		}).
 		SetResult(created).
 		Post("testtype")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, int64(0), created.Generation)
 
@@ -35,7 +35,7 @@ func TestPATCH(t *testing.T) {
 		SetResult(updated).
 		SetPathParam("id", created.ID).
 		Patch("testtype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, "bar", updated.Text)
 	require.Equal(t, created.ID, updated.ID)
@@ -47,7 +47,7 @@ func TestPATCH(t *testing.T) {
 		SetResult(read).
 		SetPathParam("id", created.ID).
 		Get("testtype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, "bar", read.Text)
 	require.Equal(t, created.ID, read.ID)
@@ -69,7 +69,7 @@ func TestPATCHIfMatch(t *testing.T) {
 		}).
 		SetResult(created).
 		Post("testtype")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, int64(0), created.Generation)
 
@@ -86,7 +86,7 @@ func TestPATCHIfMatch(t *testing.T) {
 		SetResult(updated).
 		SetPathParam("id", created.ID).
 		Patch("testtype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, int64(1), updated.Generation)
 
@@ -101,7 +101,7 @@ func TestPATCHIfMatch(t *testing.T) {
 		}).
 		SetPathParam("id", created.ID).
 		Patch("testtype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.True(t, resp.IsError())
 	require.Equal(t, 400, resp.StatusCode())
 
@@ -112,7 +112,7 @@ func TestPATCHIfMatch(t *testing.T) {
 		}).
 		SetPathParam("id", created.ID).
 		Patch("testtype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.True(t, resp.IsError())
 	require.Equal(t, 412, resp.StatusCode())
 
@@ -124,7 +124,7 @@ func TestPATCHIfMatch(t *testing.T) {
 		SetResult(updated).
 		SetPathParam("id", created.ID).
 		Patch("testtype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, int64(2), updated.Generation)
 	require.Equal(t, "zig", updated.Text)
@@ -136,7 +136,7 @@ func TestPATCHIfMatch(t *testing.T) {
 		}).
 		SetPathParam("id", created.ID).
 		Patch("testtype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.True(t, resp.IsError())
 	require.Equal(t, 412, resp.StatusCode())
 }

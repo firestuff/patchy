@@ -18,7 +18,7 @@ func testStorer(t *testing.T, st store.Storer) {
 		},
 		Opaque: "foo",
 	})
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	err = st.Write(ctx, "storeTest", &storeTest{
 		Metadata: metadata.Metadata{
@@ -26,7 +26,7 @@ func testStorer(t *testing.T, st store.Storer) {
 		},
 		Opaque: "bar",
 	})
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	err = st.Write(ctx, "storeTest", &storeTest{
 		Metadata: metadata.Metadata{
@@ -34,15 +34,15 @@ func testStorer(t *testing.T, st store.Storer) {
 		},
 		Opaque: "zig",
 	})
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	out1, err := st.Read(ctx, "storeTest", "id1", newStoreTest)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, out1)
 	require.Equal(t, "foo", out1.(*storeTest).Opaque)
 
 	out2, err := st.Read(ctx, "storeTest", "id2", newStoreTest)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, out1)
 	require.Equal(t, "zig", out2.(*storeTest).Opaque)
 }
@@ -56,17 +56,17 @@ func testDelete(t *testing.T, st store.Storer) {
 		},
 		Opaque: "foo",
 	})
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	out1, err := st.Read(ctx, "storeTest", "id1", newStoreTest)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "foo", out1.(*storeTest).Opaque)
 
 	err = st.Delete(ctx, "storeTest", "id1")
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	out2, err := st.Read(ctx, "storeTest", "id1", newStoreTest)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Nil(t, out2)
 }
 
@@ -74,7 +74,7 @@ func testList(t *testing.T, st store.Storer) {
 	ctx := context.Background()
 
 	objs, err := st.List(ctx, "storeTest", func() any { return &storeTest{} })
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Len(t, objs, 0)
 
 	err = st.Write(ctx, "storeTest", &storeTest{
@@ -83,7 +83,7 @@ func testList(t *testing.T, st store.Storer) {
 		},
 		Opaque: "foo",
 	})
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	err = st.Write(ctx, "storeTest", &storeTest{
 		Metadata: metadata.Metadata{
@@ -91,10 +91,10 @@ func testList(t *testing.T, st store.Storer) {
 		},
 		Opaque: "bar",
 	})
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	objs, err = st.List(ctx, "storeTest", func() any { return &storeTest{} })
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Len(t, objs, 2)
 	require.ElementsMatch(t, []string{"foo", "bar"}, []string{objs[0].(*storeTest).Opaque, objs[1].(*storeTest).Opaque})
 }

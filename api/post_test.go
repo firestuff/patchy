@@ -20,7 +20,7 @@ func TestPOST(t *testing.T) {
 		}).
 		SetResult(created).
 		Post("testtype")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, "foo", created.Text)
 	require.NotEmpty(t, created.ID)
@@ -31,7 +31,7 @@ func TestPOST(t *testing.T) {
 		SetResult(read).
 		SetPathParam("id", created.ID).
 		Get("testtype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, "foo", read.Text)
 	require.Equal(t, created.ID, read.ID)

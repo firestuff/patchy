@@ -107,7 +107,7 @@ func TestMayWrite(t *testing.T) {
 		SetBody(&mayType{}).
 		SetResult(created).
 		Post("maytype")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.NotEmpty(t, created.ID)
 
@@ -116,7 +116,7 @@ func TestMayWrite(t *testing.T) {
 		SetBody(&mayType{}).
 		SetResult(created).
 		Post("maytype")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.True(t, resp.IsError())
 	require.Equal(t, 401, resp.StatusCode())
 
@@ -127,7 +127,7 @@ func TestMayWrite(t *testing.T) {
 		SetResult(replaced).
 		SetPathParam("id", created.ID).
 		Put("maytype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 
 	resp, err = ta.r().
@@ -136,7 +136,7 @@ func TestMayWrite(t *testing.T) {
 		SetResult(replaced).
 		SetPathParam("id", created.ID).
 		Put("maytype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.True(t, resp.IsError())
 	require.Equal(t, 401, resp.StatusCode())
 
@@ -147,7 +147,7 @@ func TestMayWrite(t *testing.T) {
 		SetResult(updated).
 		SetPathParam("id", created.ID).
 		Patch("maytype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError(), resp)
 
 	resp, err = ta.r().
@@ -156,7 +156,7 @@ func TestMayWrite(t *testing.T) {
 		SetResult(updated).
 		SetPathParam("id", created.ID).
 		Patch("maytype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.True(t, resp.IsError())
 	require.Equal(t, 401, resp.StatusCode())
 
@@ -164,14 +164,14 @@ func TestMayWrite(t *testing.T) {
 		SetHeader("X-Refuse-Write", "x").
 		SetPathParam("id", created.ID).
 		Delete("maytype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.True(t, resp.IsError())
 	require.Equal(t, 401, resp.StatusCode())
 
 	resp, err = ta.r().
 		SetPathParam("id", created.ID).
 		Delete("maytype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 }
 
@@ -191,7 +191,7 @@ func TestMayRead(t *testing.T) {
 		SetBody(&mayType{}).
 		SetResult(created).
 		Post("maytype")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 
 	read := &testType{}
@@ -200,7 +200,7 @@ func TestMayRead(t *testing.T) {
 		SetResult(read).
 		SetPathParam("id", created.ID).
 		Get("maytype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 
 	resp, err = ta.r().
@@ -208,7 +208,7 @@ func TestMayRead(t *testing.T) {
 		SetHeader("Accept", "text/event-stream").
 		SetPathParam("id", created.ID).
 		Get("maytype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	resp.RawBody().Close()
 
@@ -217,7 +217,7 @@ func TestMayRead(t *testing.T) {
 		SetResult(read).
 		SetPathParam("id", created.ID).
 		Get("maytype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.True(t, resp.IsError())
 	require.Equal(t, 401, resp.StatusCode())
 
@@ -227,7 +227,7 @@ func TestMayRead(t *testing.T) {
 		SetHeader("Accept", "text/event-stream").
 		SetPathParam("id", created.ID).
 		Get("maytype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.True(t, resp.IsError())
 	require.Equal(t, 401, resp.StatusCode())
 	resp.RawBody().Close()
@@ -237,7 +237,7 @@ func TestMayRead(t *testing.T) {
 	resp, err = ta.r().
 		SetResult(&list).
 		Get("maytype")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Len(t, list, 1)
 
@@ -245,7 +245,7 @@ func TestMayRead(t *testing.T) {
 		SetHeader("X-Refuse-Read", "x").
 		SetResult(&list).
 		Get("maytype")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Len(t, list, 0)
 
@@ -253,7 +253,7 @@ func TestMayRead(t *testing.T) {
 		SetDoNotParseResponse(true).
 		SetHeader("Accept", "text/event-stream").
 		Get("maytype")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 
 	body1 := resp.RawBody()
@@ -262,7 +262,7 @@ func TestMayRead(t *testing.T) {
 	scan1 := bufio.NewScanner(body1)
 
 	eventType, err := readEvent(scan1, &list)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "list", eventType)
 	require.Len(t, list, 1)
 
@@ -271,7 +271,7 @@ func TestMayRead(t *testing.T) {
 		SetHeader("X-Refuse-Read", "x").
 		SetHeader("Accept", "text/event-stream").
 		Get("maytype")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 
 	body2 := resp.RawBody()
@@ -280,7 +280,7 @@ func TestMayRead(t *testing.T) {
 	scan2 := bufio.NewScanner(body2)
 
 	eventType, err = readEvent(scan2, &list)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "list", eventType)
 	require.Len(t, list, 0)
 }
@@ -302,7 +302,7 @@ func TestMayWriteMutate(t *testing.T) {
 		SetBody(&mayType{Text1: "foo"}).
 		SetResult(create).
 		Post("maytype")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, "1234", create.Text1)
 
@@ -312,7 +312,7 @@ func TestMayWriteMutate(t *testing.T) {
 		SetResult(get).
 		SetPathParam("id", create.ID).
 		Get("maytype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, "1234", get.Text1)
 
@@ -324,7 +324,7 @@ func TestMayWriteMutate(t *testing.T) {
 		SetResult(patch).
 		SetPathParam("id", create.ID).
 		Patch("maytype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, "2345", patch.Text1)
 
@@ -332,7 +332,7 @@ func TestMayWriteMutate(t *testing.T) {
 		SetResult(get).
 		SetPathParam("id", create.ID).
 		Get("maytype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, "2345", get.Text1)
 
@@ -344,7 +344,7 @@ func TestMayWriteMutate(t *testing.T) {
 		SetResult(put).
 		SetPathParam("id", create.ID).
 		Put("maytype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, "3456", put.Text1)
 
@@ -352,7 +352,7 @@ func TestMayWriteMutate(t *testing.T) {
 		SetResult(get).
 		SetPathParam("id", create.ID).
 		Get("maytype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, "3456", get.Text1)
 }
@@ -374,7 +374,7 @@ func TestMayReadMutate(t *testing.T) {
 		SetBody(&mayType{Text1: "foo"}).
 		SetResult(create).
 		Post("maytype")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, "1234", create.Text1)
 
@@ -384,7 +384,7 @@ func TestMayReadMutate(t *testing.T) {
 		SetResult(get).
 		SetPathParam("id", create.ID).
 		Get("maytype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, "foo", get.Text1)
 
@@ -396,7 +396,7 @@ func TestMayReadMutate(t *testing.T) {
 		SetResult(patch).
 		SetPathParam("id", create.ID).
 		Patch("maytype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, "2345", patch.Text1)
 
@@ -404,7 +404,7 @@ func TestMayReadMutate(t *testing.T) {
 		SetResult(get).
 		SetPathParam("id", create.ID).
 		Get("maytype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, "bar", get.Text1)
 
@@ -414,7 +414,7 @@ func TestMayReadMutate(t *testing.T) {
 		SetHeader("Accept", "text/event-stream").
 		SetPathParam("id", create.ID).
 		Get("maytype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 
 	body := resp.RawBody()
@@ -425,7 +425,7 @@ func TestMayReadMutate(t *testing.T) {
 	stream := &mayType{}
 
 	eventType, err := readEvent(scan, stream)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "initial", eventType)
 	require.Equal(t, "stream1234", stream.Text1)
 
@@ -434,7 +434,7 @@ func TestMayReadMutate(t *testing.T) {
 		SetHeader("X-Text1-Read", "stream2345").
 		SetHeader("Accept", "text/event-stream").
 		Get("maytype")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 
 	bodyList := resp.RawBody()
@@ -445,7 +445,7 @@ func TestMayReadMutate(t *testing.T) {
 	streamList := []*mayType{}
 
 	eventType, err = readEvent(scanList, &streamList)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "list", eventType)
 	require.Len(t, streamList, 1)
 	require.Equal(t, "stream2345", streamList[0].Text1)
@@ -458,7 +458,7 @@ func TestMayReadMutate(t *testing.T) {
 		SetResult(put).
 		SetPathParam("id", create.ID).
 		Put("maytype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, "3456", put.Text1)
 
@@ -466,7 +466,7 @@ func TestMayReadMutate(t *testing.T) {
 		SetResult(get).
 		SetPathParam("id", create.ID).
 		Get("maytype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, "zig", get.Text1)
 
@@ -475,17 +475,17 @@ func TestMayReadMutate(t *testing.T) {
 		SetResult(get).
 		SetPathParam("id", create.ID).
 		Get("maytype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, "4567", get.Text1)
 
 	eventType, err = readEvent(scan, stream)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "update", eventType)
 	require.Equal(t, "stream1234", stream.Text1)
 
 	eventType, err = readEvent(scanList, &streamList)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "list", eventType)
 	require.Len(t, streamList, 1)
 	require.Equal(t, "stream2345", streamList[0].Text1)
@@ -496,7 +496,7 @@ func TestMayReadMutate(t *testing.T) {
 		SetHeader("X-Text1-Read", "5678").
 		SetResult(&list).
 		Get("maytype")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Len(t, list, 1)
 	require.Equal(t, "5678", list[0].Text1)
@@ -518,7 +518,7 @@ func TestMayReadAPI(t *testing.T) {
 		SetBody(&mayType{Text1: "foo"}).
 		SetResult(created).
 		Post("maytype")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.NotEmpty(t, created.ID)
 
@@ -529,7 +529,7 @@ func TestMayReadAPI(t *testing.T) {
 		SetResult(get).
 		SetPathParam("id", created.ID).
 		Get("maytype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, "foo", get.Text1)
 
@@ -539,7 +539,7 @@ func TestMayReadAPI(t *testing.T) {
 		SetQueryParam("_sort", "+text1").
 		SetResult(&list).
 		Get("maytype")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Len(t, list, 2)
 	require.Equal(t, "abcd", list[0].Text1)
 	require.Equal(t, "foo", list[1].Text1)
