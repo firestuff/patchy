@@ -185,9 +185,9 @@ func (api *API) routeSingleGET(cfg *config, id string, w http.ResponseWriter, r 
 
 	switch ac {
 	case "application/json":
-		return api.get(cfg, id, w, r)
+		return api.getObject(cfg, id, w, r)
 	case "text/event-stream":
-		return api.stream(cfg, id, w, r)
+		return api.streamObject(cfg, id, w, r)
 	default:
 		return jsrest.Errorf(jsrest.ErrNotAcceptable, "Accept: %s (%w)", r.Header.Get("Accept"), ErrUnknownAcceptType)
 	}

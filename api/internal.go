@@ -9,6 +9,15 @@ import (
 	"github.com/firestuff/patchy/metadata"
 )
 
+type intObjectStream struct {
+	ch <-chan any
+
+	api    *API
+	cfg    *config
+	id     string
+	sbChan <-chan any
+}
+
 func (api *API) createInt(ctx context.Context, cfg *config, r *http.Request, obj any) (any, error) {
 	metadata.GetMetadata(obj).ID = uniuri.New()
 
@@ -186,4 +195,53 @@ func (api *API) updateInt(ctx context.Context, cfg *config, r *http.Request, id 
 	}
 
 	return obj, nil
+}
+
+func (api *API) getStreamInt(ctx context.Context, cfg *config, r *http.Request, id string) (*intObjectStream, error) {
+	in, err := api.sb.ReadStream(ctx, cfg.typeName, id, cfg.factory)
+	if err != nil {
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
+	}
+
+	// Pull the first item out of the channel and convert issues with it to errors
+
+	obj := <-in
+	if obj == nil {
+		api.sb.CloseReadStream(cfg.typeName, id, in)
+		return nil, jsrest.Errorf(jsrest.ErrNotFound, "%s", id)
+	}
+
+	obj, err = cfg.checkRead(ctx, obj, api)
+	if err != nil {
+		api.sb.CloseReadStream(cfg.typeName, id, in)
+		return nil, jsrest.Errorf(jsrest.ErrUnauthorized, "read check failed (%w)", err)
+	}
+
+	out := make(chan any, 100)
+	out <- obj
+
+	go func() {
+		defer close(out)
+
+		for obj := range in {
+			obj, err = cfg.checkRead(ctx, obj, api)
+			if err != nil {
+				break
+			}
+
+			out <- obj
+		}
+	}()
+
+	return &intObjectStream{
+		ch:     out,
+		api:    api,
+		cfg:    cfg,
+		id:     id,
+		sbChan: in,
+	}, nil
+}
+
+func (ios *intObjectStream) Close() {
+	ios.api.sb.CloseReadStream(ios.cfg.typeName, ios.id, ios.sbChan)
 }
