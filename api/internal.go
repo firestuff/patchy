@@ -26,7 +26,6 @@ type listStreamInt struct {
 }
 
 func (api *API) createInt(ctx context.Context, cfg *config, obj any) (any, error) {
-	// TODO: Remove http.Request argument from all these functions
 	metadata.GetMetadata(obj).ID = uniuri.New()
 
 	obj, err := cfg.checkWrite(ctx, obj, nil, api)
