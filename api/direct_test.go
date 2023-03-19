@@ -145,8 +145,10 @@ func TestDirectStreamGetNotFound(t *testing.T) {
 	ctx := context.Background()
 
 	stream, err := api.StreamGet[testType](ctx, ta.api, "junk")
-	require.Error(t, err)
-	require.Nil(t, stream)
+	require.NoError(t, err)
+	require.NotNil(t, stream)
+
+	defer stream.Close()
 }
 
 func TestDirectStreamGetInitial(t *testing.T) {

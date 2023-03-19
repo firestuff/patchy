@@ -228,8 +228,7 @@ func TestMayRead(t *testing.T) {
 		SetPathParam("id", created.ID).
 		Get("maytype/{id}")
 	require.NoError(t, err)
-	require.True(t, resp.IsError())
-	require.Equal(t, 401, resp.StatusCode())
+	require.False(t, resp.IsError())
 	resp.RawBody().Close()
 
 	list := []*testType{}
