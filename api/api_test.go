@@ -16,6 +16,7 @@ import (
 
 	"github.com/dchest/uniuri"
 	"github.com/firestuff/patchy/api"
+	"github.com/firestuff/patchy/patchyc"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/require"
 )
@@ -24,6 +25,7 @@ type testAPI struct {
 	api *api.API
 	srv *http.Server
 	rst *resty.Client
+	pyc *patchyc.Client
 }
 
 func newTestAPI(t *testing.T) *testAPI {
@@ -56,10 +58,13 @@ func newTestAPI(t *testing.T) *testAPI {
 		SetHeader("Content-Type", "application/json").
 		SetBaseURL(baseURL)
 
+	pyc := patchyc.NewClient(baseURL)
+
 	return &testAPI{
 		api: a,
 		srv: srv,
 		rst: rst,
+		pyc: pyc,
 	}
 }
 

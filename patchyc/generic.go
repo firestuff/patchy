@@ -97,6 +97,10 @@ func GetName[T any](ctx context.Context, c *Client, name, id string) (*T, error)
 		return nil, err
 	}
 
+	if resp.StatusCode() == 404 {
+		return nil, nil
+	}
+
 	if resp.IsError() {
 		return nil, errors.New(resp.String())
 	}
