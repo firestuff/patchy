@@ -8,8 +8,7 @@ import (
 )
 
 type ObjectStream[T any] struct {
-	Chan <-chan *T
-
+	ch  <-chan *T
 	ios *intObjectStream
 }
 
@@ -173,14 +172,14 @@ func GetStreamName[T any](ctx context.Context, api *API, name, id string) (*Obje
 	go func() {
 		defer close(out)
 
-		for obj := range ios.ch {
+		for obj := range ios.Chan() {
 			out <- convert[T](obj)
 		}
 	}()
 
 	return &ObjectStream[T]{
-		Chan: out,
-		ios:  ios,
+		ch:  out,
+		ios: ios,
 	}, nil
 }
 
@@ -190,6 +189,14 @@ func GetStream[T any](ctx context.Context, api *API, id string) (*ObjectStream[T
 
 func (os *ObjectStream[T]) Close() {
 	os.ios.Close()
+}
+
+func (os *ObjectStream[T]) Chan() <-chan *T {
+	return os.ch
+}
+
+func (os *ObjectStream[T]) Read() *T {
+	return <-os.Chan()
 }
 
 // TODO: Add streaming list

@@ -84,7 +84,7 @@ func TestDirectGetStreamInitial(t *testing.T) {
 
 	defer stream.Close()
 
-	obj := <-stream.Chan
+	obj := stream.Read()
 	require.NotNil(t, obj)
 	require.Equal(t, "foo", obj.Text)
 }
@@ -106,14 +106,14 @@ func TestDirectGetStreamUpdate(t *testing.T) {
 
 	defer stream.Close()
 
-	obj := <-stream.Chan
+	obj := stream.Read()
 	require.NotNil(t, obj)
 	require.Equal(t, "foo", obj.Text)
 
 	_, err = api.Update(ctx, ta.api, create.ID, &testType{Text: "bar"})
 	require.NoError(t, err)
 
-	obj = <-stream.Chan
+	obj = stream.Read()
 	require.NotNil(t, obj)
 	require.Equal(t, "bar", obj.Text)
 }

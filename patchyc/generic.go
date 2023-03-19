@@ -1,6 +1,7 @@
 package patchyc
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -190,7 +191,54 @@ func Update[T any](ctx context.Context, c *Client, id string, obj *T) (*T, error
 	return UpdateName[T](ctx, c, objName(obj), id, obj)
 }
 
-// TODO: Add streaming get & list
+func GetStreamName[T any](ctx context.Context, c *Client, name, id string) (*ObjectStream[T], error) {
+	resp, err := c.rst.R().
+		SetDoNotParseResponse(true).
+		SetHeader("Accept", "text/event-stream").
+		SetPathParam("name", name).
+		SetPathParam("id", id).
+		Get("{name}/{id}")
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.IsError() {
+		return nil, errors.New(resp.String())
+	}
+
+	body := resp.RawBody()
+	scan := bufio.NewScanner(body)
+
+	out := make(chan *T, 100)
+
+	go func() {
+		defer close(out)
+
+		for {
+			obj := new(T)
+
+			eventType, err := readEvent(scan, obj)
+			if err != nil {
+				return
+			}
+
+			if eventType == "initial" || eventType == "update" {
+				out <- obj
+			}
+		}
+	}()
+
+	return &ObjectStream[T]{
+		ch:   out,
+		body: body,
+	}, nil
+}
+
+func GetStream[T any](ctx context.Context, c *Client, id string) (*ObjectStream[T], error) {
+	return GetStreamName[T](ctx, c, objName(new(T)), id)
+}
+
+// TODO: Add streaming list
 
 func objName[T any](obj *T) string {
 	return strings.ToLower(reflect.TypeOf(*obj).Name())

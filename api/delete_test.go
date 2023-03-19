@@ -1,7 +1,6 @@
 package api_test
 
 import (
-	"bufio"
 	"context"
 	"testing"
 
@@ -74,31 +73,17 @@ func TestDeleteStream(t *testing.T) {
 	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	// TODO: Convert to using all patchyc once that supports streaming
-
-	resp, err := ta.r().
-		SetDoNotParseResponse(true).
-		SetHeader("Accept", "text/event-stream").
-		SetPathParam("id", created.ID).
-		Get("testtype/{id}")
+	stream, err := patchyc.GetStream[testType](ctx, ta.pyc, created.ID)
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
+	defer stream.Close()
 
-	body := resp.RawBody()
-	defer body.Close()
-
-	scan := bufio.NewScanner(body)
-
-	initial := &testType{}
-	eventType, err := readEvent(scan, initial)
-	require.NoError(t, err)
-	require.Equal(t, "initial", eventType)
-	require.Equal(t, "foo", initial.Text)
+	obj := stream.Read()
+	require.NotNil(t, obj)
+	require.Equal(t, "foo", obj.Text)
 
 	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID)
 	require.NoError(t, err)
 
-	eventType, err = readEvent(scan, nil)
-	require.NoError(t, err)
-	require.Equal(t, "delete", eventType)
+	obj = stream.Read()
+	require.Nil(t, obj)
 }
