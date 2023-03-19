@@ -1,4 +1,4 @@
-package client_test
+package patchyc_test
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 
 	"github.com/dchest/uniuri"
 	"github.com/firestuff/patchy/api"
-	"github.com/firestuff/patchy/client"
+	"github.com/firestuff/patchy/patchyc"
 	"github.com/stretchr/testify/require"
 )
 
@@ -51,48 +51,48 @@ func TestClient(t *testing.T) {
 
 	baseURL := fmt.Sprintf("http://[::1]:%d/api/", listener.Addr().(*net.TCPAddr).Port)
 
-	c := client.NewClient(baseURL)
+	c := patchyc.NewClient(baseURL)
 
-	create, err := client.Create(ctx, c, &testType{
-		Text1: client.P("foo"),
-		Text2: client.P("zig"),
+	create, err := patchyc.Create(ctx, c, &testType{
+		Text1: patchyc.P("foo"),
+		Text2: patchyc.P("zig"),
 	})
 	require.Nil(t, err)
 	require.Equal(t, "foo", *create.Text1)
 
-	get, err := client.Get[testType](ctx, c, create.ID)
+	get, err := patchyc.Get[testType](ctx, c, create.ID)
 	require.Nil(t, err)
 	require.Equal(t, create.ID, get.ID)
 	require.Equal(t, "foo", *get.Text1)
 
-	update, err := client.Update(ctx, c, create.ID, &testType{Text1: client.P("bar")})
+	update, err := patchyc.Update(ctx, c, create.ID, &testType{Text1: patchyc.P("bar")})
 	require.Nil(t, err)
 	require.Equal(t, create.ID, update.ID)
 	require.Equal(t, "bar", *update.Text1)
 	require.Equal(t, "zig", *update.Text2)
 
-	list, err := client.List[testType](ctx, c, nil)
+	list, err := patchyc.List[testType](ctx, c, nil)
 	require.Nil(t, err)
 	require.Len(t, list, 1)
 	require.Equal(t, create.ID, list[0].ID)
 	require.Equal(t, "bar", *list[0].Text1)
 
-	replace, err := client.Replace(ctx, c, create.ID, &testType{Text1: client.P("baz")})
+	replace, err := patchyc.Replace(ctx, c, create.ID, &testType{Text1: patchyc.P("baz")})
 	require.Nil(t, err)
 	require.Equal(t, create.ID, replace.ID)
 	require.Equal(t, "baz", *replace.Text1)
 	require.Nil(t, replace.Text2)
 
-	find, err := client.Find[testType](ctx, c, create.ID[:4])
+	find, err := patchyc.Find[testType](ctx, c, create.ID[:4])
 	require.Nil(t, err)
 	require.Equal(t, create.ID, find.ID)
 	require.Equal(t, "baz", *find.Text1)
 	require.Nil(t, find.Text2)
 
-	err = client.Delete[testType](ctx, c, create.ID)
+	err = patchyc.Delete[testType](ctx, c, create.ID)
 	require.Nil(t, err)
 
-	list, err = client.List[testType](ctx, c, nil)
+	list, err = patchyc.List[testType](ctx, c, nil)
 	require.Nil(t, err)
 	require.Len(t, list, 0)
 }
