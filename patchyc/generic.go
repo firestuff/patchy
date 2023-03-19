@@ -191,7 +191,7 @@ func Update[T any](ctx context.Context, c *Client, id string, obj *T) (*T, error
 	return UpdateName[T](ctx, c, objName(obj), id, obj)
 }
 
-func GetStreamName[T any](ctx context.Context, c *Client, name, id string) (*ObjectStream[T], error) {
+func StreamGetName[T any](ctx context.Context, c *Client, name, id string) (*GetStream[T], error) {
 	resp, err := c.rst.R().
 		SetDoNotParseResponse(true).
 		SetHeader("Accept", "text/event-stream").
@@ -228,17 +228,61 @@ func GetStreamName[T any](ctx context.Context, c *Client, name, id string) (*Obj
 		}
 	}()
 
-	return &ObjectStream[T]{
+	return &GetStream[T]{
 		ch:   out,
 		body: body,
 	}, nil
 }
 
-func GetStream[T any](ctx context.Context, c *Client, id string) (*ObjectStream[T], error) {
-	return GetStreamName[T](ctx, c, objName(new(T)), id)
+func StreamGet[T any](ctx context.Context, c *Client, id string) (*GetStream[T], error) {
+	return StreamGetName[T](ctx, c, objName(new(T)), id)
 }
 
-// TODO: Add streaming list
+func StreamListName[T any](ctx context.Context, c *Client, name string) (*ListStream[T], error) {
+	resp, err := c.rst.R().
+		SetDoNotParseResponse(true).
+		SetHeader("Accept", "text/event-stream").
+		SetPathParam("name", name).
+		Get("{name}")
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.IsError() {
+		return nil, errors.New(resp.String())
+	}
+
+	body := resp.RawBody()
+	scan := bufio.NewScanner(body)
+
+	out := make(chan []*T, 100)
+
+	go func() {
+		defer close(out)
+
+		for {
+			list := []*T{}
+
+			eventType, err := readEvent(scan, &list)
+			if err != nil {
+				return
+			}
+
+			if eventType == "list" {
+				out <- list
+			}
+		}
+	}()
+
+	return &ListStream[T]{
+		ch:   out,
+		body: body,
+	}, nil
+}
+
+func StreamList[T any](ctx context.Context, c *Client) (*ListStream[T], error) {
+	return StreamListName[T](ctx, c, objName(new(T)))
+}
 
 func objName[T any](obj *T) string {
 	return strings.ToLower(reflect.TypeOf(*obj).Name())

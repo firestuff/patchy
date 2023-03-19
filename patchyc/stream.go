@@ -8,21 +8,38 @@ import (
 	"strings"
 )
 
-type ObjectStream[T any] struct {
+type GetStream[T any] struct {
 	ch   <-chan *T
 	body io.ReadCloser
 }
 
-func (os *ObjectStream[T]) Close() {
-	os.body.Close()
+func (gs *GetStream[T]) Close() {
+	gs.body.Close()
 }
 
-func (os *ObjectStream[T]) Chan() <-chan *T {
-	return os.ch
+func (gs *GetStream[T]) Chan() <-chan *T {
+	return gs.ch
 }
 
-func (os *ObjectStream[T]) Read() *T {
-	return <-os.Chan()
+func (gs *GetStream[T]) Read() *T {
+	return <-gs.Chan()
+}
+
+type ListStream[T any] struct {
+	ch   <-chan []*T
+	body io.ReadCloser
+}
+
+func (ls *ListStream[T]) Close() {
+	ls.body.Close()
+}
+
+func (ls *ListStream[T]) Chan() <-chan []*T {
+	return ls.ch
+}
+
+func (ls *ListStream[T]) Read() []*T {
+	return <-ls.Chan()
 }
 
 func readEvent(scan *bufio.Scanner, out any) (string, error) {

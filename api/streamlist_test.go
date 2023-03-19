@@ -2,41 +2,20 @@ package api_test
 
 import (
 	"bufio"
+	"context"
 	"testing"
 
+	"github.com/firestuff/patchy/patchyc"
 	"github.com/stretchr/testify/require"
 )
 
-func TestStreamList(t *testing.T) {
-	// TODO: Break up test
+func TestStreamListHeartbeat(t *testing.T) {
 	t.Parallel()
 
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	created1 := &testType{}
-
 	resp, err := ta.r().
-		SetBody(&testType{
-			Text: "foo",
-		}).
-		SetResult(created1).
-		Post("testtype")
-	require.NoError(t, err)
-	require.False(t, resp.IsError())
-
-	created2 := &testType{}
-
-	resp, err = ta.r().
-		SetBody(&testType{
-			Text: "bar",
-		}).
-		SetResult(created2).
-		Post("testtype")
-	require.NoError(t, err)
-	require.False(t, resp.IsError())
-
-	resp, err = ta.r().
 		SetDoNotParseResponse(true).
 		SetHeader("Accept", "text/event-stream").
 		Get("testtype")
@@ -48,67 +27,124 @@ func TestStreamList(t *testing.T) {
 
 	scan := bufio.NewScanner(body)
 
-	list := []*testType{}
-
-	eventType, err := readEvent(scan, &list)
+	eventType, err := readEvent(scan, nil)
 	require.NoError(t, err)
 	require.Equal(t, "list", eventType)
 
-	require.Len(t, list, 2)
-	require.ElementsMatch(t, []string{"foo", "bar"}, []string{list[0].Text, list[1].Text})
-
-	// Heartbeat (after 5 seconds)
 	eventType, err = readEvent(scan, nil)
 	require.NoError(t, err)
 	require.Equal(t, "heartbeat", eventType)
+}
 
-	created3 := &testType{}
+func TestStreamListInitial(t *testing.T) {
+	t.Parallel()
 
-	resp, err = ta.r().
-		SetBody(&testType{
-			Text: "zig",
-		}).
-		SetResult(created3).
-		Post("testtype")
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
 
-	eventType, err = readEvent(scan, &list)
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
-	require.Equal(t, "list", eventType)
 
-	require.Len(t, list, 3)
-	require.ElementsMatch(t, []string{"foo", "bar", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
-
-	resp, err = ta.r().
-		SetBody(&testType{
-			Text: "zag",
-		}).
-		SetResult(created3).
-		SetPathParam("id", created3.ID).
-		Patch("testtype/{id}")
+	stream, err := patchyc.StreamList[testType](ctx, ta.pyc)
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
+	defer stream.Close()
 
-	eventType, err = readEvent(scan, &list)
-	require.NoError(t, err)
-	require.Equal(t, "list", eventType)
-
-	require.Len(t, list, 3)
-	require.ElementsMatch(t, []string{"foo", "bar", "zag"}, []string{list[0].Text, list[1].Text, list[2].Text})
-
-	resp, err = ta.r().
-		SetPathParam("id", created3.ID).
-		Delete("testtype/{id}")
-	require.NoError(t, err)
-	require.False(t, resp.IsError())
-
-	eventType, err = readEvent(scan, &list)
-	require.NoError(t, err)
-	require.Equal(t, "list", eventType)
-
+	list := stream.Read()
+	require.NotNil(t, list)
 	require.Len(t, list, 2)
 	require.ElementsMatch(t, []string{"foo", "bar"}, []string{list[0].Text, list[1].Text})
+}
+
+func TestStreamListAdd(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	stream, err := patchyc.StreamList[testType](ctx, ta.pyc)
+	require.NoError(t, err)
+	defer stream.Close()
+
+	list := stream.Read()
+	require.NotNil(t, list)
+	require.Len(t, list, 0)
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	list = stream.Read()
+	require.NotNil(t, list)
+	require.Len(t, list, 1)
+	require.Equal(t, "foo", list[0].Text)
+}
+
+func TestStreamListUpdate(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	stream, err := patchyc.StreamList[testType](ctx, ta.pyc)
+	require.NoError(t, err)
+	defer stream.Close()
+
+	list := stream.Read()
+	require.NotNil(t, list)
+	require.Len(t, list, 1)
+	require.Equal(t, "foo", list[0].Text)
+
+	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"})
+	require.NoError(t, err)
+
+	list = stream.Read()
+	require.NotNil(t, list)
+	require.Len(t, list, 1)
+	require.Equal(t, "bar", list[0].Text)
+}
+
+func TestStreamListDelete(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	stream, err := patchyc.StreamList[testType](ctx, ta.pyc)
+	require.NoError(t, err)
+	defer stream.Close()
+
+	list := stream.Read()
+	require.NotNil(t, list)
+	require.Len(t, list, 1)
+	require.Equal(t, "foo", list[0].Text)
+
+	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID)
+	require.NoError(t, err)
+
+	list = stream.Read()
+	require.NotNil(t, list)
+	require.Len(t, list, 0)
+}
+
+/*
+
+// TODO: Make StreamList() take ListOpts
 
 	resp, err = ta.r().
 		SetDoNotParseResponse(true).
@@ -123,13 +159,14 @@ func TestStreamList(t *testing.T) {
 
 	scan2 := bufio.NewScanner(body2)
 
-	eventType, err = readEvent(scan2, &list)
+	eventType, err := readEvent(scan2, &list)
 	require.NoError(t, err)
 	require.Equal(t, "list", eventType)
 
 	require.Len(t, list, 1)
 	require.True(t, list[0].Text == "foo" || list[0].Text == "bar")
 }
+*/
 
 func TestStreamListDiff(t *testing.T) {
 	// TODO: Break up test
