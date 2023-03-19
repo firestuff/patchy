@@ -53,3 +53,67 @@ func TestDirect(t *testing.T) {
 	require.NoError(t, err)
 	require.Nil(t, get)
 }
+
+func TestDirectGetStreamNotFound(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	stream, err := api.GetStream[testType](ctx, ta.api, "junk")
+	require.Error(t, err)
+	require.Nil(t, stream)
+}
+
+func TestDirectGetStreamInitial(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	create, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	stream, err := api.GetStream[testType](ctx, ta.api, create.ID)
+	require.NoError(t, err)
+	require.NotNil(t, stream)
+
+	defer stream.Close()
+
+	obj := <-stream.Chan
+	require.NotNil(t, obj)
+	require.Equal(t, "foo", obj.Text)
+}
+
+func TestDirectGetStreamUpdate(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	create, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	stream, err := api.GetStream[testType](ctx, ta.api, create.ID)
+	require.NoError(t, err)
+	require.NotNil(t, stream)
+
+	defer stream.Close()
+
+	obj := <-stream.Chan
+	require.NotNil(t, obj)
+	require.Equal(t, "foo", obj.Text)
+
+	_, err = api.Update(ctx, ta.api, create.ID, &testType{Text: "bar"})
+	require.NoError(t, err)
+
+	obj = <-stream.Chan
+	require.NotNil(t, obj)
+	require.Equal(t, "bar", obj.Text)
+}

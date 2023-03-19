@@ -6,7 +6,7 @@ import (
 	"github.com/firestuff/patchy/jsrest"
 )
 
-func (api *API) get(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
+func (api *API) getObject(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
 	obj, err := api.getInt(r.Context(), cfg, r, id)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "get failed (%w)", err)

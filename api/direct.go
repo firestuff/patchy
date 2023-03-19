@@ -7,6 +7,12 @@ import (
 	"github.com/firestuff/patchy/jsrest"
 )
 
+type ObjectStream[T any] struct {
+	Chan <-chan *T
+
+	ios *intObjectStream
+}
+
 func CreateName[T any](ctx context.Context, api *API, name string, obj *T) (*T, error) {
 	cfg := api.registry[name]
 	if cfg == nil {
@@ -151,4 +157,39 @@ func Update[T any](ctx context.Context, api *API, id string, obj *T) (*T, error)
 	return UpdateName[T](ctx, api, objName(obj), id, obj)
 }
 
-// TODO: Add streaming get & list
+func GetStreamName[T any](ctx context.Context, api *API, name, id string) (*ObjectStream[T], error) {
+	cfg := api.registry[name]
+	if cfg == nil {
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
+	}
+
+	ios, err := api.getStreamInt(ctx, cfg, nil, id)
+	if err != nil {
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "getSteam failed (%w)", err)
+	}
+
+	out := make(chan *T, 100)
+
+	go func() {
+		defer close(out)
+
+		for obj := range ios.ch {
+			out <- convert[T](obj)
+		}
+	}()
+
+	return &ObjectStream[T]{
+		Chan: out,
+		ios:  ios,
+	}, nil
+}
+
+func GetStream[T any](ctx context.Context, api *API, id string) (*ObjectStream[T], error) {
+	return GetStreamName[T](ctx, api, objName(new(T)), id)
+}
+
+func (os *ObjectStream[T]) Close() {
+	os.ios.Close()
+}
+
+// TODO: Add streaming list
