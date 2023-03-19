@@ -18,18 +18,18 @@ func TestDeleteSuccess(t *testing.T) {
 	ctx := context.Background()
 
 	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, get)
 	require.Equal(t, "foo", get.Text)
 
 	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	get, err = patchyc.Get[testType](ctx, ta.pyc, created.ID)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Nil(t, get)
 }
 
@@ -54,10 +54,10 @@ func TestDeleteTwice(t *testing.T) {
 	ctx := context.Background()
 
 	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID)
 	require.Error(t, err)
@@ -72,7 +72,7 @@ func TestDeleteStream(t *testing.T) {
 	ctx := context.Background()
 
 	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	// TODO: Convert to using all patchyc once that supports streaming
 
@@ -81,7 +81,7 @@ func TestDeleteStream(t *testing.T) {
 		SetHeader("Accept", "text/event-stream").
 		SetPathParam("id", created.ID).
 		Get("testtype/{id}")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, resp.IsError())
 
 	body := resp.RawBody()
@@ -91,14 +91,14 @@ func TestDeleteStream(t *testing.T) {
 
 	initial := &testType{}
 	eventType, err := readEvent(scan, initial)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "initial", eventType)
 	require.Equal(t, "foo", initial.Text)
 
 	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	eventType, err = readEvent(scan, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "delete", eventType)
 }
