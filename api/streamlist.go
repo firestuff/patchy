@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"time"
@@ -91,7 +92,6 @@ func (api *API) streamListFull(ctx context.Context, cfg *config, w http.Response
 }
 
 func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.ResponseWriter, opts *ListOpts) error {
-	// TODO: Add query condition pushdown
 	lsi, err := api.streamListInt(ctx, cfg, opts)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
@@ -101,6 +101,10 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 	last := map[string]any{}
 
 	ticker := time.NewTicker(5 * time.Second)
+
+	// Force initial bytes across the connection, since otherwise diff mode could wait forever
+	fmt.Fprintf(w, ":\n")
+	w.(http.Flusher).Flush()
 
 	for {
 		select {

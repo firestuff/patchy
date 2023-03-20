@@ -80,7 +80,7 @@ func (ta *testAPI) shutdown(t *testing.T) {
 	ta.api.Close()
 }
 
-func readEvent(scan *bufio.Scanner, out any) (string, error) {
+func readEvent[T any](scan *bufio.Scanner) (string, *T, error) {
 	eventType := ""
 	data := [][]byte{}
 
@@ -98,17 +98,14 @@ func readEvent(scan *bufio.Scanner, out any) (string, error) {
 			data = append(data, bytes.TrimPrefix(scan.Bytes(), []byte("data: ")))
 
 		case line == "":
-			var err error
+			out := new(T)
+			err := json.Unmarshal(bytes.Join(data, []byte("\n")), out)
 
-			if out != nil {
-				err = json.Unmarshal(bytes.Join(data, []byte("\n")), out)
-			}
-
-			return eventType, err
+			return eventType, out, err
 		}
 	}
 
-	return "", io.EOF
+	return "", nil, io.EOF
 }
 
 type testType struct {

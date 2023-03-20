@@ -33,11 +33,11 @@ func TestStreamGetHeartbeat(t *testing.T) {
 
 	scan := bufio.NewScanner(body)
 
-	eventType, err := readEvent(scan, nil)
+	eventType, _, err := readEvent[testType](scan)
 	require.NoError(t, err)
 	require.Equal(t, "initial", eventType)
 
-	eventType, err = readEvent(scan, nil)
+	eventType, _, err = readEvent[map[string]string](scan)
 	require.NoError(t, err)
 	require.Equal(t, "heartbeat", eventType)
 }
