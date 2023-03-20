@@ -217,6 +217,7 @@ func (api *API) streamGetInt(ctx context.Context, cfg *config, id string) (*getS
 		for obj := range in {
 			obj, err = cfg.checkRead(ctx, obj, api)
 			if err != nil {
+				// TODO: Break instead to trigger delete event downstream
 				continue
 			}
 
