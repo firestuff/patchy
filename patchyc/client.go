@@ -7,6 +7,8 @@ import (
 )
 
 // TODO: Add retries
+// TODO: Add If-Match support
+// TODO: Add Idempotency-Key support
 
 type Client struct {
 	rst *resty.Client
