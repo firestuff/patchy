@@ -17,7 +17,7 @@ func TestUpdate(t *testing.T) {
 
 	ctx := context.Background()
 
-	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo", Num: 1})
 	require.NoError(t, err)
 	require.EqualValues(t, 0, created.Generation)
 
@@ -25,11 +25,13 @@ func TestUpdate(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, updated)
 	require.Equal(t, "bar", updated.Text)
+	require.EqualValues(t, 1, updated.Num)
 	require.EqualValues(t, 1, updated.Generation)
 
 	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID)
 	require.NoError(t, err)
 	require.Equal(t, "bar", get.Text)
+	require.EqualValues(t, 1, get.Num)
 	require.EqualValues(t, 1, updated.Generation)
 }
 

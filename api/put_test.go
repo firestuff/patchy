@@ -1,144 +1,149 @@
 package api_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
+	"github.com/firestuff/patchy/patchyc"
 	"github.com/stretchr/testify/require"
 )
 
-func TestPUT(t *testing.T) {
-	// TODO: Break up test
+func TestReplace(t *testing.T) {
 	t.Parallel()
 
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	created := &testType{}
+	ctx := context.Background()
 
-	resp, err := ta.r().
-		SetBody(&testType{
-			Text: "foo",
-			Num:  1,
-		}).
-		SetResult(created).
-		Post("testtype")
+	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo", Num: 1})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
-	require.Equal(t, int64(0), created.Generation)
+	require.EqualValues(t, 0, created.Generation)
 
-	replaced := &testType{}
-
-	resp, err = ta.r().
-		SetBody(&testType{
-			Text: "bar",
-		}).
-		SetResult(replaced).
-		SetPathParam("id", created.ID).
-		Put("testtype/{id}")
+	replaced, err := patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
+	require.NotNil(t, replaced)
 	require.Equal(t, "bar", replaced.Text)
-	require.Equal(t, created.ID, replaced.ID)
-	require.Equal(t, int64(1), replaced.Generation)
+	require.EqualValues(t, 0, replaced.Num)
+	require.EqualValues(t, 1, replaced.Generation)
 
-	read := &testType{}
-
-	resp, err = ta.r().
-		SetResult(read).
-		SetPathParam("id", created.ID).
-		Get("testtype/{id}")
+	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID)
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
-	require.Equal(t, "bar", read.Text)
-	require.Equal(t, int64(0), read.Num)
-	require.Equal(t, created.ID, read.ID)
-	require.Equal(t, int64(1), read.Generation)
+	require.Equal(t, "bar", get.Text)
+	require.EqualValues(t, 0, get.Num)
+	require.EqualValues(t, 1, get.Generation)
 }
 
-func TestPUTIfMatch(t *testing.T) {
-	// TODO: Break up test
+func TestReplaceIfMatchETagSuccess(t *testing.T) {
 	t.Parallel()
 
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	created := &testType{}
+	ctx := context.Background()
 
-	resp, err := ta.r().
-		SetBody(&testType{
-			Text: "foo",
-		}).
-		SetResult(created).
-		Post("testtype")
+	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
-	require.Equal(t, int64(0), created.Generation)
 
-	etag := resp.Header().Get("ETag")
-	require.Equal(t, fmt.Sprintf(`"%s"`, created.ETag), etag)
+	ta.pyc.SetHeader("If-Match", fmt.Sprintf(`"%s"`, created.ETag))
 
-	replaced := &testType{}
-
-	resp, err = ta.r().
-		SetHeader("If-Match", etag).
-		SetBody(&testType{
-			Text: "bar",
-		}).
-		SetResult(replaced).
-		SetPathParam("id", created.ID).
-		Put("testtype/{id}")
+	replaced, err := patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
-	require.Equal(t, int64(1), replaced.Generation)
+	require.Equal(t, "bar", replaced.Text)
 
-	etag = resp.Header().Get("ETag")
-	require.Equal(t, fmt.Sprintf(`"%s"`, replaced.ETag), etag)
-	require.NotEqual(t, created.ETag, replaced.ETag)
-
-	resp, err = ta.r().
-		SetHeader("If-Match", `"foobar"`).
-		SetBody(&testType{
-			Text: "zig",
-		}).
-		SetPathParam("id", created.ID).
-		Put("testtype/{id}")
+	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID)
 	require.NoError(t, err)
-	require.True(t, resp.IsError())
-	require.Equal(t, 400, resp.StatusCode())
+	require.Equal(t, "bar", get.Text)
+}
 
-	resp, err = ta.r().
-		SetHeader("If-Match", `"etag:foobar"`).
-		SetBody(&testType{
-			Text: "zig",
-		}).
-		SetPathParam("id", created.ID).
-		Put("testtype/{id}")
-	require.NoError(t, err)
-	require.True(t, resp.IsError())
-	require.Equal(t, 412, resp.StatusCode())
+func TestReplaceIfMatchETagMismatch(t *testing.T) {
+	t.Parallel()
 
-	resp, err = ta.r().
-		SetHeader("If-Match", `"generation:1"`).
-		SetBody(&testType{
-			Text: "zig",
-		}).
-		SetResult(replaced).
-		SetPathParam("id", created.ID).
-		Put("testtype/{id}")
-	require.NoError(t, err)
-	require.False(t, resp.IsError())
-	require.Equal(t, int64(2), replaced.Generation)
-	require.Equal(t, "zig", replaced.Text)
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
 
-	resp, err = ta.r().
-		SetHeader("If-Match", `"generation:1"`).
-		SetBody(&testType{
-			Text: "zag",
-		}).
-		SetPathParam("id", created.ID).
-		Put("testtype/{id}")
+	ctx := context.Background()
+
+	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
-	require.True(t, resp.IsError())
-	require.Equal(t, 412, resp.StatusCode())
+
+	ta.pyc.SetHeader("If-Match", `"etag:doesnotmatch"`)
+
+	replaced, err := patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"})
+	require.Error(t, err)
+	require.ErrorContains(t, err, "[412] Precondition Failed")
+	require.Nil(t, replaced)
+
+	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID)
+	require.NoError(t, err)
+	require.Equal(t, "foo", get.Text)
+}
+
+func TestReplaceIfMatchGenerationSuccess(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	ta.pyc.SetHeader("If-Match", fmt.Sprintf(`"generation:%d"`, created.Generation))
+
+	replaced, err := patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"})
+	require.NoError(t, err)
+	require.Equal(t, "bar", replaced.Text)
+
+	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID)
+	require.NoError(t, err)
+	require.Equal(t, "bar", get.Text)
+}
+
+func TestReplaceIfMatchGenerationMismatch(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	ta.pyc.SetHeader("If-Match", `"generation:50"`)
+
+	replaced, err := patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"})
+	require.Error(t, err)
+	require.ErrorContains(t, err, "[412] Precondition Failed")
+	require.Nil(t, replaced)
+
+	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID)
+	require.NoError(t, err)
+	require.Equal(t, "foo", get.Text)
+}
+
+func TestReplaceIfMatchInvalid(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	ta.pyc.SetHeader("If-Match", `"foobar"`)
+
+	replaced, err := patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"})
+	require.Error(t, err)
+	require.ErrorContains(t, err, "[400] Bad Request")
+	require.Nil(t, replaced)
+
+	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID)
+	require.NoError(t, err)
+	require.Equal(t, "foo", get.Text)
 }
