@@ -1,230 +1,458 @@
 package api_test
 
 import (
+	"context"
 	"testing"
 
+	"github.com/firestuff/patchy"
+	"github.com/firestuff/patchy/patchyc"
 	"github.com/stretchr/testify/require"
 )
 
-func TestGETList(t *testing.T) {
-	// TODO: Break up test
+func TestList(t *testing.T) {
 	t.Parallel()
 
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	created1 := &testType{}
+	ctx := context.Background()
 
-	resp, err := ta.r().
-		SetBody(&testType{
-			Text: "foo",
-		}).
-		SetResult(created1).
-		Post("testtype")
+	created1, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
 
-	created2 := &testType{}
-
-	resp, err = ta.r().
-		SetBody(&testType{
-			Text: "bar",
-		}).
-		SetResult(created2).
-		Post("testtype")
+	created2, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
 
-	created3 := &testType{}
-
-	resp, err = ta.r().
-		SetBody(&testType{
-			Text: "zig",
-		}).
-		SetResult(created3).
-		Post("testtype")
+	created3, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "zig"})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
 
-	list := []testType{}
-
-	resp, err = ta.r().
-		SetResult(&list).
-		Get("testtype")
+	list, err := patchyc.List[testType](ctx, ta.pyc, nil)
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
 	require.Len(t, list, 3)
 	require.ElementsMatch(t, []string{"foo", "bar", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
+	require.ElementsMatch(
+		t,
+		[]string{created1.ID, created2.ID, created3.ID},
+		[]string{list[0].ID, list[1].ID, list[2].ID},
+	)
+}
 
-	resp, err = ta.r().
-		SetResult(&list).
-		SetQueryParam("text", "bar").
-		Get("testtype")
+func TestListEquals(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	require.NoError(t, err)
+
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
+		Filters: []*patchy.Filter{
+			{
+				Path:  "text",
+				Op:    "eq",
+				Value: "bar",
+			},
+		},
+	})
+	require.NoError(t, err)
 	require.Len(t, list, 1)
 	require.ElementsMatch(t, []string{"bar"}, []string{list[0].Text})
+}
 
-	resp, err = ta.r().
-		SetResult(&list).
-		SetQueryParam("text[eq]", "bar").
-		Get("testtype")
-	require.NoError(t, err)
-	require.False(t, resp.IsError())
-	require.Len(t, list, 1)
-	require.ElementsMatch(t, []string{"bar"}, []string{list[0].Text})
+func TestListInvalidOp(t *testing.T) {
+	t.Parallel()
 
-	resp, err = ta.r().
-		SetResult(&list).
-		SetQueryParam("text[junk]", "bar").
-		Get("testtype")
-	require.NoError(t, err)
-	require.True(t, resp.IsError())
-	require.Equal(t, 400, resp.StatusCode())
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
 
-	resp, err = ta.r().
-		SetResult(&list).
-		SetQueryParam("text[gt]", "foo").
-		Get("testtype")
-	require.NoError(t, err)
-	require.False(t, resp.IsError())
-	require.Len(t, list, 1)
-	require.ElementsMatch(t, []string{"zig"}, []string{list[0].Text})
+	ctx := context.Background()
 
-	resp, err = ta.r().
-		SetResult(&list).
-		SetQueryParam("text[gte]", "foo").
-		Get("testtype")
+	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
-	require.Len(t, list, 2)
-	require.ElementsMatch(t, []string{"foo", "zig"}, []string{list[0].Text, list[1].Text})
 
-	resp, err = ta.r().
-		SetResult(&list).
-		SetQueryParam("text[hp]", "f").
-		Get("testtype")
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
+		Filters: []*patchy.Filter{
+			{
+				Path:  "text",
+				Op:    "invalid",
+				Value: "bar",
+			},
+		},
+	})
+	require.Error(t, err)
+	require.Nil(t, list)
+}
+
+func TestListGreaterThan(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	require.NoError(t, err)
+
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
+		Filters: []*patchy.Filter{
+			{
+				Path:  "text",
+				Op:    "gt",
+				Value: "bar",
+			},
+		},
+	})
+	require.NoError(t, err)
 	require.Len(t, list, 1)
 	require.ElementsMatch(t, []string{"foo"}, []string{list[0].Text})
+}
 
-	resp, err = ta.r().
-		SetResult(&list).
-		SetQueryParam("text[in]", "zig,foo,zag").
-		Get("testtype")
+func TestListGreaterThanOrEqual(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	require.NoError(t, err)
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "zig"})
+	require.NoError(t, err)
+
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
+		Filters: []*patchy.Filter{
+			{
+				Path:  "text",
+				Op:    "gte",
+				Value: "foo",
+			},
+		},
+	})
+	require.NoError(t, err)
 	require.Len(t, list, 2)
 	require.ElementsMatch(t, []string{"foo", "zig"}, []string{list[0].Text, list[1].Text})
+}
 
-	resp, err = ta.r().
-		SetResult(&list).
-		SetQueryParam("text[lt]", "foo").
-		Get("testtype")
+func TestListHasPrefix(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	require.NoError(t, err)
+
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
+		Filters: []*patchy.Filter{
+			{
+				Path:  "text",
+				Op:    "hp",
+				Value: "f",
+			},
+		},
+	})
+	require.NoError(t, err)
+	require.Len(t, list, 1)
+	require.ElementsMatch(t, []string{"foo"}, []string{list[0].Text})
+}
+
+func TestListIn(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	require.NoError(t, err)
+
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
+		Filters: []*patchy.Filter{
+			{
+				Path:  "text",
+				Op:    "in",
+				Value: "foo,zig",
+			},
+		},
+	})
+	require.NoError(t, err)
+	require.Len(t, list, 1)
+	require.ElementsMatch(t, []string{"foo"}, []string{list[0].Text})
+}
+
+func TestListLessThan(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	require.NoError(t, err)
+
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
+		Filters: []*patchy.Filter{
+			{
+				Path:  "text",
+				Op:    "lt",
+				Value: "foo",
+			},
+		},
+	})
+	require.NoError(t, err)
 	require.Len(t, list, 1)
 	require.ElementsMatch(t, []string{"bar"}, []string{list[0].Text})
+}
 
-	resp, err = ta.r().
-		SetResult(&list).
-		SetQueryParam("text[lte]", "foo").
-		Get("testtype")
+func TestListLessThanOrEqual(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	require.NoError(t, err)
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "zig"})
+	require.NoError(t, err)
+
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
+		Filters: []*patchy.Filter{
+			{
+				Path:  "text",
+				Op:    "lte",
+				Value: "foo",
+			},
+		},
+	})
+	require.NoError(t, err)
 	require.Len(t, list, 2)
-	require.ElementsMatch(t, []string{"bar", "foo"}, []string{list[0].Text, list[1].Text})
+	require.ElementsMatch(t, []string{"foo", "bar"}, []string{list[0].Text, list[1].Text})
+}
 
-	resp, err = ta.r().
-		SetResult(&list).
-		SetQueryParam("_limit", "1").
-		Get("testtype")
+func TestListLimit(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	require.NoError(t, err)
+
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{Limit: 1})
+	require.NoError(t, err)
 	require.Len(t, list, 1)
-	require.True(t, list[0].Text == "bar" || list[0].Text == "foo" || list[0].Text == "zig")
+	require.Contains(t, []string{"foo", "bar"}, list[0].Text)
+}
 
-	resp, err = ta.r().
-		SetResult(&list).
-		SetQueryParam("_offset", "0").
-		Get("testtype")
-	require.NoError(t, err)
-	require.False(t, resp.IsError())
-	require.Len(t, list, 3)
-	require.ElementsMatch(t, []string{"bar", "foo", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
+func TestListOffset(t *testing.T) {
+	t.Parallel()
 
-	resp, err = ta.r().
-		SetResult(&list).
-		SetQueryParam("_offset", "1").
-		Get("testtype")
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	require.NoError(t, err)
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "zig"})
+	require.NoError(t, err)
+
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{Offset: 1})
+	require.NoError(t, err)
 	require.Len(t, list, 2)
+	require.Contains(t, []string{"foo", "bar", "zig"}, list[0].Text)
+	require.Contains(t, []string{"foo", "bar", "zig"}, list[1].Text)
+	require.NotEqual(t, list[0].Text, list[1].Text)
+}
 
-	resp, err = ta.r().
-		SetResult(&list).
-		Get("testtype")
+func TestListAfter(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
-	require.Len(t, list, 3)
-	require.ElementsMatch(t, []string{"bar", "foo", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
 
-	list2 := []testType{}
-
-	resp, err = ta.r().
-		SetResult(&list2).
-		SetQueryParam("_after", list[0].ID).
-		Get("testtype")
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "zig"})
+	require.NoError(t, err)
+
+	list1, err := patchyc.List[testType](ctx, ta.pyc, nil)
+	require.NoError(t, err)
+	require.Len(t, list1, 3)
+
+	list2, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{After: list1[0].ID})
+	require.NoError(t, err)
 	require.Len(t, list2, 2)
-	require.ElementsMatch(t, []string{list[1].Text, list[2].Text}, []string{list2[0].Text, list2[1].Text})
+	require.Equal(t, list2[0].Text, list1[1].Text)
+	require.Equal(t, list2[1].Text, list1[2].Text)
+}
 
-	resp, err = ta.r().
-		SetResult(&list).
-		SetQueryParam("_sort", "text").
-		Get("testtype")
+func TestListSort(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	require.NoError(t, err)
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "zig"})
+	require.NoError(t, err)
+
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{Sorts: []string{"text"}})
+	require.NoError(t, err)
 	require.Len(t, list, 3)
 	require.Equal(t, []string{"bar", "foo", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
+}
 
-	resp, err = ta.r().
-		SetResult(&list).
-		SetQueryParam("_sort", "+text").
-		Get("testtype")
+func TestListSortAsc(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	require.NoError(t, err)
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "zig"})
+	require.NoError(t, err)
+
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{Sorts: []string{"+text"}})
+	require.NoError(t, err)
 	require.Len(t, list, 3)
 	require.Equal(t, []string{"bar", "foo", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
+}
 
-	resp, err = ta.r().
-		SetResult(&list).
-		SetQueryParam("_sort", "-text").
-		Get("testtype")
+func TestListSortDesc(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	require.NoError(t, err)
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "zig"})
+	require.NoError(t, err)
+
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{Sorts: []string{"-text"}})
+	require.NoError(t, err)
 	require.Len(t, list, 3)
 	require.Equal(t, []string{"zig", "foo", "bar"}, []string{list[0].Text, list[1].Text, list[2].Text})
+}
 
-	resp, err = ta.r().
-		SetResult(&list).
-		SetQueryParam("_sort", "+text").
-		SetQueryParam("_offset", "1").
-		Get("testtype")
+func TestListSortBeforeOffset(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	require.NoError(t, err)
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "zig"})
+	require.NoError(t, err)
+
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
+		Offset: 1,
+		Sorts:  []string{"text"},
+	})
+	require.NoError(t, err)
 	require.Len(t, list, 2)
 	require.Equal(t, []string{"foo", "zig"}, []string{list[0].Text, list[1].Text})
+}
 
-	resp, err = ta.r().
-		SetResult(&list).
-		SetQueryParam("_sort", "text").
-		SetQueryParam("_limit", "2").
-		Get("testtype")
+func TestListSortBeforeLimit(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	require.NoError(t, err)
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "zig"})
+	require.NoError(t, err)
+
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
+		Limit: 2,
+		Sorts: []string{"text"},
+	})
+	require.NoError(t, err)
 	require.Len(t, list, 2)
-	require.ElementsMatch(t, []string{"bar", "foo"}, []string{list[0].Text, list[1].Text})
+	require.Equal(t, []string{"bar", "foo"}, []string{list[0].Text, list[1].Text})
 }
