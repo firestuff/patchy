@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/firestuff/patchy/api"
+	"github.com/firestuff/patchy/patchyc"
 	"github.com/stretchr/testify/require"
 )
 
@@ -91,197 +92,441 @@ func requestHook(r *http.Request, _ *api.API) (*http.Request, error) {
 	return r.WithContext(ctx), nil
 }
 
-func TestMayWrite(t *testing.T) {
-	// TODO: Break up test
+func TestMayWriteCreateSuccess(t *testing.T) {
 	t.Parallel()
 
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
+	ctx := context.Background()
+
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	created := &mayType{}
-
-	resp, err := ta.r().
-		SetBody(&mayType{}).
-		SetResult(created).
-		Post("maytype")
+	_, err := patchyc.Create(ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
-	require.NotEmpty(t, created.ID)
-
-	resp, err = ta.r().
-		SetHeader("X-Refuse-Write", "x").
-		SetBody(&mayType{}).
-		SetResult(created).
-		Post("maytype")
-	require.NoError(t, err)
-	require.True(t, resp.IsError())
-	require.Equal(t, 401, resp.StatusCode())
-
-	replaced := &mayType{}
-
-	resp, err = ta.r().
-		SetBody(&mayType{}).
-		SetResult(replaced).
-		SetPathParam("id", created.ID).
-		Put("maytype/{id}")
-	require.NoError(t, err)
-	require.False(t, resp.IsError())
-
-	resp, err = ta.r().
-		SetHeader("X-Refuse-Write", "x").
-		SetBody(&mayType{}).
-		SetResult(replaced).
-		SetPathParam("id", created.ID).
-		Put("maytype/{id}")
-	require.NoError(t, err)
-	require.True(t, resp.IsError())
-	require.Equal(t, 401, resp.StatusCode())
-
-	updated := &mayType{}
-
-	resp, err = ta.r().
-		SetBody(&mayType{}).
-		SetResult(updated).
-		SetPathParam("id", created.ID).
-		Patch("maytype/{id}")
-	require.NoError(t, err)
-	require.False(t, resp.IsError(), resp)
-
-	resp, err = ta.r().
-		SetHeader("X-Refuse-Write", "x").
-		SetBody(&mayType{}).
-		SetResult(updated).
-		SetPathParam("id", created.ID).
-		Patch("maytype/{id}")
-	require.NoError(t, err)
-	require.True(t, resp.IsError())
-	require.Equal(t, 401, resp.StatusCode())
-
-	resp, err = ta.r().
-		SetHeader("X-Refuse-Write", "x").
-		SetPathParam("id", created.ID).
-		Delete("maytype/{id}")
-	require.NoError(t, err)
-	require.True(t, resp.IsError())
-	require.Equal(t, 401, resp.StatusCode())
-
-	resp, err = ta.r().
-		SetPathParam("id", created.ID).
-		Delete("maytype/{id}")
-	require.NoError(t, err)
-	require.False(t, resp.IsError())
 }
 
-func TestMayRead(t *testing.T) {
-	// TODO: Break up test
+func TestMayWriteCreateRefuse(t *testing.T) {
 	t.Parallel()
 
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
+	ctx := context.Background()
+
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	created := &mayType{}
+	ta.pyc.SetHeader("X-Refuse-Write", "x")
 
-	resp, err := ta.r().
-		SetBody(&mayType{}).
-		SetResult(created).
-		Post("maytype")
+	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	require.Error(t, err)
+	require.Nil(t, created)
+}
+
+func TestMayWriteReplaceSuccess(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	ta.api.SetRequestHook(requestHook)
+	api.Register[mayType](ta.api)
+
+	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
 
-	read := &testType{}
-
-	resp, err = ta.r().
-		SetResult(read).
-		SetPathParam("id", created.ID).
-		Get("maytype/{id}")
+	_, err = patchyc.Replace(ctx, ta.pyc, created.ID, &mayType{})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
+}
 
-	resp, err = ta.r().
-		SetDoNotParseResponse(true).
-		SetHeader("Accept", "text/event-stream").
-		SetPathParam("id", created.ID).
-		Get("maytype/{id}")
+func TestMayWriteReplaceRefuse(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	ta.api.SetRequestHook(requestHook)
+	api.Register[mayType](ta.api)
+
+	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
-	resp.RawBody().Close()
 
-	resp, err = ta.r().
-		SetHeader("X-Refuse-Read", "x").
-		SetResult(read).
-		SetPathParam("id", created.ID).
-		Get("maytype/{id}")
+	ta.pyc.SetHeader("X-Refuse-Write", "x")
+
+	_, err = patchyc.Replace(ctx, ta.pyc, created.ID, &mayType{})
+	require.Error(t, err)
+}
+
+func TestMayWriteUpdateSuccess(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	ta.api.SetRequestHook(requestHook)
+	api.Register[mayType](ta.api)
+
+	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
-	require.True(t, resp.IsError())
-	require.Equal(t, 401, resp.StatusCode())
 
-	resp, err = ta.r().
-		SetDoNotParseResponse(true).
-		SetHeader("X-Refuse-Read", "x").
-		SetHeader("Accept", "text/event-stream").
-		SetPathParam("id", created.ID).
-		Get("maytype/{id}")
+	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &mayType{})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
-	resp.RawBody().Close()
+}
 
-	list := []*testType{}
+func TestMayWriteUpdateRefuse(t *testing.T) {
+	t.Parallel()
 
-	resp, err = ta.r().
-		SetResult(&list).
-		Get("maytype")
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	ta.api.SetRequestHook(requestHook)
+	api.Register[mayType](ta.api)
+
+	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
+
+	ta.pyc.SetHeader("X-Refuse-Write", "x")
+
+	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &mayType{})
+	require.Error(t, err)
+}
+
+func TestMayWriteDeleteSuccess(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	ta.api.SetRequestHook(requestHook)
+	api.Register[mayType](ta.api)
+
+	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	require.NoError(t, err)
+
+	err = patchyc.Delete[mayType](ctx, ta.pyc, created.ID)
+	require.NoError(t, err)
+}
+
+func TestMayWriteDeleteRefuse(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	ta.api.SetRequestHook(requestHook)
+	api.Register[mayType](ta.api)
+
+	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	require.NoError(t, err)
+
+	ta.pyc.SetHeader("X-Refuse-Write", "x")
+
+	err = patchyc.Delete[mayType](ctx, ta.pyc, created.ID)
+	require.Error(t, err)
+}
+
+func TestMayReadGetSuccess(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	ta.api.SetRequestHook(requestHook)
+	api.Register[mayType](ta.api)
+
+	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	require.NoError(t, err)
+
+	get, err := patchyc.Get[mayType](ctx, ta.pyc, created.ID)
+	require.NoError(t, err)
+	require.NotNil(t, get)
+}
+
+func TestMayReadGetRefuse(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	ta.api.SetRequestHook(requestHook)
+	api.Register[mayType](ta.api)
+
+	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	require.NoError(t, err)
+
+	ta.pyc.SetHeader("X-Refuse-Read", "x")
+
+	get, err := patchyc.Get[mayType](ctx, ta.pyc, created.ID)
+	require.Error(t, err)
+	require.Nil(t, get)
+}
+
+func TestMayReadStreamGetSuccess(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	ta.api.SetRequestHook(requestHook)
+	api.Register[mayType](ta.api)
+
+	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	require.NoError(t, err)
+
+	stream, err := patchyc.StreamGet[mayType](ctx, ta.pyc, created.ID)
+	require.NoError(t, err)
+	require.NotNil(t, stream)
+
+	defer stream.Close()
+
+	get := stream.Read()
+	require.NotNil(t, get)
+}
+
+func TestMayReadStreamGetRefuse(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	ta.api.SetRequestHook(requestHook)
+	api.Register[mayType](ta.api)
+
+	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	require.NoError(t, err)
+
+	ta.pyc.SetHeader("X-Refuse-Read", "x")
+
+	stream, err := patchyc.StreamGet[mayType](ctx, ta.pyc, created.ID)
+	require.NoError(t, err)
+	require.NotNil(t, stream)
+
+	defer stream.Close()
+
+	get := stream.Read()
+	require.Nil(t, get)
+}
+
+func TestMayReadListSuccess(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	ta.api.SetRequestHook(requestHook)
+	api.Register[mayType](ta.api)
+
+	_, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	require.NoError(t, err)
+
+	list, err := patchyc.List[mayType](ctx, ta.pyc, nil)
+	require.NoError(t, err)
 	require.Len(t, list, 1)
+}
 
-	resp, err = ta.r().
-		SetHeader("X-Refuse-Read", "x").
-		SetResult(&list).
-		Get("maytype")
+func TestMayReadListRefuse(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	ta.api.SetRequestHook(requestHook)
+	api.Register[mayType](ta.api)
+
+	_, err := patchyc.Create(ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
+
+	ta.pyc.SetHeader("X-Refuse-Read", "x")
+
+	list, err := patchyc.List[mayType](ctx, ta.pyc, nil)
+	require.NoError(t, err)
 	require.Len(t, list, 0)
+}
 
-	resp, err = ta.r().
-		SetDoNotParseResponse(true).
-		SetHeader("Accept", "text/event-stream").
-		Get("maytype")
+func TestMayReadStreamListSuccess(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	ta.api.SetRequestHook(requestHook)
+	api.Register[mayType](ta.api)
+
+	_, err := patchyc.Create(ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
 
-	body1 := resp.RawBody()
-	defer body1.Close()
-
-	scan1 := bufio.NewScanner(body1)
-
-	eventType, err := readEvent(scan1, &list)
+	stream, err := patchyc.StreamList[mayType](ctx, ta.pyc, nil)
 	require.NoError(t, err)
-	require.Equal(t, "list", eventType)
+	require.NotNil(t, stream)
+
+	defer stream.Close()
+
+	list := stream.Read()
+	require.NotNil(t, list)
 	require.Len(t, list, 1)
+}
 
-	resp, err = ta.r().
-		SetDoNotParseResponse(true).
-		SetHeader("X-Refuse-Read", "x").
-		SetHeader("Accept", "text/event-stream").
-		Get("maytype")
+func TestMayReadStreamListRefuse(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	ta.api.SetRequestHook(requestHook)
+	api.Register[mayType](ta.api)
+
+	_, err := patchyc.Create(ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
 
-	body2 := resp.RawBody()
-	defer body2.Close()
+	ta.pyc.SetHeader("X-Refuse-Read", "x")
 
-	scan2 := bufio.NewScanner(body2)
-
-	eventType, err = readEvent(scan2, &list)
+	stream, err := patchyc.StreamList[mayType](ctx, ta.pyc, nil)
 	require.NoError(t, err)
-	require.Equal(t, "list", eventType)
+	require.NotNil(t, stream)
+
+	defer stream.Close()
+
+	list := stream.Read()
+	require.NotNil(t, list)
 	require.Len(t, list, 0)
+}
+
+func TestMayReadCreateSuccess(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	ta.api.SetRequestHook(requestHook)
+	api.Register[mayType](ta.api)
+
+	_, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	require.NoError(t, err)
+}
+
+func TestMayReadCreateRefuse(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	ta.api.SetRequestHook(requestHook)
+	api.Register[mayType](ta.api)
+
+	ta.pyc.SetHeader("X-Refuse-Read", "x")
+
+	_, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	require.Error(t, err)
+}
+
+func TestMayReadReplaceSuccess(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	ta.api.SetRequestHook(requestHook)
+	api.Register[mayType](ta.api)
+
+	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	require.NoError(t, err)
+
+	_, err = patchyc.Replace(ctx, ta.pyc, created.ID, &mayType{})
+	require.NoError(t, err)
+}
+
+func TestMayReadReplaceRefuse(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	ta.api.SetRequestHook(requestHook)
+	api.Register[mayType](ta.api)
+
+	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	require.NoError(t, err)
+
+	ta.pyc.SetHeader("X-Refuse-Read", "x")
+
+	_, err = patchyc.Replace(ctx, ta.pyc, created.ID, &mayType{})
+	require.Error(t, err)
+}
+
+func TestMayReadUpdateSuccess(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	ta.api.SetRequestHook(requestHook)
+	api.Register[mayType](ta.api)
+
+	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	require.NoError(t, err)
+
+	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &mayType{})
+	require.NoError(t, err)
+}
+
+func TestMayReadUpdateRefuse(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	ta.api.SetRequestHook(requestHook)
+	api.Register[mayType](ta.api)
+
+	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	require.NoError(t, err)
+
+	ta.pyc.SetHeader("X-Refuse-Read", "x")
+
+	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &mayType{})
+	require.Error(t, err)
 }
 
 func TestMayWriteMutate(t *testing.T) {

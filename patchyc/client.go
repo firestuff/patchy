@@ -42,3 +42,8 @@ func (c *Client) SetAuthToken(token string) *Client {
 	c.rst.SetAuthToken(token)
 	return c
 }
+
+func (c *Client) SetHeader(header, value string) *Client {
+	c.rst.SetHeader(header, value)
+	return c
+}
