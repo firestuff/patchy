@@ -2,31 +2,25 @@ package api_test
 
 import (
 	"bufio"
+	"context"
 	"testing"
 
+	"github.com/firestuff/patchy/patchyc"
 	"github.com/stretchr/testify/require"
 )
 
-func TestStreamGet(t *testing.T) {
-	// TODO: Break up test
-	// TODO: Test for delete event
+func TestStreamGetHeartbeat(t *testing.T) {
 	t.Parallel()
 
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	created := &testType{}
+	ctx := context.Background()
+
+	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.NoError(t, err)
 
 	resp, err := ta.r().
-		SetBody(&testType{
-			Text: "foo",
-		}).
-		SetResult(created).
-		Post("testtype")
-	require.NoError(t, err)
-	require.False(t, resp.IsError())
-
-	resp, err = ta.r().
 		SetDoNotParseResponse(true).
 		SetHeader("Accept", "text/event-stream").
 		SetPathParam("id", created.ID).
@@ -39,32 +33,60 @@ func TestStreamGet(t *testing.T) {
 
 	scan := bufio.NewScanner(body)
 
-	initial := &testType{}
-	eventType, err := readEvent(scan, initial)
+	eventType, err := readEvent(scan, nil)
 	require.NoError(t, err)
 	require.Equal(t, "initial", eventType)
-	require.Equal(t, "foo", initial.Text)
 
-	// Heartbeat (after 5 seconds)
 	eventType, err = readEvent(scan, nil)
 	require.NoError(t, err)
 	require.Equal(t, "heartbeat", eventType)
+}
 
-	updated := &testType{}
+func TestStreamGet(t *testing.T) {
+	t.Parallel()
 
-	// Round trip PATCH -> SSE
-	resp, err = ta.r().
-		SetBody(&testType{
-			Text: "bar",
-		}).
-		SetResult(updated).
-		SetPathParam("id", created.ID).
-		Patch("testtype/{id}")
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
 
-	eventType, err = readEvent(scan, updated)
+	stream, err := patchyc.StreamGet[testType](ctx, ta.pyc, created.ID)
 	require.NoError(t, err)
-	require.Equal(t, "update", eventType)
+
+	defer stream.Close()
+
+	get := stream.Read()
+	require.NotNil(t, get)
+	require.Equal(t, "foo", get.Text)
+}
+
+func TestStreamGetUpdate(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	stream, err := patchyc.StreamGet[testType](ctx, ta.pyc, created.ID)
+	require.NoError(t, err)
+
+	defer stream.Close()
+
+	get := stream.Read()
+	require.NotNil(t, get)
+	require.Equal(t, "foo", get.Text)
+
+	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"})
+	require.NoError(t, err)
+
+	updated := stream.Read()
+	require.NotNil(t, updated)
 	require.Equal(t, "bar", updated.Text)
 }
