@@ -231,6 +231,7 @@ func TestDirectStreamListInitial(t *testing.T) {
 
 	stream, err := api.StreamList[testType](ctx, ta.api, nil)
 	require.NoError(t, err)
+
 	defer stream.Close()
 
 	list := stream.Read()
@@ -249,6 +250,7 @@ func TestDirectStreamListUpdate(t *testing.T) {
 
 	stream, err := api.StreamList[testType](ctx, ta.api, nil)
 	require.NoError(t, err)
+
 	defer stream.Close()
 
 	list := stream.Read()
@@ -277,6 +279,7 @@ func TestDirectStreamListDelete(t *testing.T) {
 
 	stream, err := api.StreamList[testType](ctx, ta.api, nil)
 	require.NoError(t, err)
+
 	defer stream.Close()
 
 	list := stream.Read()
@@ -308,6 +311,7 @@ func TestDirectStreamListOpts(t *testing.T) {
 
 	stream, err := api.StreamList[testType](ctx, ta.api, &patchyc.ListOpts{Limit: 1})
 	require.NoError(t, err)
+
 	defer stream.Close()
 
 	list := stream.Read()

@@ -42,15 +42,17 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 	case "full":
 		err = api.streamListFull(ctx, cfg, w, opts)
 		if err != nil {
-			writeEvent(w, "error", jsrest.ToJSONError(err))
+			_ = writeEvent(w, "error", jsrest.ToJSONError(err))
 		}
+
 		return nil
 
 	case "diff":
 		err = api.streamListDiff(ctx, cfg, w, opts)
 		if err != nil {
-			writeEvent(w, "error", jsrest.ToJSONError(err))
+			_ = writeEvent(w, "error", jsrest.ToJSONError(err))
 		}
+
 		return nil
 
 	default:
@@ -60,7 +62,6 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 
 func (api *API) streamListFull(ctx context.Context, cfg *config, w http.ResponseWriter, opts *ListOpts) error {
 	// TODO: Add query condition pushdown
-
 	lsi, err := api.streamListInt(ctx, cfg, opts)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
@@ -91,7 +92,6 @@ func (api *API) streamListFull(ctx context.Context, cfg *config, w http.Response
 
 func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.ResponseWriter, opts *ListOpts) error {
 	// TODO: Add query condition pushdown
-
 	lsi, err := api.streamListInt(ctx, cfg, opts)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)

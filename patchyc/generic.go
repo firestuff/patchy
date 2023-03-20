@@ -9,6 +9,11 @@ import (
 	"strings"
 )
 
+var (
+	ErrNotFound      = fmt.Errorf("not found")
+	ErrMultipleFound = fmt.Errorf("multiple found")
+)
+
 func CreateName[T any](ctx context.Context, c *Client, name string, obj *T) (*T, error) {
 	created := new(T)
 
@@ -23,7 +28,8 @@ func CreateName[T any](ctx context.Context, c *Client, name string, obj *T) (*T,
 	}
 
 	if resp.IsError() {
-		return nil, errors.New(resp.String())
+		// TODO: Rehydrate jsrest errors
+		return nil, errors.New(resp.String()) //nolint:goerr113
 	}
 
 	return created, nil
@@ -44,7 +50,8 @@ func DeleteName(ctx context.Context, c *Client, name, id string) error {
 	}
 
 	if resp.IsError() {
-		return errors.New(resp.String())
+		// TODO: Rehydrate jsrest errors
+		return errors.New(resp.String()) //nolint:goerr113
 	}
 
 	return nil
@@ -71,11 +78,11 @@ func FindName[T any](ctx context.Context, c *Client, name, shortID string) (*T, 
 	}
 
 	if len(objs) == 0 {
-		return nil, fmt.Errorf("no object found with short ID: %s", shortID)
+		return nil, fmt.Errorf("%s (%w)", shortID, ErrNotFound)
 	}
 
 	if len(objs) > 1 {
-		return nil, fmt.Errorf("multiple objects found with short ID: %s", shortID)
+		return nil, fmt.Errorf("%s (%w)", shortID, ErrMultipleFound)
 	}
 
 	return objs[0], nil
@@ -103,7 +110,8 @@ func GetName[T any](ctx context.Context, c *Client, name, id string) (*T, error)
 	}
 
 	if resp.IsError() {
-		return nil, errors.New(resp.String())
+		// TODO: Rehydrate jsrest errors
+		return nil, errors.New(resp.String()) //nolint:goerr113
 	}
 
 	return obj, nil
@@ -131,7 +139,8 @@ func ListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts
 	}
 
 	if resp.IsError() {
-		return nil, errors.New(resp.String())
+		// TODO: Rehydrate jsrest errors
+		return nil, errors.New(resp.String()) //nolint:goerr113
 	}
 
 	return objs, nil
@@ -156,7 +165,8 @@ func ReplaceName[T any](ctx context.Context, c *Client, name, id string, obj *T)
 	}
 
 	if resp.IsError() {
-		return nil, errors.New(resp.String())
+		// TODO: Rehydrate jsrest errors
+		return nil, errors.New(resp.String()) //nolint:goerr113
 	}
 
 	return replaced, nil
@@ -181,7 +191,8 @@ func UpdateName[T any](ctx context.Context, c *Client, name, id string, obj *T) 
 	}
 
 	if resp.IsError() {
-		return nil, errors.New(resp.String())
+		// TODO: Rehydrate jsrest errors
+		return nil, errors.New(resp.String()) //nolint:goerr113
 	}
 
 	return updated, nil
@@ -203,7 +214,8 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string) (*Get
 	}
 
 	if resp.IsError() {
-		return nil, errors.New(resp.String())
+		// TODO: Rehydrate jsrest errors
+		return nil, errors.New(resp.String()) //nolint:goerr113
 	}
 
 	body := resp.RawBody()
@@ -254,7 +266,8 @@ func StreamListName[T any](ctx context.Context, c *Client, name string, opts *Li
 	}
 
 	if resp.IsError() {
-		return nil, errors.New(resp.String())
+		// TODO: Rehydrate jsrest errors
+		return nil, errors.New(resp.String()) //nolint:goerr113
 	}
 
 	body := resp.RawBody()

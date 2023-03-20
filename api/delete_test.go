@@ -75,6 +75,7 @@ func TestDeleteStream(t *testing.T) {
 
 	stream, err := patchyc.StreamGet[testType](ctx, ta.pyc, created.ID)
 	require.NoError(t, err)
+
 	defer stream.Close()
 
 	obj := stream.Read()

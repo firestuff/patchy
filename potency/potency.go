@@ -60,6 +60,7 @@ func NewPotency(store store.Storer, handler http.Handler) *Potency {
 }
 
 func (p *Potency) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// TODO: Add wrapper function so internal function can just return errors
 	val := r.Header.Get("Idempotency-Key")
 	if val == "" {
 		p.handler.ServeHTTP(w, r)
@@ -69,6 +70,7 @@ func (p *Potency) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if len(val) < 2 || !strings.HasPrefix(val, `"`) || !strings.HasSuffix(val, `"`) {
 		err := jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", val, ErrInvalidKey)
 		jsrest.WriteError(w, err)
+
 		return
 	}
 
@@ -78,6 +80,7 @@ func (p *Potency) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		err = jsrest.Errorf(jsrest.ErrInternalServerError, "read idempotency key failed: %s (%w)", key, err)
 		jsrest.WriteError(w, err)
+
 		return
 	}
 
@@ -87,12 +90,14 @@ func (p *Potency) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if r.Method != saved.Method {
 			err = jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", r.Method, ErrMethodMismatch)
 			jsrest.WriteError(w, err)
+
 			return
 		}
 
 		if r.URL.String() != saved.URL {
 			err = jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", r.URL.String(), ErrURLMismatch)
 			jsrest.WriteError(w, err)
+
 			return
 		}
 
@@ -100,6 +105,7 @@ func (p *Potency) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if saved.RequestHeader.Get(h) != r.Header.Get(h) {
 				err = jsrest.Errorf(jsrest.ErrBadRequest, "%s: %s (%w)", h, r.Header.Get(h), ErrHeaderMismatch)
 				jsrest.WriteError(w, err)
+
 				return
 			}
 		}
@@ -110,6 +116,7 @@ func (p *Potency) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			err = jsrest.Errorf(jsrest.ErrBadRequest, "hash request body failed (%w)", err)
 			jsrest.WriteError(w, err)
+
 			return
 		}
 
@@ -117,6 +124,7 @@ func (p *Potency) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if hexed != saved.Sha256 {
 			err = jsrest.Errorf(jsrest.ErrUnprocessableEntity, "%s vs %s (%w)", hexed, saved.Sha256, ErrBodyMismatch)
 			jsrest.WriteError(w, err)
+
 			return
 		}
 
@@ -135,6 +143,7 @@ func (p *Potency) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		err = jsrest.Errorf(jsrest.ErrConflict, "%s", key)
 		jsrest.WriteError(w, err)
+
 		return
 	}
 

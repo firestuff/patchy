@@ -52,6 +52,7 @@ func TestStreamListInitial(t *testing.T) {
 
 	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, nil)
 	require.NoError(t, err)
+
 	defer stream.Close()
 
 	list := stream.Read()
@@ -70,6 +71,7 @@ func TestStreamListAdd(t *testing.T) {
 
 	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, nil)
 	require.NoError(t, err)
+
 	defer stream.Close()
 
 	list := stream.Read()
@@ -98,6 +100,7 @@ func TestStreamListUpdate(t *testing.T) {
 
 	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, nil)
 	require.NoError(t, err)
+
 	defer stream.Close()
 
 	list := stream.Read()
@@ -127,6 +130,7 @@ func TestStreamListDelete(t *testing.T) {
 
 	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, nil)
 	require.NoError(t, err)
+
 	defer stream.Close()
 
 	list := stream.Read()
@@ -158,6 +162,7 @@ func TestStreamListOpts(t *testing.T) {
 
 	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Limit: 1})
 	require.NoError(t, err)
+
 	defer stream.Close()
 
 	list := stream.Read()

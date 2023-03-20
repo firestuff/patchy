@@ -91,7 +91,7 @@ func WriteError(w http.ResponseWriter, err error) {
 	w.WriteHeader(je.Code)
 
 	enc := json.NewEncoder(w)
-	_ = enc.Encode(je)
+	_ = enc.Encode(je) //nolint:errchkjson
 }
 
 func Errorf(he *HTTPError, format string, a ...any) error {
@@ -99,9 +99,9 @@ func Errorf(he *HTTPError, format string, a ...any) error {
 
 	if hasHTTPError(err) {
 		return err
-	} else {
-		return SilentJoin(err, he)
 	}
+
+	return SilentJoin(err, he)
 }
 
 type JSONError struct {
@@ -127,7 +127,7 @@ type multiUnwrap interface {
 }
 
 func hasHTTPError(err error) bool {
-	if _, has := err.(*HTTPError); has {
+	if _, has := err.(*HTTPError); has { //nolint:errorlint
 		return true
 	}
 

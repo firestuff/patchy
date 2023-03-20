@@ -103,6 +103,7 @@ func (cfg *config) checkWrite(ctx context.Context, obj, prev any, api *API) (any
 
 	if obj != nil {
 		var err error
+
 		ret, err = cfg.clone(obj)
 		if err != nil {
 			return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "clone failed (%w)", err)
@@ -154,6 +155,7 @@ func (cfg *config) unlock(id string) {
 	cfg.mu.Lock()
 
 	entry := cfg.locks[id]
+
 	entry.ref--
 	if entry.ref == 0 {
 		delete(cfg.locks, id)
