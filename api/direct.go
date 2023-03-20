@@ -158,7 +158,7 @@ func StreamGetName[T any](ctx context.Context, api *API, name, id string) (*GetS
 
 	gsi, err := api.streamGetInt(ctx, cfg, id)
 	if err != nil {
-		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "getSteam failed (%w)", err)
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "stream get failed (%w)", err)
 	}
 
 	out := make(chan *T, 100)
@@ -189,7 +189,7 @@ func StreamListName[T any](ctx context.Context, api *API, name string, opts *Lis
 
 	lsi, err := api.streamListInt(ctx, cfg, opts)
 	if err != nil {
-		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "getSteam failed (%w)", err)
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "stream list failed (%w)", err)
 	}
 
 	out := make(chan []*T, 100)
