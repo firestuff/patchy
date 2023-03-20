@@ -7,53 +7,86 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type MergeTestType struct {
+type mergeTestType struct {
 	A string
-	B int64
+	B int
 	C []string
-	D NestedType
-	E *NestedType
+	D nestedType
+	E *nestedType
 }
 
-type NestedType struct {
-	F []int64
+type nestedType struct {
+	F []int
 }
 
-func TestMerge(t *testing.T) {
-	// TODO: Break up test
+func TestMergeString(t *testing.T) {
 	t.Parallel()
 
-	to := &MergeTestType{
+	to := &mergeTestType{
 		A: "foo",
 		B: 42,
+	}
+
+	merge(to, &mergeTestType{
+		A: "bar",
+	})
+
+	require.Equal(t, "bar", to.A)
+	require.Equal(t, 42, to.B)
+}
+
+func TestMergeSlice(t *testing.T) {
+	t.Parallel()
+
+	to := &mergeTestType{
+		B: 42,
+		C: []string{"foo", "bar"},
+	}
+
+	merge(to, &mergeTestType{
 		C: []string{"zig", "zag"},
-		D: NestedType{
-			F: []int64{42, 43},
-		},
-		E: &NestedType{
-			F: []int64{44, 45},
+	})
+
+	require.Equal(t, 42, to.B)
+	require.Equal(t, []string{"zig", "zag"}, to.C)
+}
+
+func TestMergeNested(t *testing.T) {
+	t.Parallel()
+
+	to := &mergeTestType{
+		B: 42,
+		D: nestedType{
+			F: []int{42, 43},
 		},
 	}
 
-	merge(to, &MergeTestType{
-		A: "bar",
+	merge(to, &mergeTestType{
+		D: nestedType{
+			F: []int{44, 45},
+		},
 	})
-	require.Equal(t, "bar", to.A)
-	require.Equal(t, int64(42), to.B)
 
-	merge(to, &MergeTestType{
-		B: 46,
-		C: []string{"ooh", "aah"},
-		D: NestedType{
-			F: []int64{47, 48},
+	require.Equal(t, 42, to.B)
+	require.Equal(t, []int{44, 45}, to.D.F)
+}
+
+func TestMergeNestedPointer(t *testing.T) {
+	t.Parallel()
+
+	to := &mergeTestType{
+		B: 42,
+		E: &nestedType{
+			F: []int{42, 43},
 		},
-		E: &NestedType{
-			F: []int64{49, 50},
+	}
+
+	merge(to, &mergeTestType{
+		E: &nestedType{
+			F: []int{49, 50},
 		},
 	})
-	require.Equal(t, "bar", to.A)
-	require.Equal(t, int64(46), to.B)
-	require.Equal(t, []string{"ooh", "aah"}, to.C)
-	require.Equal(t, []int64{47, 48}, to.D.F)
-	require.Equal(t, []int64{49, 50}, to.E.F)
+
+	require.Equal(t, 42, to.B)
+	require.Equal(t, []int{49, 50}, to.E.F)
 }
