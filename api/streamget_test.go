@@ -9,6 +9,7 @@ import (
 
 func TestStreamGet(t *testing.T) {
 	// TODO: Break up test
+	// TODO: Test for delete event
 	t.Parallel()
 
 	ta := newTestAPI(t)
