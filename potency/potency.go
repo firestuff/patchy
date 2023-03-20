@@ -60,53 +60,44 @@ func NewPotency(store store.Storer, handler http.Handler) *Potency {
 }
 
 func (p *Potency) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// TODO: Add wrapper function so internal function can just return errors
 	val := r.Header.Get("Idempotency-Key")
 	if val == "" {
 		p.handler.ServeHTTP(w, r)
 		return
 	}
 
-	if len(val) < 2 || !strings.HasPrefix(val, `"`) || !strings.HasSuffix(val, `"`) {
-		err := jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", val, ErrInvalidKey)
+	err := p.serveHTTP(w, r, val)
+	if err != nil {
 		jsrest.WriteError(w, err)
+	}
+}
 
-		return
+func (p *Potency) serveHTTP(w http.ResponseWriter, r *http.Request, val string) error {
+	if len(val) < 2 || !strings.HasPrefix(val, `"`) || !strings.HasSuffix(val, `"`) {
+		return jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", val, ErrInvalidKey)
 	}
 
 	key := val[1 : len(val)-1]
 
 	rd, err := p.store.Read(r.Context(), "idempotency-key", key, func() any { return &savedResult{} })
 	if err != nil {
-		err = jsrest.Errorf(jsrest.ErrInternalServerError, "read idempotency key failed: %s (%w)", key, err)
-		jsrest.WriteError(w, err)
-
-		return
+		return jsrest.Errorf(jsrest.ErrInternalServerError, "read idempotency key failed: %s (%w)", key, err)
 	}
 
 	if rd != nil {
 		saved := rd.(*savedResult)
 
 		if r.Method != saved.Method {
-			err = jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", r.Method, ErrMethodMismatch)
-			jsrest.WriteError(w, err)
-
-			return
+			return jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", r.Method, ErrMethodMismatch)
 		}
 
 		if r.URL.String() != saved.URL {
-			err = jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", r.URL.String(), ErrURLMismatch)
-			jsrest.WriteError(w, err)
-
-			return
+			return jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", r.URL.String(), ErrURLMismatch)
 		}
 
 		for _, h := range criticalHeaders {
 			if saved.RequestHeader.Get(h) != r.Header.Get(h) {
-				err = jsrest.Errorf(jsrest.ErrBadRequest, "%s: %s (%w)", h, r.Header.Get(h), ErrHeaderMismatch)
-				jsrest.WriteError(w, err)
-
-				return
+				return jsrest.Errorf(jsrest.ErrBadRequest, "%s: %s (%w)", h, r.Header.Get(h), ErrHeaderMismatch)
 			}
 		}
 
@@ -114,18 +105,12 @@ func (p *Potency) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		_, err = io.Copy(h, r.Body)
 		if err != nil {
-			err = jsrest.Errorf(jsrest.ErrBadRequest, "hash request body failed (%w)", err)
-			jsrest.WriteError(w, err)
-
-			return
+			return jsrest.Errorf(jsrest.ErrBadRequest, "hash request body failed (%w)", err)
 		}
 
 		hexed := hex.EncodeToString(h.Sum(nil))
 		if hexed != saved.Sha256 {
-			err = jsrest.Errorf(jsrest.ErrUnprocessableEntity, "%s vs %s (%w)", hexed, saved.Sha256, ErrBodyMismatch)
-			jsrest.WriteError(w, err)
-
-			return
+			return jsrest.Errorf(jsrest.ErrUnprocessableEntity, "%s vs %s (%w)", hexed, saved.Sha256, ErrBodyMismatch)
 		}
 
 		for key, vals := range saved.ResponseHeader {
@@ -135,16 +120,13 @@ func (p *Potency) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(saved.StatusCode)
 		_, _ = w.Write(saved.ResponseBody)
 
-		return
+		return nil
 	}
 
 	// Store miss, proceed to normal execution with interception
 	err = p.lockKey(key)
 	if err != nil {
-		err = jsrest.Errorf(jsrest.ErrConflict, "%s", key)
-		jsrest.WriteError(w, err)
-
-		return
+		return jsrest.Errorf(jsrest.ErrConflict, "%s", key)
 	}
 
 	defer p.unlockKey(key)
@@ -179,6 +161,8 @@ func (p *Potency) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Can't really do anything with the error
 	_ = p.store.Write(r.Context(), "idempotency-key", save)
+
+	return nil
 }
 
 func (p *Potency) lockKey(key string) error {
