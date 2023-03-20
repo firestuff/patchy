@@ -27,11 +27,11 @@ func TestStreamListHeartbeat(t *testing.T) {
 
 	scan := bufio.NewScanner(body)
 
-	eventType, err := readEvent(scan, nil)
+	eventType, _, err := readEvent[[]*testType](scan)
 	require.NoError(t, err)
 	require.Equal(t, "list", eventType)
 
-	eventType, err = readEvent(scan, nil)
+	eventType, _, err = readEvent[map[string]string](scan)
 	require.NoError(t, err)
 	require.Equal(t, "heartbeat", eventType)
 }
@@ -171,36 +171,19 @@ func TestStreamListOpts(t *testing.T) {
 	require.Contains(t, []string{"foo", "bar"}, list[0].Text)
 }
 
-func TestStreamListDiff(t *testing.T) {
-	// TODO: Break up test
+func TestStreamListDiffInitial(t *testing.T) {
 	t.Parallel()
 
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	created1 := &testType{}
+	ctx := context.Background()
 
+	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	// No client support for this, use direct queries
 	resp, err := ta.r().
-		SetBody(&testType{
-			Text: "foo",
-		}).
-		SetResult(created1).
-		Post("testtype")
-	require.NoError(t, err)
-	require.False(t, resp.IsError())
-
-	created2 := &testType{}
-
-	resp, err = ta.r().
-		SetBody(&testType{
-			Text: "bar",
-		}).
-		SetResult(created2).
-		Post("testtype")
-	require.NoError(t, err)
-	require.False(t, resp.IsError())
-
-	resp, err = ta.r().
 		SetDoNotParseResponse(true).
 		SetHeader("Accept", "text/event-stream").
 		SetQueryParam("_stream", "diff").
@@ -213,7 +196,180 @@ func TestStreamListDiff(t *testing.T) {
 
 	scan := bufio.NewScanner(body)
 
-	resp2, err := ta.r().
+	eventType, obj, err := readEvent[testType](scan)
+	require.NoError(t, err)
+	require.Equal(t, "add", eventType)
+	require.Equal(t, created.ID, obj.ID)
+	require.Equal(t, "foo", obj.Text)
+}
+
+func TestStreamListDiffCreate(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	resp, err := ta.r().
+		SetDoNotParseResponse(true).
+		SetHeader("Accept", "text/event-stream").
+		SetQueryParam("_stream", "diff").
+		Get("testtype")
+	require.NoError(t, err)
+	require.False(t, resp.IsError())
+
+	body := resp.RawBody()
+	defer body.Close()
+
+	scan := bufio.NewScanner(body)
+
+	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	eventType, obj, err := readEvent[testType](scan)
+	require.NoError(t, err)
+	require.Equal(t, "add", eventType)
+	require.Equal(t, created.ID, obj.ID)
+	require.Equal(t, "foo", obj.Text)
+}
+
+func TestStreamListDiffUpdate(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo", Num: 1})
+	require.NoError(t, err)
+
+	resp, err := ta.r().
+		SetDoNotParseResponse(true).
+		SetHeader("Accept", "text/event-stream").
+		SetQueryParam("_stream", "diff").
+		Get("testtype")
+	require.NoError(t, err)
+	require.False(t, resp.IsError())
+
+	body := resp.RawBody()
+	defer body.Close()
+
+	scan := bufio.NewScanner(body)
+
+	eventType, obj, err := readEvent[testType](scan)
+	require.NoError(t, err)
+	require.Equal(t, "add", eventType)
+	require.Equal(t, created.ID, obj.ID)
+	require.Equal(t, "foo", obj.Text)
+	require.EqualValues(t, 1, obj.Num)
+
+	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"})
+	require.NoError(t, err)
+
+	eventType, obj, err = readEvent[testType](scan)
+	require.NoError(t, err)
+	require.Equal(t, "update", eventType)
+	require.Equal(t, created.ID, obj.ID)
+	require.Equal(t, "bar", obj.Text)
+	require.EqualValues(t, 1, obj.Num)
+}
+
+func TestStreamListDiffReplace(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo", Num: 1})
+	require.NoError(t, err)
+
+	resp, err := ta.r().
+		SetDoNotParseResponse(true).
+		SetHeader("Accept", "text/event-stream").
+		SetQueryParam("_stream", "diff").
+		Get("testtype")
+	require.NoError(t, err)
+	require.False(t, resp.IsError())
+
+	body := resp.RawBody()
+	defer body.Close()
+
+	scan := bufio.NewScanner(body)
+
+	eventType, obj, err := readEvent[testType](scan)
+	require.NoError(t, err)
+	require.Equal(t, "add", eventType)
+	require.Equal(t, created.ID, obj.ID)
+	require.Equal(t, "foo", obj.Text)
+	require.EqualValues(t, 1, obj.Num)
+
+	_, err = patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"})
+	require.NoError(t, err)
+
+	eventType, obj, err = readEvent[testType](scan)
+	require.NoError(t, err)
+	require.Equal(t, "update", eventType)
+	require.Equal(t, created.ID, obj.ID)
+	require.Equal(t, "bar", obj.Text)
+	require.EqualValues(t, 0, obj.Num)
+}
+
+func TestStreamListDiffDelete(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	resp, err := ta.r().
+		SetDoNotParseResponse(true).
+		SetHeader("Accept", "text/event-stream").
+		SetQueryParam("_stream", "diff").
+		Get("testtype")
+	require.NoError(t, err)
+	require.False(t, resp.IsError())
+
+	body := resp.RawBody()
+	defer body.Close()
+
+	scan := bufio.NewScanner(body)
+
+	eventType, obj, err := readEvent[testType](scan)
+	require.NoError(t, err)
+	require.Equal(t, "add", eventType)
+	require.Equal(t, created.ID, obj.ID)
+	require.Equal(t, "foo", obj.Text)
+
+	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID)
+	require.NoError(t, err)
+
+	eventType, obj, err = readEvent[testType](scan)
+	require.NoError(t, err)
+	require.Equal(t, "remove", eventType)
+	require.Equal(t, created.ID, obj.ID)
+	require.Equal(t, "foo", obj.Text)
+}
+
+func TestStreamListDiffSort(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	created1, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	resp, err := ta.r().
 		SetDoNotParseResponse(true).
 		SetHeader("Accept", "text/event-stream").
 		SetQueryParam("_stream", "diff").
@@ -221,80 +377,31 @@ func TestStreamListDiff(t *testing.T) {
 		SetQueryParam("_limit", "1").
 		Get("testtype")
 	require.NoError(t, err)
-	require.False(t, resp2.IsError())
-
-	body2 := resp2.RawBody()
-	defer body2.Close()
-
-	scan2 := bufio.NewScanner(body2)
-
-	obj1 := testType{}
-
-	eventType, err := readEvent(scan, &obj1)
-	require.NoError(t, err)
-	require.Equal(t, "add", eventType)
-
-	obj2 := testType{}
-
-	eventType, err = readEvent(scan, &obj2)
-	require.NoError(t, err)
-	require.Equal(t, "add", eventType)
-	require.ElementsMatch(t, []string{"foo", "bar"}, []string{obj1.Text, obj2.Text})
-
-	eventType, err = readEvent(scan2, &obj1)
-	require.NoError(t, err)
-	require.Equal(t, "add", eventType)
-	require.Equal(t, "bar", obj1.Text)
-
-	resp, err = ta.r().
-		SetBody(&testType{
-			Text: "zig",
-		}).
-		SetResult(created2).
-		SetPathParam("id", created2.ID).
-		Patch("testtype/{id}")
-	require.NoError(t, err)
 	require.False(t, resp.IsError())
 
-	eventType, err = readEvent(scan, &obj1)
-	require.NoError(t, err)
-	require.Equal(t, "update", eventType)
-	require.Equal(t, created2.ID, obj1.ID)
-	require.Equal(t, "zig", obj1.Text)
+	body := resp.RawBody()
+	defer body.Close()
 
-	eventType, err = readEvent(scan2, &obj1)
+	scan := bufio.NewScanner(body)
+
+	eventType, obj, err := readEvent[testType](scan)
 	require.NoError(t, err)
 	require.Equal(t, "add", eventType)
-	require.Equal(t, created1.ID, obj1.ID)
-	require.Equal(t, "foo", obj1.Text)
+	require.Equal(t, created1.ID, obj.ID)
+	require.Equal(t, "foo", obj.Text)
 
-	eventType, err = readEvent(scan2, &obj1)
+	created2, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
-	require.Equal(t, "remove", eventType)
-	require.Equal(t, created2.ID, obj1.ID)
-	require.Equal(t, "bar", obj1.Text)
 
-	resp, err = ta.r().
-		SetPathParam("id", created1.ID).
-		Delete("testtype/{id}")
-	require.NoError(t, err)
-	require.False(t, resp.IsError())
-
-	eventType, err = readEvent(scan, &obj1)
-	require.NoError(t, err)
-	require.Equal(t, "remove", eventType)
-	require.Equal(t, created1.ID, obj1.ID)
-	require.Equal(t, "foo", obj1.Text)
-
-	eventType, err = readEvent(scan2, &obj1)
+	eventType, obj, err = readEvent[testType](scan)
 	require.NoError(t, err)
 	require.Equal(t, "add", eventType)
-	require.Equal(t, created2.ID, obj1.ID)
-	require.Equal(t, "zig", obj1.Text)
+	require.Equal(t, created2.ID, obj.ID)
+	require.Equal(t, "bar", obj.Text)
 
-	eventType, err = readEvent(scan2, &obj1)
+	eventType, obj, err = readEvent[testType](scan)
 	require.NoError(t, err)
 	require.Equal(t, "remove", eventType)
-	require.Equal(t, created1.ID, obj1.ID)
-	require.Equal(t, "foo", obj1.Text)
+	require.Equal(t, created1.ID, obj.ID)
+	require.Equal(t, "foo", obj.Text)
 }
