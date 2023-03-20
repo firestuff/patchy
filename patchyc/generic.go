@@ -3,10 +3,11 @@ package patchyc
 import (
 	"bufio"
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
 	"strings"
+
+	"github.com/firestuff/patchy/jsrest"
 )
 
 var (
@@ -28,8 +29,7 @@ func CreateName[T any](ctx context.Context, c *Client, name string, obj *T) (*T,
 	}
 
 	if resp.IsError() {
-		// TODO: Rehydrate jsrest errors
-		return nil, errors.New(resp.String()) //nolint:goerr113
+		return nil, jsrest.ReadError(resp.Body())
 	}
 
 	return created, nil
@@ -50,8 +50,7 @@ func DeleteName(ctx context.Context, c *Client, name, id string) error {
 	}
 
 	if resp.IsError() {
-		// TODO: Rehydrate jsrest errors
-		return errors.New(resp.String()) //nolint:goerr113
+		return jsrest.ReadError(resp.Body())
 	}
 
 	return nil
@@ -110,8 +109,7 @@ func GetName[T any](ctx context.Context, c *Client, name, id string) (*T, error)
 	}
 
 	if resp.IsError() {
-		// TODO: Rehydrate jsrest errors
-		return nil, errors.New(resp.String()) //nolint:goerr113
+		return nil, jsrest.ReadError(resp.Body())
 	}
 
 	return obj, nil
@@ -139,8 +137,7 @@ func ListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts
 	}
 
 	if resp.IsError() {
-		// TODO: Rehydrate jsrest errors
-		return nil, errors.New(resp.String()) //nolint:goerr113
+		return nil, jsrest.ReadError(resp.Body())
 	}
 
 	return objs, nil
@@ -165,8 +162,7 @@ func ReplaceName[T any](ctx context.Context, c *Client, name, id string, obj *T)
 	}
 
 	if resp.IsError() {
-		// TODO: Rehydrate jsrest errors
-		return nil, errors.New(resp.String()) //nolint:goerr113
+		return nil, jsrest.ReadError(resp.Body())
 	}
 
 	return replaced, nil
@@ -191,8 +187,7 @@ func UpdateName[T any](ctx context.Context, c *Client, name, id string, obj *T) 
 	}
 
 	if resp.IsError() {
-		// TODO: Rehydrate jsrest errors
-		return nil, errors.New(resp.String()) //nolint:goerr113
+		return nil, jsrest.ReadError(resp.Body())
 	}
 
 	return updated, nil
@@ -214,8 +209,7 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string) (*Get
 	}
 
 	if resp.IsError() {
-		// TODO: Rehydrate jsrest errors
-		return nil, errors.New(resp.String()) //nolint:goerr113
+		return nil, jsrest.ReadError(resp.Body())
 	}
 
 	body := resp.RawBody()
@@ -266,8 +260,7 @@ func StreamListName[T any](ctx context.Context, c *Client, name string, opts *Li
 	}
 
 	if resp.IsError() {
-		// TODO: Rehydrate jsrest errors
-		return nil, errors.New(resp.String()) //nolint:goerr113
+		return nil, jsrest.ReadError(resp.Body())
 	}
 
 	body := resp.RawBody()
