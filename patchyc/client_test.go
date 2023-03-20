@@ -21,12 +21,16 @@ type testType struct {
 }
 
 func TestClient(t *testing.T) {
+	// TODO: Break up and expand this
+	t.Parallel()
+
 	ctx := context.Background()
 
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
 	a, err := api.NewSQLiteAPI(dbname)
 	require.NoError(t, err)
+
 	defer a.Close()
 
 	api.Register[testType](a)
@@ -47,7 +51,12 @@ func TestClient(t *testing.T) {
 		_ = srv.Serve(listener)
 	}()
 
-	defer srv.Shutdown(ctx)
+	defer func() {
+		err := srv.Shutdown(ctx)
+		if err != nil {
+			panic(err)
+		}
+	}()
 
 	baseURL := fmt.Sprintf("http://[::1]:%d/api/", listener.Addr().(*net.TCPAddr).Port)
 

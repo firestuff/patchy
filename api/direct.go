@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/firestuff/patchy/jsrest"
 )
@@ -60,11 +59,11 @@ func FindName[T any](ctx context.Context, api *API, name, shortID string) (*T, e
 	}
 
 	if len(objs) == 0 {
-		return nil, fmt.Errorf("no object found with short ID: %s", shortID)
+		return nil, jsrest.Errorf(jsrest.ErrNotFound, "no object found with short ID: %s", shortID)
 	}
 
 	if len(objs) > 1 {
-		return nil, fmt.Errorf("multiple objects found with short ID: %s", shortID)
+		return nil, jsrest.Errorf(jsrest.ErrBadRequest, "multiple objects found with short ID: %s", shortID)
 	}
 
 	return objs[0], nil

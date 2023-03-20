@@ -100,10 +100,12 @@ func (api *API) CheckSafe() {
 func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if api.requestHook != nil {
 		var err error
+
 		r, err = api.requestHook(r, api)
 		if err != nil {
 			err = jsrest.Errorf(jsrest.ErrInternalServerError, "request hook failed (%w)", err)
 			jsrest.WriteError(w, err)
+
 			return
 		}
 	}

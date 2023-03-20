@@ -30,7 +30,7 @@ func (mt *mayType) MayRead(ctx context.Context, a *api.API) error {
 	nt1 := ctx.Value(newText1)
 	if nt1 != nil {
 		// Use a separate context so we don't recursively create objects
-		_, err := api.Create(context.Background(), a, &mayType{Text1: nt1.(string)})
+		_, err := api.Create(context.Background(), a, &mayType{Text1: nt1.(string)}) //nolint:contextcheck
 		if err != nil {
 			return err
 		}
@@ -539,6 +539,7 @@ func TestMayReadAPI(t *testing.T) {
 		SetResult(&list).
 		Get("maytype")
 	require.NoError(t, err)
+	require.False(t, resp.IsError())
 	require.Len(t, list, 2)
 	require.Equal(t, "abcd", list[0].Text1)
 	require.Equal(t, "foo", list[1].Text1)

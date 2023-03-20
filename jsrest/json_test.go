@@ -18,7 +18,7 @@ func TestRead(t *testing.T) {
 
 	body := bytes.NewBufferString(`{"text1":"foo"}`)
 
-	req, err := http.NewRequest("GET", "xyz", body)
+	req, err := http.NewRequest(http.MethodGet, "xyz", body)
 	require.NoError(t, err)
 
 	req.Header.Set("Content-Type", "application/json")
@@ -35,7 +35,7 @@ func TestReadContentTypeParams(t *testing.T) {
 
 	body := bytes.NewBufferString(`{"text1":"bar"}`)
 
-	req, err := http.NewRequest("GET", "xyz", body)
+	req, err := http.NewRequest(http.MethodGet, "xyz", body) //nolint:noctx
 	require.NoError(t, err)
 
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")

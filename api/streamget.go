@@ -28,16 +28,16 @@ func (api *API) streamGet(cfg *config, id string, w http.ResponseWriter, r *http
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 
-	err = api.streamGetWrite(ctx, cfg, w, gsi.ch)
+	err = api.streamGetWrite(ctx, w, gsi.ch)
 	if err != nil {
-		writeEvent(w, "error", jsrest.ToJSONError(err))
+		_ = writeEvent(w, "error", jsrest.ToJSONError(err))
 		return nil
 	}
 
 	return nil
 }
 
-func (api *API) streamGetWrite(ctx context.Context, cfg *config, w http.ResponseWriter, ch <-chan any) error {
+func (api *API) streamGetWrite(ctx context.Context, w http.ResponseWriter, ch <-chan any) error {
 	eventType := "initial"
 
 	ticker := time.NewTicker(5 * time.Second)

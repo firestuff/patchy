@@ -9,7 +9,9 @@ import (
 )
 
 func TestParseAuthorization(t *testing.T) {
-	req, err := http.NewRequest("GET", "/foo", nil)
+	t.Parallel()
+
+	req, err := http.NewRequest(http.MethodGet, "/foo", nil)
 	require.NoError(t, err)
 
 	req.Header.Add("Authorization", "Bearer xyz")
@@ -21,7 +23,9 @@ func TestParseAuthorization(t *testing.T) {
 }
 
 func TestParseBasic(t *testing.T) {
-	req, err := http.NewRequest("GET", "/foo", nil)
+	t.Parallel()
+
+	req, err := http.NewRequest(http.MethodGet, "/foo", nil) //nolint:noctx
 	require.NoError(t, err)
 
 	req.Header.Add("Authorization", "Basic YWxhZGRpbjpvcGVuc2VzYW1l")

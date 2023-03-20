@@ -23,7 +23,6 @@ var (
 
 func ifMatch(obj any, match string) error {
 	// TODO: Support a better intermediate representation for If-Match values, so they can be used by direct clients easily
-
 	if match == "" {
 		return nil
 	}

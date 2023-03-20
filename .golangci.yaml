@@ -2,14 +2,11 @@ linters:
   enable-all: true
   disable:
     # re-enable when working
-    - contextcheck
     - rowserrcheck
-    - sqlclosecheck
     - wastedassign
     # maybe enable these
     - wrapcheck
     # leave these disabled
-    - containedctx
     - cyclop
     - deadcode
     - dupl
@@ -28,6 +25,7 @@ linters:
     - interfacer
     - lll
     - maligned
+    - nilnil
     - nestif
     - nlreturn
     - nolintlint

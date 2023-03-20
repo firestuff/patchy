@@ -336,7 +336,7 @@ func TestRequestHookError(t *testing.T) {
 	ctx := context.Background()
 
 	ta.api.SetRequestHook(func(*http.Request, *patchy.API) (*http.Request, error) {
-		return nil, fmt.Errorf("test reject")
+		return nil, fmt.Errorf("test reject") //nolint:goerr113
 	})
 
 	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})

@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/firestuff/patchy/metadata"
+	// Register sqlite3 db handler.
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -37,7 +38,7 @@ func (sls *SQLiteStore) Write(ctx context.Context, t string, obj any) error {
 		return err
 	}
 
-	_, err = sls.exec(ctx, "INSERT INTO `%s` (id, obj) VALUES (?,?) ON CONFLICT(id) DO UPDATE SET obj=?;", t, id, js, js)
+	err = sls.exec(ctx, "INSERT INTO `%s` (id, obj) VALUES (?,?) ON CONFLICT(id) DO UPDATE SET obj=?;", t, id, js, js)
 	if err != nil {
 		return err
 	}
@@ -46,7 +47,7 @@ func (sls *SQLiteStore) Write(ctx context.Context, t string, obj any) error {
 }
 
 func (sls *SQLiteStore) Delete(ctx context.Context, t, id string) error {
-	_, err := sls.exec(ctx, "DELETE FROM `%s` WHERE id=?", t, id)
+	err := sls.exec(ctx, "DELETE FROM `%s` WHERE id=?", t, id)
 	if err != nil {
 		return err
 	}
@@ -62,25 +63,25 @@ func (sls *SQLiteStore) Read(ctx context.Context, t, id string, factory func() a
 
 	defer rows.Close()
 
-	for rows.Next() {
-		var js []byte
-
-		err = rows.Scan(&js)
-		if err != nil {
-			return nil, err
-		}
-
-		obj := factory()
-
-		err = json.Unmarshal(js, obj)
-		if err != nil {
-			return nil, err
-		}
-
-		return obj, nil
+	if !rows.Next() {
+		return nil, nil
 	}
 
-	return nil, nil
+	var js []byte
+
+	err = rows.Scan(&js)
+	if err != nil {
+		return nil, err
+	}
+
+	obj := factory()
+
+	err = json.Unmarshal(js, obj)
+	if err != nil {
+		return nil, err
+	}
+
+	return obj, nil
 }
 
 func (sls *SQLiteStore) List(ctx context.Context, t string, factory func() any) ([]any, error) {
@@ -114,20 +115,25 @@ func (sls *SQLiteStore) List(ctx context.Context, t string, factory func() any) 
 	return ret, nil
 }
 
-func (sls *SQLiteStore) exec(ctx context.Context, query, t string, args ...any) (sql.Result, error) {
+func (sls *SQLiteStore) exec(ctx context.Context, query, t string, args ...any) error {
 	query = fmt.Sprintf(query, t)
 
-	result, err := sls.db.ExecContext(ctx, query, args...)
+	_, err := sls.db.ExecContext(ctx, query, args...)
 	if err == nil {
-		return result, nil
+		return nil
 	}
 
 	_, err = sls.db.ExecContext(ctx, sls.tableSQL(t))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return sls.db.ExecContext(ctx, query, args...)
+	_, err = sls.db.ExecContext(ctx, query, args...)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (sls *SQLiteStore) query(ctx context.Context, query, t string, args ...any) (*sql.Rows, error) {

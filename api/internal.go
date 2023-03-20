@@ -89,7 +89,6 @@ func (api *API) getInt(ctx context.Context, cfg *config, id string) (any, error)
 
 func (api *API) listInt(ctx context.Context, cfg *config, opts *ListOpts) ([]any, error) {
 	// TODO: Add query condition pushdown
-
 	if opts == nil {
 		opts = &ListOpts{}
 	}
