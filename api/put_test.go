@@ -72,7 +72,7 @@ func TestReplaceIfMatchETagMismatch(t *testing.T) {
 
 	replaced, err := patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"})
 	require.Error(t, err)
-	require.ErrorContains(t, err, "[412] Precondition Failed")
+	require.ErrorContains(t, err, "etag mismatch")
 	require.Nil(t, replaced)
 
 	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID)
@@ -117,7 +117,7 @@ func TestReplaceIfMatchGenerationMismatch(t *testing.T) {
 
 	replaced, err := patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"})
 	require.Error(t, err)
-	require.ErrorContains(t, err, "[412] Precondition Failed")
+	require.ErrorContains(t, err, "generation mismatch")
 	require.Nil(t, replaced)
 
 	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID)
@@ -140,7 +140,7 @@ func TestReplaceIfMatchInvalid(t *testing.T) {
 
 	replaced, err := patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"})
 	require.Error(t, err)
-	require.ErrorContains(t, err, "[400] Bad Request")
+	require.ErrorContains(t, err, "invalid If-Match")
 	require.Nil(t, replaced)
 
 	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID)

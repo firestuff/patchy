@@ -12,13 +12,13 @@ import (
 
 var (
 	ErrInvalidIfMatch           = errors.New("invalid If-Match")
-	ErrIfMatchMissingQuotes     = fmt.Errorf("missing quotes: %w", ErrInvalidIfMatch)
-	ErrIfMatchUnknownType       = fmt.Errorf("unknown type: %w", ErrInvalidIfMatch)
-	ErrIfMatchInvalidGeneration = fmt.Errorf("invalid generation: %w", ErrInvalidIfMatch)
+	ErrIfMatchMissingQuotes     = fmt.Errorf("missing quotes (%w)", ErrInvalidIfMatch)
+	ErrIfMatchUnknownType       = fmt.Errorf("unknown type (%w)", ErrInvalidIfMatch)
+	ErrIfMatchInvalidGeneration = fmt.Errorf("invalid generation (%w)", ErrInvalidIfMatch)
 
 	ErrMismatch           = errors.New("If-Match mismatch")
-	ErrEtagMismatch       = fmt.Errorf("etag mismatch: %w", ErrMismatch)
-	ErrGenerationMismatch = fmt.Errorf("generation mismatch: %w", ErrMismatch)
+	ErrEtagMismatch       = fmt.Errorf("etag mismatch (%w)", ErrMismatch)
+	ErrGenerationMismatch = fmt.Errorf("generation mismatch (%w)", ErrMismatch)
 )
 
 func ifMatch(obj any, match string) error {

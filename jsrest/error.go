@@ -2,6 +2,7 @@ package jsrest
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 )
@@ -109,6 +110,25 @@ type JSONError struct {
 	Messages []string `json:"messages"`
 }
 
+func (je *JSONError) Error() string {
+	if len(je.Messages) > 0 {
+		return je.Messages[0]
+	}
+
+	return "no error message"
+}
+
+func (je *JSONError) Unwrap() error {
+	if len(je.Messages) > 1 {
+		return &JSONError{
+			Code:     je.Code,
+			Messages: je.Messages[1:],
+		}
+	}
+
+	return nil
+}
+
 func ToJSONError(err error) *JSONError {
 	je := &JSONError{
 		Code: 500,
@@ -116,6 +136,17 @@ func ToJSONError(err error) *JSONError {
 	je.importError(err)
 
 	return je
+}
+
+func ReadError(in []byte) error {
+	jse := &JSONError{}
+
+	err := json.Unmarshal(in, jse)
+	if err == nil {
+		return jse
+	}
+
+	return errors.New(string(in)) //nolint:goerr113
 }
 
 type singleUnwrap interface {
