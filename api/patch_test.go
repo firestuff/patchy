@@ -35,6 +35,19 @@ func TestUpdate(t *testing.T) {
 	require.EqualValues(t, 1, updated.Generation)
 }
 
+func TestUpdateNotExist(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	updated, err := patchyc.Update(ctx, ta.pyc, "doesnotexist", &testType{Text: "bar"})
+	require.Error(t, err)
+	require.Nil(t, updated)
+}
+
 func TestUpdateIfMatchETagSuccess(t *testing.T) {
 	t.Parallel()
 

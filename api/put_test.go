@@ -35,6 +35,19 @@ func TestReplace(t *testing.T) {
 	require.EqualValues(t, 1, get.Generation)
 }
 
+func TestReplaceNotExist(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	replaced, err := patchyc.Replace(ctx, ta.pyc, "doesnotexist", &testType{Text: "bar"})
+	require.Error(t, err)
+	require.Nil(t, replaced)
+}
+
 func TestReplaceIfMatchETagSuccess(t *testing.T) {
 	t.Parallel()
 

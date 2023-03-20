@@ -119,11 +119,28 @@ type testType2 struct {
 	Text string `json:"text"`
 }
 
+type testType3 struct {
+	api.Metadata
+	Text string `json:"text"`
+}
+
+type missingMetadata struct {
+	Text string `json:"text"`
+}
+
 func (tt *testType) MayRead(context.Context, *api.API) error {
 	return nil
 }
 
 func (tt *testType2) MayWrite(context.Context, *testType2, *api.API) error {
+	return nil
+}
+
+func (tt *testType3) MayRead(context.Context, *api.API) error {
+	return nil
+}
+
+func (tt *testType3) MayWrite(context.Context, *testType3, *api.API) error {
 	return nil
 }
 
@@ -149,6 +166,36 @@ func TestFileStoreAPI(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, get)
 	require.Equal(t, "foo", get.Text)
+}
+
+func TestRegisterMissingMetadata(t *testing.T) {
+	t.Parallel()
+
+	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
+
+	a, err := api.NewSQLiteAPI(dbname)
+	require.NoError(t, err)
+
+	defer a.Close()
+
+	require.Panics(t, func() {
+		api.Register[missingMetadata](a)
+	})
+}
+
+func TestIsSafeSuccess(t *testing.T) {
+	t.Parallel()
+
+	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
+
+	a, err := api.NewSQLiteAPI(dbname)
+	require.NoError(t, err)
+
+	defer a.Close()
+
+	api.Register[testType3](a)
+
+	require.NoError(t, a.IsSafe())
 }
 
 func TestIsSafeWithoutWrite(t *testing.T) {
@@ -183,6 +230,21 @@ func TestIsSafeWithoutRead(t *testing.T) {
 	api.Register[testType2](a)
 
 	require.ErrorIs(t, a.IsSafe(), api.ErrMissingAuthCheck)
+}
+
+func TestCheckSafeSuccess(t *testing.T) {
+	t.Parallel()
+
+	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
+
+	a, err := api.NewSQLiteAPI(dbname)
+	require.NoError(t, err)
+
+	defer a.Close()
+
+	api.Register[testType3](a)
+
+	require.NotPanics(t, a.CheckSafe)
 }
 
 func TestCheckSafeWithoutWrite(t *testing.T) {
