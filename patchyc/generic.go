@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/firestuff/patchy/api"
 	"github.com/firestuff/patchy/jsrest"
 	"github.com/firestuff/patchy/metadata"
 )
@@ -331,22 +332,15 @@ func streamListDiff[T any](out chan<- []*T, scan *bufio.Scanner, opts *ListOpts)
 			delete(objs, id)
 
 		case "sync":
-			listAny := []any{}
-
-			for _, obj := range objs {
-				listAny = append(listAny, obj)
-			}
-
-			// TODO: Make ApplySorts generic
-			listAny, err := opts.ApplySorts(listAny)
-			if err != nil {
-				return
-			}
-
 			list := []*T{}
 
-			for _, obj := range listAny {
-				list = append(list, obj.(*T))
+			for _, obj := range objs {
+				list = append(list, obj)
+			}
+
+			list, err := api.ApplySorts(list, opts)
+			if err != nil {
+				return
 			}
 
 			out <- list
