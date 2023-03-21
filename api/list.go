@@ -15,6 +15,7 @@ import (
 )
 
 type ListOpts struct {
+	// TODO: Add mode or similar (full/diff)
 	Limit   int64
 	Offset  int64
 	After   string
