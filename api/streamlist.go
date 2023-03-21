@@ -120,6 +120,8 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 			return nil
 
 		case list := <-lsi.Chan():
+			// TODO: Hash list, compare against previous and client If-Match (or similar)
+			// TODO: If we sent changes or this is the first round, send some barrier
 			cur := map[string]any{}
 
 			for _, obj := range list {

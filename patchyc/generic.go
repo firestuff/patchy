@@ -245,6 +245,7 @@ func StreamGet[T any](ctx context.Context, c *Client, id string) (*GetStream[T],
 }
 
 func StreamListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts) (*ListStream[T], error) {
+	// TODO: Support full and diff modes (diff requires local sorting, barriers)
 	r := c.rst.R().
 		SetDoNotParseResponse(true).
 		SetHeader("Accept", "text/event-stream").
