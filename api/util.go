@@ -25,5 +25,5 @@ func FieldChanged[T any](obj *T, prev *T, p string) bool {
 		panic(err)
 	}
 
-	return v1 == v2
+	return v1 != v2
 }
