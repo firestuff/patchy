@@ -98,6 +98,21 @@ func (cfg *config) checkRead(ctx context.Context, obj any, api *API) (any, error
 	return ret, nil
 }
 
+func (cfg *config) checkReadList(ctx context.Context, list []any, api *API) ([]any, error) { //nolint:unparam
+	ret := []any{}
+
+	for _, obj := range list {
+		obj, err := cfg.checkRead(ctx, obj, api)
+		if err != nil {
+			continue
+		}
+
+		ret = append(ret, obj)
+	}
+
+	return ret, nil
+}
+
 func (cfg *config) checkWrite(ctx context.Context, obj, prev any, api *API) (any, error) {
 	var ret any
 

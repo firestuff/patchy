@@ -49,6 +49,86 @@ var (
 	ErrInvalidStreamFormat = errors.New("invalid _stream")
 )
 
+func (opts *ListOpts) ApplySorts(list []any) ([]any, error) {
+	for _, srt := range opts.Sorts {
+		switch {
+		case strings.HasPrefix(srt, "+"):
+			err := path.Sort(list, strings.TrimPrefix(srt, "+"))
+			if err != nil {
+				return nil, err
+			}
+
+		case strings.HasPrefix(srt, "-"):
+			err := path.SortReverse(list, strings.TrimPrefix(srt, "-"))
+			if err != nil {
+				return nil, err
+			}
+
+		default:
+			err := path.Sort(list, srt)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	return list, nil
+}
+
+func (opts *ListOpts) ApplyFilters(list []any) ([]any, error) {
+	ret := []any{}
+
+	for _, obj := range list {
+		isMatch, err := match(obj, opts.Filters)
+		if err != nil {
+			return nil, jsrest.Errorf(jsrest.ErrBadRequest, "match failed (%w)", err)
+		}
+
+		if isMatch {
+			ret = append(ret, obj)
+		}
+	}
+
+	return ret, nil
+}
+
+func (opts *ListOpts) ApplyWindow(list []any) ([]any, error) {
+	ret := []any{}
+
+	after := opts.After
+	offset := opts.Offset
+	limit := opts.Limit
+
+	if limit == 0 {
+		limit = math.MaxInt64
+	}
+
+	for _, obj := range list {
+		if after != "" {
+			if metadata.GetMetadata(obj).ID == after {
+				after = ""
+			}
+
+			continue
+		}
+
+		if offset > 0 {
+			offset--
+
+			continue
+		}
+
+		limit--
+		if limit < 0 {
+			break
+		}
+
+		ret = append(ret, obj)
+	}
+
+	return ret, nil
+}
+
 func parseListOpts(params url.Values) (*ListOpts, error) {
 	ret := &ListOpts{
 		Sorts:   []string{},
@@ -127,79 +207,27 @@ func parseListOpts(params url.Values) (*ListOpts, error) {
 }
 
 func (api *API) filterList(ctx context.Context, cfg *config, opts *ListOpts, list []any) ([]any, error) {
-	inter := []any{}
-
-	for _, obj := range list {
-		obj, jse := cfg.checkRead(ctx, obj, api)
-		if jse != nil {
-			continue
-		}
-
-		matches, err := match(obj, opts.Filters)
-		if err != nil {
-			return nil, jsrest.Errorf(jsrest.ErrBadRequest, "match failed (%w)", err)
-		}
-
-		if !matches {
-			continue
-		}
-
-		inter = append(inter, obj)
+	list, err := cfg.checkReadList(ctx, list, api)
+	if err != nil {
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "check read list failed (%w)", err)
 	}
 
-	for _, srt := range opts.Sorts {
-		var err error
-
-		switch {
-		case strings.HasPrefix(srt, "+"):
-			err = path.Sort(inter, strings.TrimPrefix(srt, "+"))
-
-		case strings.HasPrefix(srt, "-"):
-			err = path.SortReverse(inter, strings.TrimPrefix(srt, "-"))
-
-		default:
-			err = path.Sort(inter, srt)
-		}
-
-		if err != nil {
-			return nil, jsrest.Errorf(jsrest.ErrBadRequest, "sort failed (%w)", err)
-		}
+	list, err = opts.ApplyFilters(list)
+	if err != nil {
+		return nil, jsrest.Errorf(jsrest.ErrBadRequest, "filter failed (%w)", err)
 	}
 
-	ret := []any{}
-
-	after := opts.After
-	offset := opts.Offset
-	limit := opts.Limit
-
-	if limit == 0 {
-		limit = math.MaxInt64
+	list, err = opts.ApplySorts(list)
+	if err != nil {
+		return nil, jsrest.Errorf(jsrest.ErrBadRequest, "sort failed (%w)", err)
 	}
 
-	for _, obj := range inter {
-		if after != "" {
-			if metadata.GetMetadata(obj).ID == after {
-				after = ""
-			}
-
-			continue
-		}
-
-		if offset > 0 {
-			offset--
-
-			continue
-		}
-
-		limit--
-		if limit < 0 {
-			break
-		}
-
-		ret = append(ret, obj)
+	list, err = opts.ApplyWindow(list)
+	if err != nil {
+		return nil, jsrest.Errorf(jsrest.ErrBadRequest, "window failed (%w)", err)
 	}
 
-	return ret, nil
+	return list, nil
 }
 
 func match(obj any, filters []*Filter) (bool, error) {
