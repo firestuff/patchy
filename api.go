@@ -94,3 +94,7 @@ func IsUpdate[T any](obj *T, prev *T) bool {
 func IsDelete[T any](obj *T, prev *T) bool {
 	return api.IsDelete[T](obj, prev)
 }
+
+func FieldChanged[T any](obj *T, prev *T, p string) bool {
+	return api.FieldChanged[T](obj, prev, p)
+}
