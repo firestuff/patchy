@@ -30,7 +30,7 @@ func (api *API) streamGet(cfg *config, id string, w http.ResponseWriter, r *http
 
 	err = api.streamGetWrite(ctx, w, gsi.ch)
 	if err != nil {
-		_ = writeEvent(w, "error", jsrest.ToJSONError(err))
+		_ = writeEvent(w, "error", jsrest.ToJSONError(err), true)
 		return nil
 	}
 
@@ -49,7 +49,7 @@ func (api *API) streamGetWrite(ctx context.Context, w http.ResponseWriter, ch <-
 
 		case msg, ok := <-ch:
 			if ok {
-				err := writeEvent(w, eventType, msg)
+				err := writeEvent(w, eventType, msg, true)
 				if err != nil {
 					return jsrest.Errorf(jsrest.ErrInternalServerError, "write update failed (%w)", err)
 				}
@@ -58,7 +58,7 @@ func (api *API) streamGetWrite(ctx context.Context, w http.ResponseWriter, ch <-
 					eventType = "update"
 				}
 			} else {
-				err := writeEvent(w, "delete", emptyEvent)
+				err := writeEvent(w, "delete", emptyEvent, true)
 				if err != nil {
 					return jsrest.Errorf(jsrest.ErrInternalServerError, "write delete failed (%w)", err)
 				}
@@ -66,7 +66,7 @@ func (api *API) streamGetWrite(ctx context.Context, w http.ResponseWriter, ch <-
 			}
 
 		case <-ticker.C:
-			err := writeEvent(w, "heartbeat", emptyEvent)
+			err := writeEvent(w, "heartbeat", emptyEvent, true)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "write heartbeat failed (%w)", err)
 			}

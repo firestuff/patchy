@@ -36,7 +36,7 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 	case "full":
 		err = api.streamListFull(ctx, cfg, w, opts)
 		if err != nil {
-			_ = writeEvent(w, "error", jsrest.ToJSONError(err))
+			_ = writeEvent(w, "error", jsrest.ToJSONError(err), true)
 		}
 
 		return nil
@@ -44,7 +44,7 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 	case "diff":
 		err = api.streamListDiff(ctx, cfg, w, opts)
 		if err != nil {
-			_ = writeEvent(w, "error", jsrest.ToJSONError(err))
+			_ = writeEvent(w, "error", jsrest.ToJSONError(err), true)
 		}
 
 		return nil
@@ -70,13 +70,13 @@ func (api *API) streamListFull(ctx context.Context, cfg *config, w http.Response
 			return nil
 
 		case <-ticker.C:
-			err = writeEvent(w, "heartbeat", emptyEvent)
+			err = writeEvent(w, "heartbeat", emptyEvent, true)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "write heartbeat failed (%w)", err)
 			}
 
 		case list := <-lsi.Chan():
-			err = writeEvent(w, "list", list)
+			err = writeEvent(w, "list", list, true)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "write list failed (%w)", err)
 			}
@@ -100,7 +100,7 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 	for {
 		select {
 		case <-ticker.C:
-			err = writeEvent(w, "heartbeat", emptyEvent)
+			err = writeEvent(w, "heartbeat", emptyEvent, true)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "write heartbeat failed (%w)", err)
 			}
@@ -124,7 +124,7 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 					if objMD.ETag != lastMD.ETag {
 						changed = true
 
-						err = writeEvent(w, "update", obj)
+						err = writeEvent(w, "update", obj, false)
 						if err != nil {
 							return jsrest.Errorf(jsrest.ErrInternalServerError, "write update failed (%w)", err)
 						}
@@ -132,7 +132,7 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 				} else {
 					changed = true
 
-					err = writeEvent(w, "add", obj)
+					err = writeEvent(w, "add", obj, false)
 					if err != nil {
 						return jsrest.Errorf(jsrest.ErrInternalServerError, "write add failed (%w)", err)
 					}
@@ -150,7 +150,7 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 
 				changed = true
 
-				err = writeEvent(w, "remove", old)
+				err = writeEvent(w, "remove", old, false)
 				if err != nil {
 					return jsrest.Errorf(jsrest.ErrInternalServerError, "write remove failed (%w)", err)
 				}
@@ -161,7 +161,7 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 			if first || changed {
 				first = false
 
-				err = writeEvent(w, "sync", emptyEvent)
+				err = writeEvent(w, "sync", emptyEvent, true)
 				if err != nil {
 					return jsrest.Errorf(jsrest.ErrInternalServerError, "write sync failed (%w)", err)
 				}
