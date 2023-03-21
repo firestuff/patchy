@@ -14,6 +14,10 @@ type (
 )
 
 func applyListOpts(opts *ListOpts, req *resty.Request) {
+	if opts.Stream != "" {
+		req.SetQueryParam("_stream", opts.Stream)
+	}
+
 	if opts.Limit != 0 {
 		req.SetQueryParam("_limit", fmt.Sprintf("%d", opts.Limit))
 	}

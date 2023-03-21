@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/firestuff/patchy/jsrest"
+	"github.com/firestuff/patchy/metadata"
 )
 
 var (
@@ -245,15 +246,16 @@ func StreamGet[T any](ctx context.Context, c *Client, id string) (*GetStream[T],
 }
 
 func StreamListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts) (*ListStream[T], error) {
-	// TODO: Support full and diff modes (diff requires local sorting, barriers)
 	r := c.rst.R().
 		SetDoNotParseResponse(true).
 		SetHeader("Accept", "text/event-stream").
 		SetPathParam("name", name)
 
-	if opts != nil {
-		applyListOpts(opts, r)
+	if opts == nil {
+		opts = &ListOpts{}
 	}
+
+	applyListOpts(opts, r)
 
 	resp, err := r.Get("{name}")
 	if err != nil {
@@ -269,27 +271,89 @@ func StreamListName[T any](ctx context.Context, c *Client, name string, opts *Li
 
 	out := make(chan []*T, 100)
 
-	go func() {
-		defer close(out)
+	switch opts.Stream {
+	case "":
+		fallthrough
+	case "full":
+		go streamListFull(out, scan)
 
-		for {
-			list := []*T{}
-
-			eventType, err := readEvent(scan, &list)
-			if err != nil {
-				return
-			}
-
-			if eventType == "list" {
-				out <- list
-			}
-		}
-	}()
+	case "diff":
+		go streamListDiff(out, scan, opts)
+	}
 
 	return &ListStream[T]{
 		ch:   out,
 		body: body,
 	}, nil
+}
+
+func streamListFull[T any](out chan<- []*T, scan *bufio.Scanner) {
+	defer close(out)
+
+	for {
+		list := []*T{}
+
+		eventType, err := readEvent(scan, &list)
+		if err != nil {
+			return
+		}
+
+		if eventType == "list" {
+			out <- list
+		}
+	}
+}
+
+func streamListDiff[T any](out chan<- []*T, scan *bufio.Scanner, opts *ListOpts) {
+	defer close(out)
+
+	objs := map[string]*T{}
+
+	for {
+		obj := new(T)
+
+		eventType, err := readEvent(scan, &obj)
+		if err != nil {
+			return
+		}
+
+		switch eventType {
+		case "add":
+			id := metadata.GetMetadata(obj).ID
+			objs[id] = obj
+
+		case "update":
+			id := metadata.GetMetadata(obj).ID
+			objs[id] = obj
+
+		case "remove":
+			id := metadata.GetMetadata(obj).ID
+			delete(objs, id)
+
+		case "sync":
+			listAny := []any{}
+
+			for _, obj := range objs {
+				listAny = append(listAny, obj)
+			}
+
+			// TODO: Make ApplySorts generic
+			listAny, err := opts.ApplySorts(listAny)
+			if err != nil {
+				return
+			}
+
+			list := []*T{}
+
+			for _, obj := range listAny {
+				list = append(list, obj.(*T))
+			}
+
+			out <- list
+
+		case "heartbeat":
+		}
+	}
 }
 
 func StreamList[T any](ctx context.Context, c *Client, opts *ListOpts) (*ListStream[T], error) {
