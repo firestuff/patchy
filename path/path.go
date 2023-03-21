@@ -14,14 +14,14 @@ var (
 	ErrUnknownFieldName = errors.New("unknown field name")
 )
 
-func getAny(obj any, path string) (any, error) {
+func Get(obj any, path string) (any, error) {
 	parts := strings.Split(path, ".")
 	v := reflect.ValueOf(obj)
 
-	return getAnyRecursive(v, parts, []string{})
+	return getRecursive(v, parts, []string{})
 }
 
-func getAnyRecursive(v reflect.Value, parts []string, prev []string) (any, error) {
+func getRecursive(v reflect.Value, parts []string, prev []string) (any, error) {
 	if v.Kind() == reflect.Pointer {
 		if v.IsNil() {
 			v = reflect.Zero(v.Type().Elem())
@@ -49,7 +49,7 @@ func getAnyRecursive(v reflect.Value, parts []string, prev []string) (any, error
 	copy(newPrev, prev)
 	newPrev = append(newPrev, part)
 
-	return getAnyRecursive(sub, parts[1:], newPrev)
+	return getRecursive(sub, parts[1:], newPrev)
 }
 
 func getField(v reflect.Value, name string) reflect.Value {

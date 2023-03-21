@@ -5,7 +5,7 @@ import (
 )
 
 func op(obj any, path string, matchStr string, cb func(any, any, string) bool) (bool, error) {
-	objVal, err := getAny(obj, path)
+	objVal, err := Get(obj, path)
 	if err != nil {
 		return false, err
 	}
@@ -23,7 +23,7 @@ func op(obj any, path string, matchStr string, cb func(any, any, string) bool) (
 }
 
 func opList(obj any, path string, matchStr string, cb func(any, any, string) bool) (bool, error) {
-	objVal, err := getAny(obj, path)
+	objVal, err := Get(obj, path)
 	if err != nil {
 		return false, err
 	}
