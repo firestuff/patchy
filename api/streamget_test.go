@@ -5,6 +5,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/firestuff/patchy/api"
 	"github.com/firestuff/patchy/patchyc"
 	"github.com/stretchr/testify/require"
 )
@@ -37,7 +38,7 @@ func TestStreamGetHeartbeat(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "initial", eventType)
 
-	eventType, _, err = readEvent[map[string]string](scan)
+	eventType, _, err = readEvent[api.EmptyEventType](scan)
 	require.NoError(t, err)
 	require.Equal(t, "heartbeat", eventType)
 }

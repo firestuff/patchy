@@ -5,6 +5,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/firestuff/patchy/api"
 	"github.com/firestuff/patchy/patchyc"
 	"github.com/stretchr/testify/require"
 )
@@ -31,7 +32,7 @@ func TestStreamListHeartbeat(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "list", eventType)
 
-	eventType, _, err = readEvent[map[string]string](scan)
+	eventType, _, err = readEvent[api.EmptyEventType](scan)
 	require.NoError(t, err)
 	require.Equal(t, "heartbeat", eventType)
 }
@@ -182,7 +183,7 @@ func TestStreamListDiffInitial(t *testing.T) {
 	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	// No client support for this, use direct queries
+	// TODO: Convert to real client support when available
 	resp, err := ta.r().
 		SetDoNotParseResponse(true).
 		SetHeader("Accept", "text/event-stream").
@@ -223,6 +224,10 @@ func TestStreamListDiffCreate(t *testing.T) {
 	defer body.Close()
 
 	scan := bufio.NewScanner(body)
+
+	eventType, _, err := readEvent[testType](scan)
+	require.NoError(t, err)
+	require.Equal(t, "sync", eventType)
 
 	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
@@ -265,6 +270,10 @@ func TestStreamListDiffUpdate(t *testing.T) {
 	require.Equal(t, "foo", obj.Text)
 	require.EqualValues(t, 1, obj.Num)
 
+	eventType, _, err = readEvent[api.EmptyEventType](scan)
+	require.NoError(t, err)
+	require.Equal(t, "sync", eventType)
+
 	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"})
 	require.NoError(t, err)
 
@@ -274,6 +283,10 @@ func TestStreamListDiffUpdate(t *testing.T) {
 	require.Equal(t, created.ID, obj.ID)
 	require.Equal(t, "bar", obj.Text)
 	require.EqualValues(t, 1, obj.Num)
+
+	eventType, _, err = readEvent[api.EmptyEventType](scan)
+	require.NoError(t, err)
+	require.Equal(t, "sync", eventType)
 }
 
 func TestStreamListDiffReplace(t *testing.T) {
@@ -307,6 +320,10 @@ func TestStreamListDiffReplace(t *testing.T) {
 	require.Equal(t, "foo", obj.Text)
 	require.EqualValues(t, 1, obj.Num)
 
+	eventType, _, err = readEvent[api.EmptyEventType](scan)
+	require.NoError(t, err)
+	require.Equal(t, "sync", eventType)
+
 	_, err = patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"})
 	require.NoError(t, err)
 
@@ -316,6 +333,10 @@ func TestStreamListDiffReplace(t *testing.T) {
 	require.Equal(t, created.ID, obj.ID)
 	require.Equal(t, "bar", obj.Text)
 	require.EqualValues(t, 0, obj.Num)
+
+	eventType, _, err = readEvent[api.EmptyEventType](scan)
+	require.NoError(t, err)
+	require.Equal(t, "sync", eventType)
 }
 
 func TestStreamListDiffDelete(t *testing.T) {
@@ -348,6 +369,10 @@ func TestStreamListDiffDelete(t *testing.T) {
 	require.Equal(t, created.ID, obj.ID)
 	require.Equal(t, "foo", obj.Text)
 
+	eventType, _, err = readEvent[api.EmptyEventType](scan)
+	require.NoError(t, err)
+	require.Equal(t, "sync", eventType)
+
 	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID)
 	require.NoError(t, err)
 
@@ -356,6 +381,10 @@ func TestStreamListDiffDelete(t *testing.T) {
 	require.Equal(t, "remove", eventType)
 	require.Equal(t, created.ID, obj.ID)
 	require.Equal(t, "foo", obj.Text)
+
+	eventType, _, err = readEvent[api.EmptyEventType](scan)
+	require.NoError(t, err)
+	require.Equal(t, "sync", eventType)
 }
 
 func TestStreamListDiffSort(t *testing.T) {
@@ -390,6 +419,10 @@ func TestStreamListDiffSort(t *testing.T) {
 	require.Equal(t, created1.ID, obj.ID)
 	require.Equal(t, "foo", obj.Text)
 
+	eventType, _, err = readEvent[api.EmptyEventType](scan)
+	require.NoError(t, err)
+	require.Equal(t, "sync", eventType)
+
 	created2, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
@@ -404,4 +437,8 @@ func TestStreamListDiffSort(t *testing.T) {
 	require.Equal(t, "remove", eventType)
 	require.Equal(t, created1.ID, obj.ID)
 	require.Equal(t, "foo", obj.Text)
+
+	eventType, _, err = readEvent[api.EmptyEventType](scan)
+	require.NoError(t, err)
+	require.Equal(t, "sync", eventType)
 }

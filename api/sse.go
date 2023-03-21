@@ -8,7 +8,9 @@ import (
 	"github.com/firestuff/patchy/jsrest"
 )
 
-var emptyEvent = map[string]string{}
+type EmptyEventType map[string]any
+
+var emptyEvent = EmptyEventType{}
 
 func writeEvent(w http.ResponseWriter, event string, obj any) error {
 	data, err := json.Marshal(obj)
