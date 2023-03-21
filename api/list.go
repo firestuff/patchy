@@ -15,7 +15,7 @@ import (
 )
 
 type ListOpts struct {
-	// TODO: Add mode or similar (full/diff)
+	Stream  string
 	Limit   int64
 	Offset  int64
 	After   string
@@ -30,7 +30,11 @@ type Filter struct {
 }
 
 var (
-	opMatch  = regexp.MustCompile(`^([^\[]+)\[(.+)\]$`)
+	opMatch     = regexp.MustCompile(`^([^\[]+)\[(.+)\]$`)
+	validStream = map[string]bool{
+		"full": true,
+		"diff": true,
+	}
 	validOps = map[string]bool{
 		"eq":  true,
 		"gt":  true,
@@ -40,8 +44,9 @@ var (
 		"lt":  true,
 		"lte": true,
 	}
-	ErrInvalidFilterOp = errors.New("invalid filter operator")
-	ErrInvalidSort     = errors.New("invalid _sort")
+	ErrInvalidFilterOp     = errors.New("invalid filter operator")
+	ErrInvalidSort         = errors.New("invalid _sort")
+	ErrInvalidStreamFormat = errors.New("invalid _stream")
 )
 
 func parseListOpts(params url.Values) (*ListOpts, error) {
@@ -51,6 +56,16 @@ func parseListOpts(params url.Values) (*ListOpts, error) {
 	}
 
 	var err error
+
+	if stream := params.Get("_stream"); stream != "" {
+		if _, valid := validStream[stream]; !valid {
+			return nil, jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", stream, ErrInvalidStreamFormat)
+		}
+
+		ret.Stream = stream
+
+		params.Del("_stream")
+	}
 
 	if limit := params.Get("_limit"); limit != "" {
 		ret.Limit, err = strconv.ParseInt(limit, 10, 64)
