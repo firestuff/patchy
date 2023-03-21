@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -11,8 +10,6 @@ import (
 	"github.com/firestuff/patchy/jsrest"
 	"github.com/firestuff/patchy/metadata"
 )
-
-var ErrUnknownStreamFormat = errors.New("unknown _stream format")
 
 func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
@@ -26,9 +23,6 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 		return jsrest.Errorf(jsrest.ErrBadRequest, "parse URL query failed (%w)", err)
 	}
 
-	stream := params.Get("_stream")
-	params.Del("_stream")
-
 	opts, err := parseListOpts(params)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrBadRequest, "parse list parameters failed (%w)", err)
@@ -37,7 +31,7 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 
-	switch stream {
+	switch opts.Stream {
 	case "":
 		fallthrough
 	case "full":
@@ -57,7 +51,7 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 		return nil
 
 	default:
-		return jsrest.Errorf(jsrest.ErrBadRequest, "_stream=%s (%w)", stream, ErrUnknownStreamFormat)
+		return jsrest.Errorf(jsrest.ErrBadRequest, "_stream=%s (%w)", opts.Stream, ErrInvalidStreamFormat)
 	}
 }
 
