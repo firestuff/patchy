@@ -55,6 +55,10 @@ func TestSet(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(1234), tt1.Int64)
 
+	get, err := path.Get(tt1, "int64")
+	require.NoError(t, err)
+	require.Equal(t, int64(1234), get)
+
 	err = path.Set(tt1, "time", "2022-11-01-08:00")
 	require.NoError(t, err)
 	require.Equal(t, int64(1667289600), tt1.Time.Unix())

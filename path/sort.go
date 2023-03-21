@@ -46,14 +46,14 @@ func (as *anySlice) Len() int {
 }
 
 func (as *anySlice) Less(i, j int) bool {
-	v1, err := getAny(as.slice.Index(i).Interface(), as.path)
+	v1, err := Get(as.slice.Index(i).Interface(), as.path)
 	if err != nil {
 		as.err = err
 		// We have to obey the Less() contract even in error cases
 		return i < j
 	}
 
-	v2, err := getAny(as.slice.Index(j).Interface(), as.path)
+	v2, err := Get(as.slice.Index(j).Interface(), as.path)
 	if err != nil {
 		as.err = err
 		return i < j
