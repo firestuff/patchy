@@ -49,7 +49,7 @@ var (
 	ErrInvalidStreamFormat = errors.New("invalid _stream")
 )
 
-func (opts *ListOpts) ApplySorts(list []any) ([]any, error) {
+func ApplySorts[T any](list []T, opts *ListOpts) ([]T, error) {
 	for _, srt := range opts.Sorts {
 		switch {
 		case strings.HasPrefix(srt, "+"):
@@ -75,8 +75,8 @@ func (opts *ListOpts) ApplySorts(list []any) ([]any, error) {
 	return list, nil
 }
 
-func (opts *ListOpts) ApplyFilters(list []any) ([]any, error) {
-	ret := []any{}
+func ApplyFilters[T any](list []T, opts *ListOpts) ([]T, error) {
+	ret := []T{}
 
 	for _, obj := range list {
 		isMatch, err := match(obj, opts.Filters)
@@ -92,8 +92,8 @@ func (opts *ListOpts) ApplyFilters(list []any) ([]any, error) {
 	return ret, nil
 }
 
-func (opts *ListOpts) ApplyWindow(list []any) ([]any, error) {
-	ret := []any{}
+func ApplyWindow[T any](list []T, opts *ListOpts) ([]T, error) {
+	ret := []T{}
 
 	after := opts.After
 	offset := opts.Offset
@@ -212,17 +212,17 @@ func (api *API) filterList(ctx context.Context, cfg *config, opts *ListOpts, lis
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "check read list failed (%w)", err)
 	}
 
-	list, err = opts.ApplyFilters(list)
+	list, err = ApplyFilters(list, opts)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrBadRequest, "filter failed (%w)", err)
 	}
 
-	list, err = opts.ApplySorts(list)
+	list, err = ApplySorts(list, opts)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrBadRequest, "sort failed (%w)", err)
 	}
 
-	list, err = opts.ApplyWindow(list)
+	list, err = ApplyWindow(list, opts)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrBadRequest, "window failed (%w)", err)
 	}
