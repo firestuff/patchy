@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"net/url"
 	"time"
@@ -96,9 +95,7 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 
 	ticker := time.NewTicker(5 * time.Second)
 
-	// Force initial bytes across the connection, since otherwise diff mode could wait forever
-	fmt.Fprintf(w, ":\n")
-	w.(http.Flusher).Flush()
+	first := true
 
 	for {
 		select {
@@ -115,8 +112,8 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 
 		case list := <-lsi.Chan():
 			// TODO: Hash list, compare against previous and client If-Match (or similar)
-			// TODO: If we sent changes or this is the first round, send some barrier
 			cur := map[string]any{}
+			changed := false
 
 			for _, obj := range list {
 				objMD := metadata.GetMetadata(obj)
@@ -125,12 +122,16 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 				if found {
 					lastMD := metadata.GetMetadata(lastObj)
 					if objMD.ETag != lastMD.ETag {
+						changed = true
+
 						err = writeEvent(w, "update", obj)
 						if err != nil {
 							return jsrest.Errorf(jsrest.ErrInternalServerError, "write update failed (%w)", err)
 						}
 					}
 				} else {
+					changed = true
+
 					err = writeEvent(w, "add", obj)
 					if err != nil {
 						return jsrest.Errorf(jsrest.ErrInternalServerError, "write add failed (%w)", err)
@@ -147,12 +148,23 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 					continue
 				}
 
+				changed = true
+
 				err = writeEvent(w, "remove", old)
 				if err != nil {
 					return jsrest.Errorf(jsrest.ErrInternalServerError, "write remove failed (%w)", err)
 				}
 
 				delete(last, id)
+			}
+
+			if first || changed {
+				first = false
+
+				err = writeEvent(w, "sync", emptyEvent)
+				if err != nil {
+					return jsrest.Errorf(jsrest.ErrInternalServerError, "write sync failed (%w)", err)
+				}
 			}
 		}
 	}

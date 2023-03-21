@@ -7,10 +7,11 @@ import (
 )
 
 type (
-	API      = api.API
-	Metadata = api.Metadata
-	ListOpts = api.ListOpts
-	Filter   = api.Filter
+	API            = api.API
+	Metadata       = api.Metadata
+	ListOpts       = api.ListOpts
+	Filter         = api.Filter
+	EmptyEventType = api.EmptyEventType
 )
 
 var (
