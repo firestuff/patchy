@@ -26,7 +26,9 @@ type listStreamInt struct {
 }
 
 func (api *API) createInt(ctx context.Context, cfg *config, obj any) (any, error) {
-	metadata.GetMetadata(obj).ID = uniuri.New()
+	md := metadata.GetMetadata(obj)
+	md.ID = uniuri.New()
+	md.Generation = 1
 
 	obj, err := cfg.checkWrite(ctx, obj, nil, api)
 	if err != nil {
@@ -108,7 +110,7 @@ func (api *API) listInt(ctx context.Context, cfg *config, opts *ListOpts) ([]any
 	return list, nil
 }
 
-func (api *API) replaceInt(ctx context.Context, cfg *config, ifmatch, id string, replace any) (any, error) {
+func (api *API) replaceInt(ctx context.Context, cfg *config, id string, replace any, opts *UpdateOpts) (any, error) {
 	cfg.lock(id)
 	defer cfg.unlock(id)
 
@@ -121,7 +123,7 @@ func (api *API) replaceInt(ctx context.Context, cfg *config, ifmatch, id string,
 		return nil, jsrest.Errorf(jsrest.ErrNotFound, "%s", id)
 	}
 
-	err = ifMatch(obj, ifmatch)
+	err = ifMatch(obj, opts)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "match failed (%w)", err)
 	}
@@ -156,7 +158,7 @@ func (api *API) replaceInt(ctx context.Context, cfg *config, ifmatch, id string,
 	return replace, nil
 }
 
-func (api *API) updateInt(ctx context.Context, cfg *config, ifmatch, id string, patch any) (any, error) {
+func (api *API) updateInt(ctx context.Context, cfg *config, id string, patch any, opts *UpdateOpts) (any, error) {
 	cfg.lock(id)
 	defer cfg.unlock(id)
 
@@ -172,7 +174,7 @@ func (api *API) updateInt(ctx context.Context, cfg *config, ifmatch, id string, 
 		return nil, jsrest.Errorf(jsrest.ErrNotFound, "%s", id)
 	}
 
-	err = ifMatch(obj, ifmatch)
+	err = ifMatch(obj, opts)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "match failed (%w)", err)
 	}

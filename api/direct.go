@@ -120,7 +120,8 @@ func ReplaceName[T any](ctx context.Context, api *API, name, id string, obj *T) 
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
 	}
 
-	replaced, err := api.replaceInt(ctx, cfg, "", id, obj)
+	// TODO: Accept and pass in opts
+	replaced, err := api.replaceInt(ctx, cfg, id, obj, nil)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "replace failed (%w)", err)
 	}
@@ -138,7 +139,8 @@ func UpdateName[T any](ctx context.Context, api *API, name, id string, obj *T) (
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
 	}
 
-	updated, err := api.updateInt(ctx, cfg, "", id, obj)
+	// TODO: Accept and pass in opts
+	updated, err := api.updateInt(ctx, cfg, id, obj, nil)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "update failed (%w)", err)
 	}
