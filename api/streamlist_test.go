@@ -109,7 +109,7 @@ func TestStreamListUpdate(t *testing.T) {
 	require.Len(t, list, 1)
 	require.Equal(t, "foo", list[0].Text)
 
-	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"})
+	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
 	require.NoError(t, err)
 
 	list = stream.Read()
@@ -242,7 +242,7 @@ func TestStreamListDiffUpdate(t *testing.T) {
 	require.Equal(t, "foo", list[0].Text)
 	require.EqualValues(t, 1, list[0].Num)
 
-	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"})
+	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
 	require.NoError(t, err)
 
 	list = stream.Read()
@@ -274,7 +274,7 @@ func TestStreamListDiffReplace(t *testing.T) {
 	require.Equal(t, "foo", list[0].Text)
 	require.EqualValues(t, 1, list[0].Num)
 
-	_, err = patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"})
+	_, err = patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
 	require.NoError(t, err)
 
 	list = stream.Read()

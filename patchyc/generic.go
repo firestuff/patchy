@@ -149,16 +149,21 @@ func List[T any](ctx context.Context, c *Client, opts *ListOpts) ([]*T, error) {
 	return ListName[T](ctx, c, objName(new(T)), opts)
 }
 
-func ReplaceName[T any](ctx context.Context, c *Client, name, id string, obj *T) (*T, error) {
+func ReplaceName[T any](ctx context.Context, c *Client, name, id string, obj *T, opts *UpdateOpts) (*T, error) {
 	replaced := new(T)
 
-	resp, err := c.rst.R().
+	r := c.rst.R().
 		SetContext(ctx).
 		SetPathParam("name", name).
 		SetPathParam("id", id).
 		SetBody(obj).
-		SetResult(replaced).
-		Put("{name}/{id}")
+		SetResult(replaced)
+
+	if opts != nil {
+		applyUpdateOpts(opts, r)
+	}
+
+	resp, err := r.Put("{name}/{id}")
 	if err != nil {
 		return nil, err
 	}
@@ -170,20 +175,25 @@ func ReplaceName[T any](ctx context.Context, c *Client, name, id string, obj *T)
 	return replaced, nil
 }
 
-func Replace[T any](ctx context.Context, c *Client, id string, obj *T) (*T, error) {
-	return ReplaceName[T](ctx, c, objName(obj), id, obj)
+func Replace[T any](ctx context.Context, c *Client, id string, obj *T, opts *UpdateOpts) (*T, error) {
+	return ReplaceName[T](ctx, c, objName(obj), id, obj, opts)
 }
 
-func UpdateName[T any](ctx context.Context, c *Client, name, id string, obj *T) (*T, error) {
+func UpdateName[T any](ctx context.Context, c *Client, name, id string, obj *T, opts *UpdateOpts) (*T, error) {
 	updated := new(T)
 
-	resp, err := c.rst.R().
+	r := c.rst.R().
 		SetContext(ctx).
 		SetPathParam("name", name).
 		SetPathParam("id", id).
 		SetBody(obj).
-		SetResult(updated).
-		Patch("{name}/{id}")
+		SetResult(updated)
+
+	if opts != nil {
+		applyUpdateOpts(opts, r)
+	}
+
+	resp, err := r.Patch("{name}/{id}")
 	if err != nil {
 		return nil, err
 	}
@@ -195,8 +205,8 @@ func UpdateName[T any](ctx context.Context, c *Client, name, id string, obj *T) 
 	return updated, nil
 }
 
-func Update[T any](ctx context.Context, c *Client, id string, obj *T) (*T, error) {
-	return UpdateName[T](ctx, c, objName(obj), id, obj)
+func Update[T any](ctx context.Context, c *Client, id string, obj *T, opts *UpdateOpts) (*T, error) {
+	return UpdateName[T](ctx, c, objName(obj), id, obj, opts)
 }
 
 func StreamGetName[T any](ctx context.Context, c *Client, name, id string) (*GetStream[T], error) {

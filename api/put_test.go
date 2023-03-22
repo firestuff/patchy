@@ -2,7 +2,6 @@ package api_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/firestuff/patchy/patchyc"
@@ -20,7 +19,7 @@ func TestReplace(t *testing.T) {
 	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo", Num: 1})
 	require.NoError(t, err)
 
-	replaced, err := patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"})
+	replaced, err := patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
 	require.NoError(t, err)
 	require.NotNil(t, replaced)
 	require.Equal(t, "bar", replaced.Text)
@@ -42,7 +41,7 @@ func TestReplaceNotExist(t *testing.T) {
 
 	ctx := context.Background()
 
-	replaced, err := patchyc.Replace(ctx, ta.pyc, "doesnotexist", &testType{Text: "bar"})
+	replaced, err := patchyc.Replace(ctx, ta.pyc, "doesnotexist", &testType{Text: "bar"}, nil)
 	require.Error(t, err)
 	require.Nil(t, replaced)
 }
@@ -58,9 +57,7 @@ func TestReplaceIfMatchETagSuccess(t *testing.T) {
 	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	ta.pyc.SetHeader("If-Match", fmt.Sprintf(`"%s"`, created.ETag))
-
-	replaced, err := patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"})
+	replaced, err := patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, &patchyc.UpdateOpts{IfMatchETag: created.ETag})
 	require.NoError(t, err)
 	require.Equal(t, "bar", replaced.Text)
 
@@ -80,9 +77,7 @@ func TestReplaceIfMatchETagMismatch(t *testing.T) {
 	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	ta.pyc.SetHeader("If-Match", `"etag:doesnotmatch"`)
-
-	replaced, err := patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"})
+	replaced, err := patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, &patchyc.UpdateOpts{IfMatchETag: "etag:doesnotmatch"})
 	require.Error(t, err)
 	require.ErrorContains(t, err, "etag mismatch")
 	require.Nil(t, replaced)
@@ -103,9 +98,7 @@ func TestReplaceIfMatchGenerationSuccess(t *testing.T) {
 	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	ta.pyc.SetHeader("If-Match", fmt.Sprintf(`"generation:%d"`, created.Generation))
-
-	replaced, err := patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"})
+	replaced, err := patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, &patchyc.UpdateOpts{IfMatchGeneration: created.Generation})
 	require.NoError(t, err)
 	require.Equal(t, "bar", replaced.Text)
 
@@ -125,9 +118,7 @@ func TestReplaceIfMatchGenerationMismatch(t *testing.T) {
 	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	ta.pyc.SetHeader("If-Match", `"generation:50"`)
-
-	replaced, err := patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"})
+	replaced, err := patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, &patchyc.UpdateOpts{IfMatchGeneration: 50})
 	require.Error(t, err)
 	require.ErrorContains(t, err, "generation mismatch")
 	require.Nil(t, replaced)
@@ -150,7 +141,7 @@ func TestReplaceIfMatchInvalid(t *testing.T) {
 
 	ta.pyc.SetHeader("If-Match", `"foobar"`)
 
-	replaced, err := patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"})
+	replaced, err := patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "invalid If-Match")
 	require.Nil(t, replaced)
