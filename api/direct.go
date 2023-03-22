@@ -114,14 +114,13 @@ func List[T any](ctx context.Context, api *API, opts *ListOpts) ([]*T, error) {
 	return ListName[T](ctx, api, objName(new(T)), opts)
 }
 
-func ReplaceName[T any](ctx context.Context, api *API, name, id string, obj *T) (*T, error) {
+func ReplaceName[T any](ctx context.Context, api *API, name, id string, obj *T, opts *UpdateOpts) (*T, error) {
 	cfg := api.registry[name]
 	if cfg == nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
 	}
 
-	// TODO: Accept and pass in opts
-	replaced, err := api.replaceInt(ctx, cfg, id, obj, nil)
+	replaced, err := api.replaceInt(ctx, cfg, id, obj, opts)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "replace failed (%w)", err)
 	}
@@ -129,18 +128,17 @@ func ReplaceName[T any](ctx context.Context, api *API, name, id string, obj *T) 
 	return replaced.(*T), nil
 }
 
-func Replace[T any](ctx context.Context, api *API, id string, obj *T) (*T, error) {
-	return ReplaceName[T](ctx, api, objName(obj), id, obj)
+func Replace[T any](ctx context.Context, api *API, id string, obj *T, opts *UpdateOpts) (*T, error) {
+	return ReplaceName[T](ctx, api, objName(obj), id, obj, opts)
 }
 
-func UpdateName[T any](ctx context.Context, api *API, name, id string, obj *T) (*T, error) {
+func UpdateName[T any](ctx context.Context, api *API, name, id string, obj *T, opts *UpdateOpts) (*T, error) {
 	cfg := api.registry[name]
 	if cfg == nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
 	}
 
-	// TODO: Accept and pass in opts
-	updated, err := api.updateInt(ctx, cfg, id, obj, nil)
+	updated, err := api.updateInt(ctx, cfg, id, obj, opts)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "update failed (%w)", err)
 	}
@@ -148,8 +146,8 @@ func UpdateName[T any](ctx context.Context, api *API, name, id string, obj *T) (
 	return updated.(*T), nil
 }
 
-func Update[T any](ctx context.Context, api *API, id string, obj *T) (*T, error) {
-	return UpdateName[T](ctx, api, objName(obj), id, obj)
+func Update[T any](ctx context.Context, api *API, id string, obj *T, opts *UpdateOpts) (*T, error) {
+	return UpdateName[T](ctx, api, objName(obj), id, obj, opts)
 }
 
 func StreamGetName[T any](ctx context.Context, api *API, name, id string) (*GetStream[T], error) {

@@ -111,6 +111,10 @@ func (api *API) listInt(ctx context.Context, cfg *config, opts *ListOpts) ([]any
 }
 
 func (api *API) replaceInt(ctx context.Context, cfg *config, id string, replace any, opts *UpdateOpts) (any, error) {
+	if opts == nil {
+		opts = &UpdateOpts{}
+	}
+
 	cfg.lock(id)
 	defer cfg.unlock(id)
 
@@ -159,6 +163,10 @@ func (api *API) replaceInt(ctx context.Context, cfg *config, id string, replace 
 }
 
 func (api *API) updateInt(ctx context.Context, cfg *config, id string, patch any, opts *UpdateOpts) (any, error) {
+	if opts == nil {
+		opts = &UpdateOpts{}
+	}
+
 	cfg.lock(id)
 	defer cfg.unlock(id)
 

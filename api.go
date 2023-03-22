@@ -7,10 +7,11 @@ import (
 )
 
 type (
-	API      = api.API
-	Metadata = api.Metadata
-	ListOpts = api.ListOpts
-	Filter   = api.Filter
+	API        = api.API
+	Metadata   = api.Metadata
+	ListOpts   = api.ListOpts
+	Filter     = api.Filter
+	UpdateOpts = api.UpdateOpts
 )
 
 var (
@@ -67,20 +68,20 @@ func List[T any](ctx context.Context, a *API, opts *ListOpts) ([]*T, error) {
 	return api.List[T](ctx, a, opts)
 }
 
-func ReplaceName[T any](ctx context.Context, a *API, name, id string, obj *T) (*T, error) {
-	return api.ReplaceName[T](ctx, a, name, id, obj)
+func ReplaceName[T any](ctx context.Context, a *API, name, id string, obj *T, opts *UpdateOpts) (*T, error) {
+	return api.ReplaceName[T](ctx, a, name, id, obj, opts)
 }
 
-func Replace[T any](ctx context.Context, a *API, id string, obj *T) (*T, error) {
-	return api.Replace[T](ctx, a, id, obj)
+func Replace[T any](ctx context.Context, a *API, id string, obj *T, opts *UpdateOpts) (*T, error) {
+	return api.Replace[T](ctx, a, id, obj, opts)
 }
 
-func UpdateName[T any](ctx context.Context, a *API, name, id string, obj *T) (*T, error) {
-	return api.UpdateName[T](ctx, a, name, id, obj)
+func UpdateName[T any](ctx context.Context, a *API, name, id string, obj *T, opts *UpdateOpts) (*T, error) {
+	return api.UpdateName[T](ctx, a, name, id, obj, opts)
 }
 
-func Update[T any](ctx context.Context, a *API, id string, obj *T) (*T, error) {
-	return api.Update[T](ctx, a, id, obj)
+func Update[T any](ctx context.Context, a *API, id string, obj *T, opts *UpdateOpts) (*T, error) {
+	return api.Update[T](ctx, a, id, obj, opts)
 }
 
 func IsCreate[T any](obj *T, prev *T) bool {

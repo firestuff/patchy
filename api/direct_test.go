@@ -83,7 +83,7 @@ func TestDirectUpdate(t *testing.T) {
 	require.Equal(t, "foo", get.Text)
 	require.EqualValues(t, 1, get.Num)
 
-	update, err := api.Update(ctx, ta.api, create.ID, &testType{Text: "bar"})
+	update, err := api.Update(ctx, ta.api, create.ID, &testType{Text: "bar"}, nil)
 	require.NoError(t, err)
 	require.Equal(t, create.ID, update.ID)
 	require.Equal(t, "bar", update.Text)
@@ -106,7 +106,7 @@ func TestDirectUpdateInvalidType(t *testing.T) {
 	create, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = api.UpdateName(ctx, ta.api, "doesnotexist", create.ID, &testType{Text: "bar"})
+	_, err = api.UpdateName(ctx, ta.api, "doesnotexist", create.ID, &testType{Text: "bar"}, nil)
 	require.Error(t, err)
 }
 
@@ -126,7 +126,7 @@ func TestDirectReplace(t *testing.T) {
 	require.Equal(t, "foo", get.Text)
 	require.EqualValues(t, 1, get.Num)
 
-	replace, err := api.Replace(ctx, ta.api, create.ID, &testType{Text: "bar"})
+	replace, err := api.Replace(ctx, ta.api, create.ID, &testType{Text: "bar"}, nil)
 	require.NoError(t, err)
 	require.Equal(t, create.ID, replace.ID)
 	require.Equal(t, "bar", replace.Text)
@@ -154,7 +154,7 @@ func TestDirectReplaceInvalidType(t *testing.T) {
 	require.Equal(t, "foo", get.Text)
 	require.EqualValues(t, 1, get.Num)
 
-	_, err = api.ReplaceName(ctx, ta.api, "doesnotexist", create.ID, &testType{Text: "bar"})
+	_, err = api.ReplaceName(ctx, ta.api, "doesnotexist", create.ID, &testType{Text: "bar"}, nil)
 	require.Error(t, err)
 }
 
@@ -367,7 +367,7 @@ func TestDirectStreamGetUpdate(t *testing.T) {
 	require.NotNil(t, obj)
 	require.Equal(t, "foo", obj.Text)
 
-	_, err = api.Update(ctx, ta.api, create.ID, &testType{Text: "bar"})
+	_, err = api.Update(ctx, ta.api, create.ID, &testType{Text: "bar"}, nil)
 	require.NoError(t, err)
 
 	obj = stream.Read()

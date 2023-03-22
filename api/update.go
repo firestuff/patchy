@@ -62,10 +62,6 @@ func parseUpdateOpts(r *http.Request) (*UpdateOpts, error) {
 }
 
 func ifMatch(obj any, opts *UpdateOpts) error {
-	if opts == nil {
-		return nil
-	}
-
 	objMD := metadata.GetMetadata(obj)
 
 	if opts.IfMatchETag != "" && opts.IfMatchETag != objMD.ETag {
