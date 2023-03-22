@@ -32,6 +32,7 @@ linters:
     - nosnakecase
     - scopelint
     - structcheck
+    - tagliatelle
     - thelper
     - varcheck
     - varnamelen
