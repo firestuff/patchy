@@ -315,13 +315,13 @@ func streamListFull[T any](out chan<- []*T, scan *bufio.Scanner, stream *ListStr
 	defer close(out)
 
 	for {
-		// TODO: Pass id back
 		event, err := readEvent(scan)
 		if err != nil {
+			stream.receivedEvent("", err)
 			return
 		}
 
-		stream.receivedEvent()
+		stream.receivedEvent(event.id, nil)
 
 		switch event.eventType {
 		case "list":
@@ -345,13 +345,13 @@ func streamListDiff[T any](out chan<- []*T, scan *bufio.Scanner, stream *ListStr
 	objs := map[string]*T{}
 
 	for {
-		// TODO: Pass id back
 		event, err := readEvent(scan)
 		if err != nil {
+			stream.receivedEvent("", err)
 			return
 		}
 
-		stream.receivedEvent()
+		stream.receivedEvent(event.id, nil)
 
 		switch event.eventType {
 		case "add":
