@@ -1,11 +1,10 @@
 package api_test
 
 import (
-	"bufio"
 	"context"
 	"testing"
+	"time"
 
-	"github.com/firestuff/patchy/api"
 	"github.com/firestuff/patchy/patchyc"
 	"github.com/stretchr/testify/require"
 )
@@ -16,26 +15,31 @@ func TestStreamListHeartbeat(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	// TODO: Use the real client for this and sleep; it may be buggy
-	resp, err := ta.r().
-		SetDoNotParseResponse(true).
-		SetHeader("Accept", "text/event-stream").
-		Get("testtype")
+	ctx := context.Background()
+
+	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, nil)
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
 
-	body := resp.RawBody()
-	defer body.Close()
+	defer stream.Close()
 
-	scan := bufio.NewScanner(body)
+	list := stream.Read()
+	require.NotNil(t, list)
+	require.Len(t, list, 0)
 
-	eventType, _, err := readEvent[[]*testType](scan)
-	require.NoError(t, err)
-	require.Equal(t, "list", eventType)
+	time.Sleep(6 * time.Second)
 
-	eventType, _, err = readEvent[api.EmptyEventType](scan)
-	require.NoError(t, err)
-	require.Equal(t, "heartbeat", eventType)
+	select {
+	case _, ok := <-stream.Chan():
+		if ok {
+			require.Fail(t, "unexpected list")
+		} else {
+			require.Fail(t, "unexpected closure")
+		}
+
+	default:
+	}
+
+	require.Less(t, time.Since(stream.LastEventReceived()), 6*time.Second)
 }
 
 func TestStreamListInitial(t *testing.T) {

@@ -233,16 +233,26 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string) (*Get
 		defer close(out)
 
 		for {
-			obj := new(T)
-
 			// TODO: Pass id back
-			eventType, _, err := readEvent(scan, obj)
+			event, err := readEvent(scan)
 			if err != nil {
 				return
 			}
 
-			if eventType == "initial" || eventType == "update" {
+			switch event.eventType {
+			case "initial":
+				fallthrough
+			case "update":
+				obj := new(T)
+
+				err = event.decode(obj)
+				if err != nil {
+					return
+				}
+
 				out <- obj
+
+			case "heartbeat":
 			}
 		}
 	}()
@@ -283,36 +293,45 @@ func StreamListName[T any](ctx context.Context, c *Client, name string, opts *Li
 
 	out := make(chan []*T, 100)
 
+	stream := &ListStream[T]{
+		ch:   out,
+		body: body,
+	}
+
 	switch opts.Stream {
 	case "":
 		fallthrough
 	case "full":
-		go streamListFull(out, scan)
+		go streamListFull(out, scan, stream)
 
 	case "diff":
-		go streamListDiff(out, scan, opts)
+		go streamListDiff(out, scan, stream, opts)
 	}
 
-	return &ListStream[T]{
-		ch:   out,
-		body: body,
-	}, nil
+	return stream, nil
 }
 
-func streamListFull[T any](out chan<- []*T, scan *bufio.Scanner) {
+func streamListFull[T any](out chan<- []*T, scan *bufio.Scanner, stream *ListStream[T]) {
 	defer close(out)
 
 	for {
-		list := []*T{}
-
 		// TODO: Pass id back
-		eventType, _, err := readEvent(scan, &list)
+		event, err := readEvent(scan)
 		if err != nil {
 			return
 		}
 
-		switch eventType {
+		stream.receivedEvent()
+
+		switch event.eventType {
 		case "list":
+			list := []*T{}
+
+			err = event.decode(&list)
+			if err != nil {
+				return
+			}
+
 			out <- list
 
 		case "heartbeat":
@@ -320,30 +339,42 @@ func streamListFull[T any](out chan<- []*T, scan *bufio.Scanner) {
 	}
 }
 
-func streamListDiff[T any](out chan<- []*T, scan *bufio.Scanner, opts *ListOpts) {
+func streamListDiff[T any](out chan<- []*T, scan *bufio.Scanner, stream *ListStream[T], opts *ListOpts) {
 	defer close(out)
 
 	objs := map[string]*T{}
 
 	for {
-		obj := new(T)
-
 		// TODO: Pass id back
-		eventType, _, err := readEvent(scan, &obj)
+		event, err := readEvent(scan)
 		if err != nil {
 			return
 		}
 
-		switch eventType {
-		case "add":
-			id := metadata.GetMetadata(obj).ID
-			objs[id] = obj
+		stream.receivedEvent()
 
+		switch event.eventType {
+		case "add":
+			fallthrough
 		case "update":
+			obj := new(T)
+
+			err = event.decode(obj)
+			if err != nil {
+				return
+			}
+
 			id := metadata.GetMetadata(obj).ID
 			objs[id] = obj
 
 		case "remove":
+			obj := new(T)
+
+			err = event.decode(obj)
+			if err != nil {
+				return
+			}
+
 			id := metadata.GetMetadata(obj).ID
 			delete(objs, id)
 
