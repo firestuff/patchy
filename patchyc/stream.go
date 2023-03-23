@@ -11,22 +11,72 @@ import (
 )
 
 type GetStream[T any] struct {
-	ch   <-chan *T
+	ch   chan *GetStreamEvent[T]
 	body io.ReadCloser
 
-	// TODO: Make GetStream match ListStream
+	lastEventReceived time.Time
+	lastID            string
+
+	err error
+
+	mu sync.RWMutex
+}
+
+type GetStreamEvent[T any] struct {
+	ID  string
+	Obj *T
 }
 
 func (gs *GetStream[T]) Close() {
 	gs.body.Close()
 }
 
-func (gs *GetStream[T]) Chan() <-chan *T {
+func (gs *GetStream[T]) Chan() <-chan *GetStreamEvent[T] {
 	return gs.ch
 }
 
-func (gs *GetStream[T]) Read() *T {
+func (gs *GetStream[T]) Read() *GetStreamEvent[T] {
 	return <-gs.Chan()
+}
+
+func (gs *GetStream[T]) LastID() string {
+	gs.mu.RLock()
+	defer gs.mu.RUnlock()
+
+	return gs.lastID
+}
+
+func (gs *GetStream[T]) Error() error {
+	gs.mu.RLock()
+	defer gs.mu.RUnlock()
+
+	return gs.err
+}
+
+func (gs *GetStream[T]) writeHeartbeat() {
+	gs.mu.Lock()
+	gs.lastEventReceived = time.Now()
+	gs.mu.Unlock()
+}
+
+func (gs *GetStream[T]) writeEvent(id string, obj *T) {
+	gs.mu.Lock()
+	gs.lastEventReceived = time.Now()
+	gs.lastID = id
+	gs.mu.Unlock()
+
+	gs.ch <- &GetStreamEvent[T]{
+		ID:  id,
+		Obj: obj,
+	}
+}
+
+func (gs *GetStream[T]) writeError(err error) {
+	gs.mu.Lock()
+	gs.err = err
+	gs.mu.Unlock()
+
+	close(gs.ch)
 }
 
 type ListStream[T any] struct {
