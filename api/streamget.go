@@ -39,7 +39,7 @@ func (api *API) streamGet(cfg *config, id string, w http.ResponseWriter, r *http
 }
 
 func (api *API) streamGetWrite(ctx context.Context, w http.ResponseWriter, ch <-chan any) error {
-	// TODO: Support If-Match
+	// TODO: Support If-None-Match
 	eventType := "initial"
 	ticker := time.NewTicker(5 * time.Second)
 

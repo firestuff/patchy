@@ -2,8 +2,10 @@ package api
 
 import (
 	"context"
+	"io"
 
 	"github.com/firestuff/patchy/jsrest"
+	"github.com/firestuff/patchy/metadata"
 )
 
 func CreateName[T any](ctx context.Context, api *API, name string, obj *T) (*T, error) {
@@ -161,20 +163,21 @@ func StreamGetName[T any](ctx context.Context, api *API, name, id string) (*GetS
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "stream get failed (%w)", err)
 	}
 
-	out := make(chan *T, 100)
+	stream := &GetStream[T]{
+		ch:  make(chan *GetStreamEvent[T], 100),
+		gsi: gsi,
+	}
 
 	go func() {
-		defer close(out)
-
 		for obj := range gsi.Chan() {
-			out <- convert[T](obj)
+			md := metadata.GetMetadata(obj)
+			stream.writeEvent(md.ETag, convert[T](obj))
 		}
+
+		stream.writeError(io.EOF)
 	}()
 
-	return &GetStream[T]{
-		ch:  out,
-		gsi: gsi,
-	}, nil
+	return stream, nil
 }
 
 func StreamGet[T any](ctx context.Context, api *API, id string) (*GetStream[T], error) {
@@ -192,26 +195,32 @@ func StreamListName[T any](ctx context.Context, api *API, name string, opts *Lis
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "stream list failed (%w)", err)
 	}
 
-	out := make(chan []*T, 100)
+	stream := &ListStream[T]{
+		ch:  make(chan *ListStreamEvent[T], 100),
+		lsi: lsi,
+	}
 
 	go func() {
-		defer close(out)
-
 		for list := range lsi.Chan() {
+			hash, err := hashList(list)
+			if err != nil {
+				stream.writeError(err)
+				return
+			}
+
 			typeList := []*T{}
 
 			for _, obj := range list {
 				typeList = append(typeList, convert[T](obj))
 			}
 
-			out <- typeList
+			stream.writeEvent(hash, typeList)
 		}
+
+		stream.writeError(io.EOF)
 	}()
 
-	return &ListStream[T]{
-		ch:  out,
-		lsi: lsi,
-	}, nil
+	return stream, nil
 }
 
 func StreamList[T any](ctx context.Context, api *API, opts *ListOpts) (*ListStream[T], error) {

@@ -8,6 +8,7 @@ import (
 )
 
 func (api *API) getList(cfg *config, w http.ResponseWriter, r *http.Request) error {
+	// TODO: Support If-None-Match
 	params, err := url.ParseQuery(r.URL.RawQuery)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrBadRequest, "parse URL query failed (%w)", err)
