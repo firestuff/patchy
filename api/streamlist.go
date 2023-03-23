@@ -36,7 +36,7 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 	case "full":
 		err = api.streamListFull(ctx, cfg, w, opts)
 		if err != nil {
-			_ = writeEvent(w, "error", jsrest.ToJSONError(err), true)
+			_ = writeEvent(w, "error", "", jsrest.ToJSONError(err), true)
 		}
 
 		return nil
@@ -44,7 +44,7 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 	case "diff":
 		err = api.streamListDiff(ctx, cfg, w, opts)
 		if err != nil {
-			_ = writeEvent(w, "error", jsrest.ToJSONError(err), true)
+			_ = writeEvent(w, "error", "", jsrest.ToJSONError(err), true)
 		}
 
 		return nil
@@ -56,6 +56,7 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 
 func (api *API) streamListFull(ctx context.Context, cfg *config, w http.ResponseWriter, opts *ListOpts) error {
 	// TODO: Add query condition pushdown
+	// TODO: Support If-Match
 	lsi, err := api.streamListInt(ctx, cfg, opts)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
@@ -70,13 +71,18 @@ func (api *API) streamListFull(ctx context.Context, cfg *config, w http.Response
 			return nil
 
 		case <-ticker.C:
-			err = writeEvent(w, "heartbeat", emptyEvent, true)
+			err = writeEvent(w, "heartbeat", "", emptyEvent, true)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "write heartbeat failed (%w)", err)
 			}
 
 		case list := <-lsi.Chan():
-			err = writeEvent(w, "list", list, true)
+			hash, err := hashList(list)
+			if err != nil {
+				return jsrest.Errorf(jsrest.ErrInternalServerError, "hash list failed (%w)", err)
+			}
+
+			err = writeEvent(w, "list", hash, list, true)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "write list failed (%w)", err)
 			}
@@ -85,6 +91,7 @@ func (api *API) streamListFull(ctx context.Context, cfg *config, w http.Response
 }
 
 func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.ResponseWriter, opts *ListOpts) error {
+	// TODO: Support If-Match
 	lsi, err := api.streamListInt(ctx, cfg, opts)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
@@ -100,7 +107,7 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 	for {
 		select {
 		case <-ticker.C:
-			err = writeEvent(w, "heartbeat", emptyEvent, true)
+			err = writeEvent(w, "heartbeat", "", emptyEvent, true)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "write heartbeat failed (%w)", err)
 			}
@@ -111,7 +118,11 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 			return nil
 
 		case list := <-lsi.Chan():
-			// TODO: Hash list, compare against previous and client If-Match (or similar)
+			hash, err := hashList(list)
+			if err != nil {
+				return jsrest.Errorf(jsrest.ErrInternalServerError, "hash list failed (%w)", err)
+			}
+
 			cur := map[string]any{}
 			changed := false
 
@@ -124,7 +135,7 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 					if objMD.ETag != lastMD.ETag {
 						changed = true
 
-						err = writeEvent(w, "update", obj, false)
+						err = writeEvent(w, "update", "", obj, false)
 						if err != nil {
 							return jsrest.Errorf(jsrest.ErrInternalServerError, "write update failed (%w)", err)
 						}
@@ -132,7 +143,7 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 				} else {
 					changed = true
 
-					err = writeEvent(w, "add", obj, false)
+					err = writeEvent(w, "add", "", obj, false)
 					if err != nil {
 						return jsrest.Errorf(jsrest.ErrInternalServerError, "write add failed (%w)", err)
 					}
@@ -150,7 +161,7 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 
 				changed = true
 
-				err = writeEvent(w, "remove", old, false)
+				err = writeEvent(w, "remove", "", old, false)
 				if err != nil {
 					return jsrest.Errorf(jsrest.ErrInternalServerError, "write remove failed (%w)", err)
 				}
@@ -161,7 +172,7 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 			if first || changed {
 				first = false
 
-				err = writeEvent(w, "sync", emptyEvent, true)
+				err = writeEvent(w, "sync", hash, emptyEvent, true)
 				if err != nil {
 					return jsrest.Errorf(jsrest.ErrInternalServerError, "write sync failed (%w)", err)
 				}
