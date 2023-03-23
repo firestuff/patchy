@@ -341,9 +341,9 @@ func TestDirectStreamGetInitial(t *testing.T) {
 
 	defer stream.Close()
 
-	obj := stream.Read()
-	require.NotNil(t, obj)
-	require.Equal(t, "foo", obj.Text)
+	ev := stream.Read()
+	require.NotNil(t, ev, stream.Error())
+	require.Equal(t, "foo", ev.Obj.Text)
 }
 
 func TestDirectStreamGetUpdate(t *testing.T) {
@@ -363,16 +363,16 @@ func TestDirectStreamGetUpdate(t *testing.T) {
 
 	defer stream.Close()
 
-	obj := stream.Read()
-	require.NotNil(t, obj)
-	require.Equal(t, "foo", obj.Text)
+	ev := stream.Read()
+	require.NotNil(t, ev, stream.Error())
+	require.Equal(t, "foo", ev.Obj.Text)
 
 	_, err = api.Update(ctx, ta.api, create.ID, &testType{Text: "bar"}, nil)
 	require.NoError(t, err)
 
-	obj = stream.Read()
-	require.NotNil(t, obj)
-	require.Equal(t, "bar", obj.Text)
+	ev = stream.Read()
+	require.NotNil(t, ev, stream.Error())
+	require.Equal(t, "bar", ev.Obj.Text)
 }
 
 func TestDirectStreamListInvalidType(t *testing.T) {
@@ -407,10 +407,10 @@ func TestDirectStreamListInitial(t *testing.T) {
 
 	defer stream.Close()
 
-	list := stream.Read()
-	require.NotNil(t, list)
-	require.Len(t, list, 2)
-	require.ElementsMatch(t, []string{"foo", "bar"}, []string{list[0].Text, list[1].Text})
+	ev := stream.Read()
+	require.NotNil(t, ev, stream.Error())
+	require.Len(t, ev.List, 2)
+	require.ElementsMatch(t, []string{"foo", "bar"}, []string{ev.List[0].Text, ev.List[1].Text})
 }
 
 func TestDirectStreamListUpdate(t *testing.T) {
@@ -426,17 +426,17 @@ func TestDirectStreamListUpdate(t *testing.T) {
 
 	defer stream.Close()
 
-	list := stream.Read()
-	require.NotNil(t, list)
-	require.Len(t, list, 0)
+	ev := stream.Read()
+	require.NotNil(t, ev, stream.Error())
+	require.Len(t, ev.List, 0)
 
 	_, err = api.Create(ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	list = stream.Read()
-	require.NotNil(t, list)
-	require.Len(t, list, 1)
-	require.Equal(t, "foo", list[0].Text)
+	ev = stream.Read()
+	require.NotNil(t, ev, stream.Error())
+	require.Len(t, ev.List, 1)
+	require.Equal(t, "foo", ev.List[0].Text)
 }
 
 func TestDirectStreamListDelete(t *testing.T) {
@@ -455,17 +455,17 @@ func TestDirectStreamListDelete(t *testing.T) {
 
 	defer stream.Close()
 
-	list := stream.Read()
-	require.NotNil(t, list)
-	require.Len(t, list, 1)
-	require.Equal(t, "foo", list[0].Text)
+	ev := stream.Read()
+	require.NotNil(t, ev, stream.Error())
+	require.Len(t, ev.List, 1)
+	require.Equal(t, "foo", ev.List[0].Text)
 
 	err = api.Delete[testType](ctx, ta.api, created.ID)
 	require.NoError(t, err)
 
-	list = stream.Read()
-	require.NotNil(t, list)
-	require.Len(t, list, 0)
+	ev = stream.Read()
+	require.NotNil(t, ev, stream.Error())
+	require.Len(t, ev.List, 0)
 }
 
 func TestDirectStreamListOpts(t *testing.T) {
@@ -487,8 +487,8 @@ func TestDirectStreamListOpts(t *testing.T) {
 
 	defer stream.Close()
 
-	list := stream.Read()
-	require.NotNil(t, list)
-	require.Len(t, list, 1)
-	require.Contains(t, []string{"foo", "bar"}, list[0].Text)
+	ev := stream.Read()
+	require.NotNil(t, ev, stream.Error())
+	require.Len(t, ev.List, 1)
+	require.Contains(t, []string{"foo", "bar"}, ev.List[0].Text)
 }

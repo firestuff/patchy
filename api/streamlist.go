@@ -56,7 +56,7 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 
 func (api *API) streamListFull(ctx context.Context, cfg *config, w http.ResponseWriter, opts *ListOpts) error {
 	// TODO: Add query condition pushdown
-	// TODO: Support If-Match
+	// TODO: Support If-None-Match
 	lsi, err := api.streamListInt(ctx, cfg, opts)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
@@ -91,7 +91,7 @@ func (api *API) streamListFull(ctx context.Context, cfg *config, w http.Response
 }
 
 func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.ResponseWriter, opts *ListOpts) error {
-	// TODO: Support If-Match
+	// TODO: Support If-None-Match
 	lsi, err := api.streamListInt(ctx, cfg, opts)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
