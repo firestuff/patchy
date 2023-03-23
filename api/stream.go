@@ -1,5 +1,7 @@
 package api
 
+// TODO: Make these match patchyc's stream.go
+
 type GetStream[T any] struct {
 	ch  <-chan *T
 	gsi *getStreamInt

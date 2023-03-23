@@ -39,6 +39,13 @@ func (gs *GetStream[T]) Read() *GetStreamEvent[T] {
 	return <-gs.Chan()
 }
 
+func (gs *GetStream[T]) LastEventReceived() time.Time {
+	gs.mu.RLock()
+	defer gs.mu.RUnlock()
+
+	return gs.lastEventReceived
+}
+
 func (gs *GetStream[T]) LastID() string {
 	gs.mu.RLock()
 	defer gs.mu.RUnlock()

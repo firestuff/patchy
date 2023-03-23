@@ -234,7 +234,6 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string) (*Get
 
 	go func() {
 		for {
-			// TODO: Pass id back
 			event, err := readEvent(scan)
 			if err != nil {
 				stream.writeError(err)
