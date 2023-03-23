@@ -30,32 +30,32 @@ func (gs *GetStream[T]) Read() *T {
 }
 
 type ListStream[T any] struct {
-	ch   <-chan []*T
+	ch   chan *ListStreamEvent[T]
 	body io.ReadCloser
 
 	lastEventReceived time.Time
 	lastID            string
-	lastError         error
+
+	err error
 
 	mu sync.RWMutex
+}
+
+type ListStreamEvent[T any] struct {
+	ID   string
+	List []*T
 }
 
 func (ls *ListStream[T]) Close() {
 	ls.body.Close()
 }
 
-func (ls *ListStream[T]) Chan() <-chan []*T {
+func (ls *ListStream[T]) Chan() <-chan *ListStreamEvent[T] {
 	return ls.ch
 }
 
-func (ls *ListStream[T]) Read() ([]*T, error) {
-	// TODO: Send id, time, and error through the channel so we don't get out of sync
-	list := <-ls.Chan()
-
-	ls.mu.RLock()
-	defer ls.mu.RUnlock()
-
-	return list, ls.lastError
+func (ls *ListStream[T]) Read() *ListStreamEvent[T] {
+	return <-ls.Chan()
 }
 
 func (ls *ListStream[T]) LastEventReceived() time.Time {
@@ -65,19 +65,44 @@ func (ls *ListStream[T]) LastEventReceived() time.Time {
 	return ls.lastEventReceived
 }
 
-func (ls *ListStream[T]) receivedEvent(id string, err error) {
+func (ls *ListStream[T]) LastID() string {
+	ls.mu.RLock()
+	defer ls.mu.RUnlock()
+
+	return ls.lastID
+}
+
+func (ls *ListStream[T]) Error() error {
+	ls.mu.RLock()
+	defer ls.mu.RUnlock()
+
+	return ls.err
+}
+
+func (ls *ListStream[T]) writeHeartbeat() {
 	ls.mu.Lock()
-	defer ls.mu.Unlock()
-
 	ls.lastEventReceived = time.Now()
+	ls.mu.Unlock()
+}
 
-	if id != "" {
-		ls.lastID = id
-	}
+func (ls *ListStream[T]) writeEvent(id string, list []*T) {
+	ls.mu.Lock()
+	ls.lastEventReceived = time.Now()
+	ls.lastID = id
+	ls.mu.Unlock()
 
-	if err != nil {
-		ls.lastError = err
+	ls.ch <- &ListStreamEvent[T]{
+		ID:   id,
+		List: list,
 	}
+}
+
+func (ls *ListStream[T]) writeError(err error) {
+	ls.mu.Lock()
+	ls.err = err
+	ls.mu.Unlock()
+
+	close(ls.ch)
 }
 
 type streamEvent struct {

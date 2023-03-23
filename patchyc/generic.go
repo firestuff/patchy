@@ -291,7 +291,7 @@ func StreamListName[T any](ctx context.Context, c *Client, name string, opts *Li
 	body := resp.RawBody()
 	scan := bufio.NewScanner(body)
 
-	out := make(chan []*T, 100)
+	out := make(chan *ListStreamEvent[T], 100)
 
 	stream := &ListStream[T]{
 		ch:   out,
@@ -302,26 +302,22 @@ func StreamListName[T any](ctx context.Context, c *Client, name string, opts *Li
 	case "":
 		fallthrough
 	case "full":
-		go streamListFull(out, scan, stream)
+		go streamListFull(scan, stream)
 
 	case "diff":
-		go streamListDiff(out, scan, stream, opts)
+		go streamListDiff(scan, stream, opts)
 	}
 
 	return stream, nil
 }
 
-func streamListFull[T any](out chan<- []*T, scan *bufio.Scanner, stream *ListStream[T]) {
-	defer close(out)
-
+func streamListFull[T any](scan *bufio.Scanner, stream *ListStream[T]) {
 	for {
 		event, err := readEvent(scan)
 		if err != nil {
-			stream.receivedEvent("", err)
+			stream.writeError(err)
 			return
 		}
-
-		stream.receivedEvent(event.id, nil)
 
 		switch event.eventType {
 		case "list":
@@ -329,29 +325,27 @@ func streamListFull[T any](out chan<- []*T, scan *bufio.Scanner, stream *ListStr
 
 			err = event.decode(&list)
 			if err != nil {
+				stream.writeError(err)
 				return
 			}
 
-			out <- list
+			stream.writeEvent(event.id, list)
 
 		case "heartbeat":
+			stream.writeHeartbeat()
 		}
 	}
 }
 
-func streamListDiff[T any](out chan<- []*T, scan *bufio.Scanner, stream *ListStream[T], opts *ListOpts) {
-	defer close(out)
-
+func streamListDiff[T any](scan *bufio.Scanner, stream *ListStream[T], opts *ListOpts) {
 	objs := map[string]*T{}
 
 	for {
 		event, err := readEvent(scan)
 		if err != nil {
-			stream.receivedEvent("", err)
+			stream.writeError(err)
 			return
 		}
-
-		stream.receivedEvent(event.id, nil)
 
 		switch event.eventType {
 		case "add":
@@ -361,6 +355,7 @@ func streamListDiff[T any](out chan<- []*T, scan *bufio.Scanner, stream *ListStr
 
 			err = event.decode(obj)
 			if err != nil {
+				stream.writeError(err)
 				return
 			}
 
@@ -372,6 +367,7 @@ func streamListDiff[T any](out chan<- []*T, scan *bufio.Scanner, stream *ListStr
 
 			err = event.decode(obj)
 			if err != nil {
+				stream.writeError(err)
 				return
 			}
 
@@ -387,12 +383,14 @@ func streamListDiff[T any](out chan<- []*T, scan *bufio.Scanner, stream *ListStr
 
 			list, err := api.ApplySorts(list, opts)
 			if err != nil {
+				stream.writeError(err)
 				return
 			}
 
-			out <- list
+			stream.writeEvent(event.id, list)
 
 		case "heartbeat":
+			stream.writeHeartbeat()
 		}
 	}
 }
