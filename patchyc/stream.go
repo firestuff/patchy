@@ -13,6 +13,8 @@ import (
 type GetStream[T any] struct {
 	ch   <-chan *T
 	body io.ReadCloser
+
+	// TODO: Make GetStream match ListStream
 }
 
 func (gs *GetStream[T]) Close() {
@@ -24,7 +26,6 @@ func (gs *GetStream[T]) Chan() <-chan *T {
 }
 
 func (gs *GetStream[T]) Read() *T {
-	// TODO: Need a way to return errors
 	return <-gs.Chan()
 }
 
@@ -33,6 +34,8 @@ type ListStream[T any] struct {
 	body io.ReadCloser
 
 	lastEventReceived time.Time
+	lastID            string
+	lastError         error
 
 	mu sync.RWMutex
 }
@@ -45,8 +48,14 @@ func (ls *ListStream[T]) Chan() <-chan []*T {
 	return ls.ch
 }
 
-func (ls *ListStream[T]) Read() []*T {
-	return <-ls.Chan()
+func (ls *ListStream[T]) Read() ([]*T, error) {
+	// TODO: Send id, time, and error through the channel so we don't get out of sync
+	list := <-ls.Chan()
+
+	ls.mu.RLock()
+	defer ls.mu.RUnlock()
+
+	return list, ls.lastError
 }
 
 func (ls *ListStream[T]) LastEventReceived() time.Time {
@@ -56,11 +65,19 @@ func (ls *ListStream[T]) LastEventReceived() time.Time {
 	return ls.lastEventReceived
 }
 
-func (ls *ListStream[T]) receivedEvent() {
+func (ls *ListStream[T]) receivedEvent(id string, err error) {
 	ls.mu.Lock()
 	defer ls.mu.Unlock()
 
 	ls.lastEventReceived = time.Now()
+
+	if id != "" {
+		ls.lastID = id
+	}
+
+	if err != nil {
+		ls.lastError = err
+	}
 }
 
 type streamEvent struct {

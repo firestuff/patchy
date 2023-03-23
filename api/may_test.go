@@ -388,8 +388,8 @@ func TestMayReadStreamListSuccess(t *testing.T) {
 
 	defer stream.Close()
 
-	list := stream.Read()
-	require.NotNil(t, list)
+	list, err := stream.Read()
+	require.NoError(t, err)
 	require.Len(t, list, 1)
 }
 
@@ -415,8 +415,8 @@ func TestMayReadStreamListRefuse(t *testing.T) {
 
 	defer stream.Close()
 
-	list := stream.Read()
-	require.NotNil(t, list)
+	list, err := stream.Read()
+	require.NoError(t, err)
 	require.Len(t, list, 0)
 }
 
@@ -765,9 +765,8 @@ func TestMayReadMutateStreamList(t *testing.T) {
 
 	defer stream.Close()
 
-	list := stream.Read()
-	require.NotNil(t, list)
-	require.Len(t, list, 1)
+	list, err := stream.Read()
+	require.NoError(t, err)
 	require.Equal(t, "789a", list[0].Text1)
 }
 
