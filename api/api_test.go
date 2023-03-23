@@ -1,16 +1,11 @@
 package api_test
 
 import (
-	"bufio"
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
@@ -78,34 +73,6 @@ func (ta *testAPI) shutdown(t *testing.T) {
 	require.NoError(t, err)
 
 	ta.api.Close()
-}
-
-func readEvent[T any](scan *bufio.Scanner) (string, *T, error) {
-	eventType := ""
-	data := [][]byte{}
-
-	for scan.Scan() {
-		line := scan.Text()
-
-		switch {
-		case strings.HasPrefix(line, ":"):
-			continue
-
-		case strings.HasPrefix(line, "event: "):
-			eventType = strings.TrimPrefix(line, "event: ")
-
-		case strings.HasPrefix(line, "data: "):
-			data = append(data, bytes.TrimPrefix(scan.Bytes(), []byte("data: ")))
-
-		case line == "":
-			out := new(T)
-			err := json.Unmarshal(bytes.Join(data, []byte("\n")), out)
-
-			return eventType, out, err
-		}
-	}
-
-	return "", nil, io.EOF
 }
 
 type testType struct {
