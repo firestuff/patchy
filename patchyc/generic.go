@@ -235,7 +235,8 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string) (*Get
 		for {
 			obj := new(T)
 
-			eventType, err := readEvent(scan, obj)
+			// TODO: Pass id back
+			eventType, _, err := readEvent(scan, obj)
 			if err != nil {
 				return
 			}
@@ -304,13 +305,17 @@ func streamListFull[T any](out chan<- []*T, scan *bufio.Scanner) {
 	for {
 		list := []*T{}
 
-		eventType, err := readEvent(scan, &list)
+		// TODO: Pass id back
+		eventType, _, err := readEvent(scan, &list)
 		if err != nil {
 			return
 		}
 
-		if eventType == "list" {
+		switch eventType {
+		case "list":
 			out <- list
+
+		case "heartbeat":
 		}
 	}
 }
@@ -323,7 +328,8 @@ func streamListDiff[T any](out chan<- []*T, scan *bufio.Scanner, opts *ListOpts)
 	for {
 		obj := new(T)
 
-		eventType, err := readEvent(scan, &obj)
+		// TODO: Pass id back
+		eventType, _, err := readEvent(scan, &obj)
 		if err != nil {
 			return
 		}

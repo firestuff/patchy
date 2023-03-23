@@ -42,8 +42,10 @@ func (ls *ListStream[T]) Read() []*T {
 	return <-ls.Chan()
 }
 
-func readEvent(scan *bufio.Scanner, out any) (string, error) {
+func readEvent(scan *bufio.Scanner, out any) (string, string, error) { //nolint:unparam
+	// TODO: Remove unparam above
 	eventType := ""
+	id := ""
 	data := [][]byte{}
 
 	for scan.Scan() {
@@ -56,6 +58,9 @@ func readEvent(scan *bufio.Scanner, out any) (string, error) {
 		case strings.HasPrefix(line, "event: "):
 			eventType = strings.TrimPrefix(line, "event: ")
 
+		case strings.HasPrefix(line, "id: "):
+			id = strings.TrimPrefix(line, "id: ")
+
 		case strings.HasPrefix(line, "data: "):
 			data = append(data, bytes.TrimPrefix(scan.Bytes(), []byte("data: ")))
 
@@ -66,9 +71,9 @@ func readEvent(scan *bufio.Scanner, out any) (string, error) {
 				err = json.Unmarshal(bytes.Join(data, []byte("\n")), out)
 			}
 
-			return eventType, err
+			return eventType, id, err
 		}
 	}
 
-	return "", io.EOF
+	return "", "", io.EOF
 }

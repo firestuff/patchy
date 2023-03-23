@@ -2,7 +2,10 @@ package api
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"math"
 	"net/url"
 	"regexp"
@@ -272,4 +275,15 @@ func match(obj any, filters []*Filter) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func hashList(list []any) (string, error) {
+	hash := sha256.New()
+	enc := json.NewEncoder(hash)
+
+	if err := enc.Encode(list); err != nil {
+		return "", jsrest.Errorf(jsrest.ErrInternalServerError, "JSON encode failed (%w)", err)
+	}
+
+	return fmt.Sprintf("%x", hash.Sum(nil)), nil
 }

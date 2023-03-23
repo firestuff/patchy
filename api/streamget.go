@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/firestuff/patchy/jsrest"
+	"github.com/firestuff/patchy/metadata"
 )
 
 var ErrStreamingNotSupported = errors.New("streaming not supported")
@@ -30,7 +31,7 @@ func (api *API) streamGet(cfg *config, id string, w http.ResponseWriter, r *http
 
 	err = api.streamGetWrite(ctx, w, gsi.ch)
 	if err != nil {
-		_ = writeEvent(w, "error", jsrest.ToJSONError(err), true)
+		_ = writeEvent(w, "error", "", jsrest.ToJSONError(err), true)
 		return nil
 	}
 
@@ -38,8 +39,8 @@ func (api *API) streamGet(cfg *config, id string, w http.ResponseWriter, r *http
 }
 
 func (api *API) streamGetWrite(ctx context.Context, w http.ResponseWriter, ch <-chan any) error {
+	// TODO: Support If-Match
 	eventType := "initial"
-
 	ticker := time.NewTicker(5 * time.Second)
 
 	for {
@@ -47,9 +48,11 @@ func (api *API) streamGetWrite(ctx context.Context, w http.ResponseWriter, ch <-
 		case <-ctx.Done():
 			return nil
 
-		case msg, ok := <-ch:
+		case obj, ok := <-ch:
 			if ok {
-				err := writeEvent(w, eventType, msg, true)
+				md := metadata.GetMetadata(obj)
+
+				err := writeEvent(w, eventType, md.ETag, obj, true)
 				if err != nil {
 					return jsrest.Errorf(jsrest.ErrInternalServerError, "write update failed (%w)", err)
 				}
@@ -58,7 +61,7 @@ func (api *API) streamGetWrite(ctx context.Context, w http.ResponseWriter, ch <-
 					eventType = "update"
 				}
 			} else {
-				err := writeEvent(w, "delete", emptyEvent, true)
+				err := writeEvent(w, "delete", "", emptyEvent, true)
 				if err != nil {
 					return jsrest.Errorf(jsrest.ErrInternalServerError, "write delete failed (%w)", err)
 				}
@@ -66,7 +69,7 @@ func (api *API) streamGetWrite(ctx context.Context, w http.ResponseWriter, ch <-
 			}
 
 		case <-ticker.C:
-			err := writeEvent(w, "heartbeat", emptyEvent, true)
+			err := writeEvent(w, "heartbeat", "", emptyEvent, true)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "write heartbeat failed (%w)", err)
 			}

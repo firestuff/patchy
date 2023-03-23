@@ -16,6 +16,7 @@ func TestStreamListHeartbeat(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
+	// TODO: Use the real client for this and sleep; it may be buggy
 	resp, err := ta.r().
 		SetDoNotParseResponse(true).
 		SetHeader("Accept", "text/event-stream").
