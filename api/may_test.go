@@ -388,9 +388,9 @@ func TestMayReadStreamListSuccess(t *testing.T) {
 
 	defer stream.Close()
 
-	list, err := stream.Read()
-	require.NoError(t, err)
-	require.Len(t, list, 1)
+	ev := stream.Read()
+	require.NotNil(t, ev, stream.Error())
+	require.Len(t, ev.List, 1)
 }
 
 func TestMayReadStreamListRefuse(t *testing.T) {
@@ -415,9 +415,9 @@ func TestMayReadStreamListRefuse(t *testing.T) {
 
 	defer stream.Close()
 
-	list, err := stream.Read()
-	require.NoError(t, err)
-	require.Len(t, list, 0)
+	ev := stream.Read()
+	require.NotNil(t, ev, stream.Error())
+	require.Len(t, ev.List, 0)
 }
 
 func TestMayReadCreateSuccess(t *testing.T) {
@@ -765,9 +765,9 @@ func TestMayReadMutateStreamList(t *testing.T) {
 
 	defer stream.Close()
 
-	list, err := stream.Read()
-	require.NoError(t, err)
-	require.Equal(t, "789a", list[0].Text1)
+	ev := stream.Read()
+	require.NotNil(t, ev, stream.Error())
+	require.Equal(t, "789a", ev.List[0].Text1)
 }
 
 func TestMayReadSideEffect(t *testing.T) {
