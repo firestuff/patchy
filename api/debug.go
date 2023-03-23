@@ -19,7 +19,7 @@ type serverInfo struct {
 }
 
 type ipInfo struct {
-	RemoteAddr string `json:"remote_addr"`
+	RemoteAddr string `json:"remoteAddr"`
 }
 
 type httpInfo struct {
@@ -31,10 +31,10 @@ type httpInfo struct {
 
 type tlsInfo struct {
 	Version            uint16 `json:"version"`
-	DidResume          bool   `json:"did_resume"`
-	CipherSuite        uint16 `json:"cipher_suite"`
-	NegotiatedProtocol string `json:"negotiated_protocol"`
-	ServerName         string `json:"server_name"`
+	DidResume          bool   `json:"didResume"`
+	CipherSuite        uint16 `json:"cipherSuite"`
+	NegotiatedProtocol string `json:"negotiatedProtocol"`
+	ServerName         string `json:"serverName"`
 }
 
 func (api *API) handleDebug(w http.ResponseWriter, r *http.Request) {
