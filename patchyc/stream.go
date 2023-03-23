@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"io"
 	"strings"
+	"sync"
+	"time"
 )
 
 type GetStream[T any] struct {
@@ -22,12 +24,17 @@ func (gs *GetStream[T]) Chan() <-chan *T {
 }
 
 func (gs *GetStream[T]) Read() *T {
+	// TODO: Need a way to return errors
 	return <-gs.Chan()
 }
 
 type ListStream[T any] struct {
 	ch   <-chan []*T
 	body io.ReadCloser
+
+	lastEventReceived time.Time
+
+	mu sync.RWMutex
 }
 
 func (ls *ListStream[T]) Close() {
@@ -42,10 +49,28 @@ func (ls *ListStream[T]) Read() []*T {
 	return <-ls.Chan()
 }
 
-func readEvent(scan *bufio.Scanner, out any) (string, string, error) { //nolint:unparam
-	// TODO: Remove unparam above
-	eventType := ""
-	id := ""
+func (ls *ListStream[T]) LastEventReceived() time.Time {
+	ls.mu.RLock()
+	defer ls.mu.RUnlock()
+
+	return ls.lastEventReceived
+}
+
+func (ls *ListStream[T]) receivedEvent() {
+	ls.mu.Lock()
+	defer ls.mu.Unlock()
+
+	ls.lastEventReceived = time.Now()
+}
+
+type streamEvent struct {
+	eventType string
+	id        string
+	data      []byte
+}
+
+func readEvent(scan *bufio.Scanner) (*streamEvent, error) {
+	event := &streamEvent{}
 	data := [][]byte{}
 
 	for scan.Scan() {
@@ -56,24 +81,23 @@ func readEvent(scan *bufio.Scanner, out any) (string, string, error) { //nolint:
 			continue
 
 		case strings.HasPrefix(line, "event: "):
-			eventType = strings.TrimPrefix(line, "event: ")
+			event.eventType = strings.TrimPrefix(line, "event: ")
 
 		case strings.HasPrefix(line, "id: "):
-			id = strings.TrimPrefix(line, "id: ")
+			event.id = strings.TrimPrefix(line, "id: ")
 
 		case strings.HasPrefix(line, "data: "):
 			data = append(data, bytes.TrimPrefix(scan.Bytes(), []byte("data: ")))
 
 		case line == "":
-			var err error
-
-			if out != nil {
-				err = json.Unmarshal(bytes.Join(data, []byte("\n")), out)
-			}
-
-			return eventType, id, err
+			event.data = bytes.Join(data, []byte("\n"))
+			return event, nil
 		}
 	}
 
-	return "", "", io.EOF
+	return nil, io.EOF
+}
+
+func (event *streamEvent) decode(out any) error {
+	return json.Unmarshal(event.data, out)
 }
