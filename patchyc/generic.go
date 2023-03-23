@@ -227,15 +227,17 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string) (*Get
 	body := resp.RawBody()
 	scan := bufio.NewScanner(body)
 
-	out := make(chan *T, 100)
+	stream := &GetStream[T]{
+		ch:   make(chan *GetStreamEvent[T], 100),
+		body: body,
+	}
 
 	go func() {
-		defer close(out)
-
 		for {
 			// TODO: Pass id back
 			event, err := readEvent(scan)
 			if err != nil {
+				stream.writeError(err)
 				return
 			}
 
@@ -247,20 +249,19 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string) (*Get
 
 				err = event.decode(obj)
 				if err != nil {
+					stream.writeError(err)
 					return
 				}
 
-				out <- obj
+				stream.writeEvent(event.id, obj)
 
 			case "heartbeat":
+				stream.writeHeartbeat()
 			}
 		}
 	}()
 
-	return &GetStream[T]{
-		ch:   out,
-		body: body,
-	}, nil
+	return stream, nil
 }
 
 func StreamGet[T any](ctx context.Context, c *Client, id string) (*GetStream[T], error) {
@@ -291,10 +292,8 @@ func StreamListName[T any](ctx context.Context, c *Client, name string, opts *Li
 	body := resp.RawBody()
 	scan := bufio.NewScanner(body)
 
-	out := make(chan *ListStreamEvent[T], 100)
-
 	stream := &ListStream[T]{
-		ch:   out,
+		ch:   make(chan *ListStreamEvent[T], 100),
 		body: body,
 	}
 

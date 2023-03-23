@@ -78,13 +78,15 @@ func TestDeleteStream(t *testing.T) {
 
 	defer stream.Close()
 
-	obj := stream.Read()
-	require.NotNil(t, obj)
-	require.Equal(t, "foo", obj.Text)
+	ev := stream.Read()
+	require.NotNil(t, ev, stream.Error())
+	require.NoError(t, stream.Error())
+	require.Equal(t, "foo", ev.Obj.Text)
 
 	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID)
 	require.NoError(t, err)
 
-	obj = stream.Read()
-	require.Nil(t, obj)
+	ev = stream.Read()
+	require.Nil(t, ev, stream.Error())
+	require.Error(t, stream.Error())
 }

@@ -21,6 +21,7 @@ func TestStreamGetHeartbeat(t *testing.T) {
 	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
+	// TODO: Use real client
 	resp, err := ta.r().
 		SetDoNotParseResponse(true).
 		SetHeader("Accept", "text/event-stream").
@@ -59,9 +60,9 @@ func TestStreamGet(t *testing.T) {
 
 	defer stream.Close()
 
-	get := stream.Read()
-	require.NotNil(t, get)
-	require.Equal(t, "foo", get.Text)
+	ev := stream.Read()
+	require.NotNil(t, ev, stream.Error())
+	require.Equal(t, "foo", ev.Obj.Text)
 }
 
 func TestStreamGetUpdate(t *testing.T) {
@@ -80,14 +81,14 @@ func TestStreamGetUpdate(t *testing.T) {
 
 	defer stream.Close()
 
-	get := stream.Read()
-	require.NotNil(t, get)
-	require.Equal(t, "foo", get.Text)
+	ev := stream.Read()
+	require.NotNil(t, ev, stream.Error())
+	require.Equal(t, "foo", ev.Obj.Text)
 
 	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
 	require.NoError(t, err)
 
-	updated := stream.Read()
-	require.NotNil(t, updated)
-	require.Equal(t, "bar", updated.Text)
+	ev = stream.Read()
+	require.NotNil(t, ev, stream.Error())
+	require.Equal(t, "bar", ev.Obj.Text)
 }
