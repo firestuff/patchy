@@ -14,8 +14,9 @@ import (
 )
 
 var (
-	ErrNotFound      = fmt.Errorf("not found")
-	ErrMultipleFound = fmt.Errorf("multiple found")
+	ErrNotFound           = fmt.Errorf("not found")
+	ErrMultipleFound      = fmt.Errorf("multiple found")
+	ErrInvalidStreamEvent = fmt.Errorf("invalid stream event")
 )
 
 func CreateName[T any](ctx context.Context, c *Client, name string, obj *T) (*T, error) {
@@ -322,7 +323,7 @@ func StreamListName[T any](ctx context.Context, c *Client, name string, opts *Li
 	case "":
 		fallthrough
 	case "full":
-		go streamListFull(scan, stream)
+		go streamListFull(scan, stream, opts)
 
 	case "diff":
 		go streamListDiff(scan, stream, opts)
@@ -331,7 +332,7 @@ func StreamListName[T any](ctx context.Context, c *Client, name string, opts *Li
 	return stream, nil
 }
 
-func streamListFull[T any](scan *bufio.Scanner, stream *ListStream[T]) {
+func streamListFull[T any](scan *bufio.Scanner, stream *ListStream[T], opts *ListOpts) {
 	for {
 		event, err := readEvent(scan)
 		if err != nil {
@@ -350,6 +351,13 @@ func streamListFull[T any](scan *bufio.Scanner, stream *ListStream[T]) {
 			}
 
 			stream.writeEvent(event.id, list)
+
+		case "notModified":
+			if opts != nil && opts.Prev != nil {
+				stream.writeEvent(event.id, opts.Prev.([]*T))
+			} else {
+				stream.writeError(fmt.Errorf("notModified without If-None-Match (%w)", ErrInvalidStreamEvent))
+			}
 
 		case "heartbeat":
 			stream.writeHeartbeat()
