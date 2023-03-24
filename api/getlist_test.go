@@ -456,3 +456,26 @@ func TestListSortBeforeLimit(t *testing.T) {
 	require.Len(t, list, 2)
 	require.Equal(t, []string{"bar", "foo"}, []string{list[0].Text, list[1].Text})
 }
+
+func TestListPrev(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	list, err := patchyc.List[testType](ctx, ta.pyc, nil)
+	require.NoError(t, err)
+	require.Len(t, list, 1)
+	require.Equal(t, "foo", list[0].Text)
+
+	// Doesn't actually verify that the list isn't sent over the wire, just that it doesn't fail.
+	list2, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{Prev: list})
+	require.NoError(t, err)
+	require.Len(t, list2, 1)
+	require.Equal(t, "foo", list2[0].Text)
+}

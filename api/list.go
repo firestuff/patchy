@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"net/http"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -24,6 +25,10 @@ type ListOpts struct {
 	After   string
 	Sorts   []string
 	Filters []*Filter
+
+	IfNoneMatchETag string
+
+	Prev any
 }
 
 type Filter struct {
@@ -132,13 +137,44 @@ func ApplyWindow[T any](list []T, opts *ListOpts) ([]T, error) {
 	return ret, nil
 }
 
-func parseListOpts(params url.Values) (*ListOpts, error) {
+func HashList(list any) (string, error) {
+	hash := sha256.New()
+	enc := json.NewEncoder(hash)
+
+	if err := enc.Encode(list); err != nil {
+		return "", jsrest.Errorf(jsrest.ErrInternalServerError, "JSON encode failed (%w)", err)
+	}
+
+	return fmt.Sprintf("etag:%x", hash.Sum(nil)), nil
+}
+
+func parseListOpts(r *http.Request) (*ListOpts, error) {
 	ret := &ListOpts{
 		Sorts:   []string{},
 		Filters: []*Filter{},
 	}
 
-	var err error
+	ifNoneMatch := r.Header.Get("If-None-Match")
+
+	if ifNoneMatch != "" {
+		val, err := trimQuotes(ifNoneMatch)
+		if err != nil {
+			return nil, jsrest.Errorf(jsrest.ErrBadRequest, "trim quotes failed (%w) (%w)", err, ErrInvalidIfNoneMatch)
+		}
+
+		switch {
+		case strings.HasPrefix(val, "etag:"):
+			ret.IfNoneMatchETag = val
+
+		default:
+			return nil, jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", ifNoneMatch, ErrIfNoneMatchUnknownType)
+		}
+	}
+
+	params, err := url.ParseQuery(r.URL.RawQuery)
+	if err != nil {
+		return nil, jsrest.Errorf(jsrest.ErrBadRequest, "parse URL query failed (%w)", err)
+	}
 
 	if stream := params.Get("_stream"); stream != "" {
 		if _, valid := validStream[stream]; !valid {
@@ -275,15 +311,4 @@ func match(obj any, filters []*Filter) (bool, error) {
 	}
 
 	return true, nil
-}
-
-func hashList(list []any) (string, error) {
-	hash := sha256.New()
-	enc := json.NewEncoder(hash)
-
-	if err := enc.Encode(list); err != nil {
-		return "", jsrest.Errorf(jsrest.ErrInternalServerError, "JSON encode failed (%w)", err)
-	}
-
-	return fmt.Sprintf("etag:%x", hash.Sum(nil)), nil
 }

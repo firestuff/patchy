@@ -103,7 +103,9 @@ func GetName[T any](ctx context.Context, c *Client, name, id string, opts *GetOp
 		SetPathParam("id", id).
 		SetResult(obj)
 
-	applyGetOpts(opts, r)
+	if opts != nil {
+		applyGetOpts(opts, r)
+	}
 
 	resp, err := r.Get("{name}/{id}")
 	if err != nil {
@@ -138,12 +140,19 @@ func ListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts
 		SetResult(&objs)
 
 	if opts != nil {
-		applyListOpts(opts, r)
+		err := applyListOpts(opts, r)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	resp, err := r.Get("{name}")
 	if err != nil {
 		return nil, err
+	}
+
+	if opts != nil && opts.Prev != nil && resp.StatusCode() == http.StatusNotModified {
+		return opts.Prev.([]*T), nil
 	}
 
 	if resp.IsError() {
@@ -285,7 +294,12 @@ func StreamListName[T any](ctx context.Context, c *Client, name string, opts *Li
 		opts = &ListOpts{}
 	}
 
-	applyListOpts(opts, r)
+	if opts != nil {
+		err := applyListOpts(opts, r)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	resp, err := r.Get("{name}")
 	if err != nil {
