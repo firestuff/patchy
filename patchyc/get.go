@@ -13,10 +13,6 @@ type (
 )
 
 func applyGetOpts(opts *GetOpts, req *resty.Request) {
-	if opts == nil {
-		return
-	}
-
 	if opts.Prev != nil {
 		md := metadata.GetMetadata(opts.Prev)
 		opts.IfNoneMatchETag = md.ETag

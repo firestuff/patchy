@@ -55,8 +55,9 @@ func Write(w http.ResponseWriter, obj any) error {
 	return nil
 }
 
-func WriteList(w http.ResponseWriter, list []any) error {
+func WriteList(w http.ResponseWriter, list []any, etag string) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("ETag", fmt.Sprintf(`"%s"`, etag))
 
 	enc := json.NewEncoder(w)
 

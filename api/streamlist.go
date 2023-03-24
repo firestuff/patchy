@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"net/http"
-	"net/url"
 	"time"
 
 	"github.com/firestuff/patchy/jsrest"
@@ -17,12 +16,7 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 		return jsrest.Errorf(jsrest.ErrBadRequest, "stream failed (%w)", ErrStreamingNotSupported)
 	}
 
-	params, err := url.ParseQuery(r.URL.RawQuery)
-	if err != nil {
-		return jsrest.Errorf(jsrest.ErrBadRequest, "parse URL query failed (%w)", err)
-	}
-
-	opts, err := parseListOpts(params)
+	opts, err := parseListOpts(r)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrBadRequest, "parse list parameters failed (%w)", err)
 	}
@@ -77,12 +71,12 @@ func (api *API) streamListFull(ctx context.Context, cfg *config, w http.Response
 			}
 
 		case list := <-lsi.Chan():
-			hash, err := hashList(list)
+			etag, err := HashList(list)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "hash list failed (%w)", err)
 			}
 
-			err = writeEvent(w, "list", hash, list, true)
+			err = writeEvent(w, "list", etag, list, true)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "write list failed (%w)", err)
 			}
@@ -118,7 +112,7 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 			return nil
 
 		case list := <-lsi.Chan():
-			hash, err := hashList(list)
+			etag, err := HashList(list)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "hash list failed (%w)", err)
 			}
@@ -172,7 +166,7 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 			if first || changed {
 				first = false
 
-				err = writeEvent(w, "sync", hash, emptyEvent, true)
+				err = writeEvent(w, "sync", etag, emptyEvent, true)
 				if err != nil {
 					return jsrest.Errorf(jsrest.ErrInternalServerError, "write sync failed (%w)", err)
 				}

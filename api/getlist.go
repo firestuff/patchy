@@ -2,19 +2,12 @@ package api
 
 import (
 	"net/http"
-	"net/url"
 
 	"github.com/firestuff/patchy/jsrest"
 )
 
 func (api *API) getList(cfg *config, w http.ResponseWriter, r *http.Request) error {
-	// TODO: Support If-None-Match
-	params, err := url.ParseQuery(r.URL.RawQuery)
-	if err != nil {
-		return jsrest.Errorf(jsrest.ErrBadRequest, "parse URL query failed (%w)", err)
-	}
-
-	opts, err := parseListOpts(params)
+	opts, err := parseListOpts(r)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrBadRequest, "parse list parameters failed (%w)", err)
 	}
@@ -24,7 +17,17 @@ func (api *API) getList(cfg *config, w http.ResponseWriter, r *http.Request) err
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "list failed (%w)", err)
 	}
 
-	err = jsrest.WriteList(w, list)
+	etag, err := HashList(list)
+	if err != nil {
+		return jsrest.Errorf(jsrest.ErrInternalServerError, "hash list failed (%w)", err)
+	}
+
+	if opts.IfNoneMatchETag != "" && opts.IfNoneMatchETag == etag {
+		w.WriteHeader(http.StatusNotModified)
+		return nil
+	}
+
+	err = jsrest.WriteList(w, list, etag)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "write list failed (%w)", err)
 	}

@@ -13,7 +13,20 @@ type (
 	Filter   = api.Filter
 )
 
-func applyListOpts(opts *ListOpts, req *resty.Request) {
+func applyListOpts(opts *ListOpts, req *resty.Request) error {
+	if opts.Prev != nil {
+		etag, err := api.HashList(opts.Prev)
+		if err != nil {
+			return err
+		}
+
+		opts.IfNoneMatchETag = etag
+	}
+
+	if opts.IfNoneMatchETag != "" {
+		req.SetHeader("If-None-Match", fmt.Sprintf(`"%s"`, opts.IfNoneMatchETag))
+	}
+
 	if opts.Stream != "" {
 		req.SetQueryParam("_stream", opts.Stream)
 	}
@@ -41,4 +54,6 @@ func applyListOpts(opts *ListOpts, req *resty.Request) {
 	}
 
 	req.SetQueryParamsFromValues(sorts)
+
+	return nil
 }

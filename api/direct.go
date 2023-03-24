@@ -202,7 +202,7 @@ func StreamListName[T any](ctx context.Context, api *API, name string, opts *Lis
 
 	go func() {
 		for list := range lsi.Chan() {
-			hash, err := hashList(list)
+			etag, err := HashList(list)
 			if err != nil {
 				stream.writeError(err)
 				return
@@ -214,7 +214,7 @@ func StreamListName[T any](ctx context.Context, api *API, name string, opts *Lis
 				typeList = append(typeList, convert[T](obj))
 			}
 
-			stream.writeEvent(hash, typeList)
+			stream.writeEvent(etag, typeList)
 		}
 
 		stream.writeError(io.EOF)
