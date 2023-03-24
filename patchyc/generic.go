@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"net/http"
 	"reflect"
 	"strings"
 
@@ -93,21 +94,28 @@ func Find[T any](ctx context.Context, c *Client, shortID string) (*T, error) {
 	return FindName[T](ctx, c, objName(new(T)), shortID)
 }
 
-func GetName[T any](ctx context.Context, c *Client, name, id string) (*T, error) {
+func GetName[T any](ctx context.Context, c *Client, name, id string, opts *GetOpts) (*T, error) {
 	obj := new(T)
 
-	resp, err := c.rst.R().
+	r := c.rst.R().
 		SetContext(ctx).
 		SetPathParam("name", name).
 		SetPathParam("id", id).
-		SetResult(obj).
-		Get("{name}/{id}")
+		SetResult(obj)
+
+	applyGetOpts(opts, r)
+
+	resp, err := r.Get("{name}/{id}")
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.StatusCode() == 404 {
+	if resp.StatusCode() == http.StatusNotFound {
 		return nil, nil
+	}
+
+	if opts != nil && opts.Prev != nil && resp.StatusCode() == http.StatusNotModified {
+		return opts.Prev.(*T), nil
 	}
 
 	if resp.IsError() {
@@ -117,8 +125,8 @@ func GetName[T any](ctx context.Context, c *Client, name, id string) (*T, error)
 	return obj, nil
 }
 
-func Get[T any](ctx context.Context, c *Client, id string) (*T, error) {
-	return GetName[T](ctx, c, objName(new(T)), id)
+func Get[T any](ctx context.Context, c *Client, id string, opts *GetOpts) (*T, error) {
+	return GetName[T](ctx, c, objName(new(T)), id, opts)
 }
 
 func ListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts) ([]*T, error) {

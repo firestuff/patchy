@@ -19,7 +19,7 @@ func TestDeleteSuccess(t *testing.T) {
 	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID)
+	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 	require.NotNil(t, get)
 	require.Equal(t, "foo", get.Text)
@@ -27,7 +27,7 @@ func TestDeleteSuccess(t *testing.T) {
 	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID)
 	require.NoError(t, err)
 
-	get, err = patchyc.Get[testType](ctx, ta.pyc, created.ID)
+	get, err = patchyc.Get[testType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 	require.Nil(t, get)
 }

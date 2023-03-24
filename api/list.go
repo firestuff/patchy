@@ -285,5 +285,5 @@ func hashList(list []any) (string, error) {
 		return "", jsrest.Errorf(jsrest.ErrInternalServerError, "JSON encode failed (%w)", err)
 	}
 
-	return fmt.Sprintf("%x", hash.Sum(nil)), nil
+	return fmt.Sprintf("etag:%x", hash.Sum(nil)), nil
 }

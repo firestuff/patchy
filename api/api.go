@@ -28,7 +28,10 @@ type RequestHook func(*http.Request, *API) (*http.Request, error)
 
 type Metadata = metadata.Metadata
 
-var ErrUnknownAcceptType = errors.New("unknown Accept type")
+var (
+	ErrHeaderValueMissingQuotes = errors.New("header missing quotes")
+	ErrUnknownAcceptType        = errors.New("unknown Accept type")
+)
 
 func NewFileStoreAPI(root string) (*API, error) {
 	return NewAPI(store.NewFileStore(root))
@@ -208,4 +211,12 @@ func (api *API) wrapErrorID(cb func(*config, string, http.ResponseWriter, *http.
 
 func objName[T any](obj *T) string {
 	return strings.ToLower(reflect.TypeOf(*obj).Name())
+}
+
+func trimQuotes(in string) (string, error) {
+	if len(in) < 2 || !strings.HasPrefix(in, `"`) || !strings.HasSuffix(in, `"`) {
+		return "", jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", in, ErrHeaderValueMissingQuotes)
+	}
+
+	return strings.TrimPrefix(strings.TrimSuffix(in, `"`), `"`), nil
 }

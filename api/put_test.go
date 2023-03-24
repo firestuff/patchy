@@ -26,7 +26,7 @@ func TestReplace(t *testing.T) {
 	require.EqualValues(t, 0, replaced.Num)
 	require.EqualValues(t, created.Generation+1, replaced.Generation)
 
-	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID)
+	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 	require.Equal(t, "bar", get.Text)
 	require.EqualValues(t, 0, get.Num)
@@ -61,7 +61,7 @@ func TestReplaceIfMatchETagSuccess(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "bar", replaced.Text)
 
-	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID)
+	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 	require.Equal(t, "bar", get.Text)
 }
@@ -82,7 +82,7 @@ func TestReplaceIfMatchETagMismatch(t *testing.T) {
 	require.ErrorContains(t, err, "etag mismatch")
 	require.Nil(t, replaced)
 
-	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID)
+	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 	require.Equal(t, "foo", get.Text)
 }
@@ -102,7 +102,7 @@ func TestReplaceIfMatchGenerationSuccess(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "bar", replaced.Text)
 
-	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID)
+	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 	require.Equal(t, "bar", get.Text)
 }
@@ -123,7 +123,7 @@ func TestReplaceIfMatchGenerationMismatch(t *testing.T) {
 	require.ErrorContains(t, err, "generation mismatch")
 	require.Nil(t, replaced)
 
-	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID)
+	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 	require.Equal(t, "foo", get.Text)
 }
@@ -146,7 +146,7 @@ func TestReplaceIfMatchInvalid(t *testing.T) {
 	require.ErrorContains(t, err, "invalid If-Match")
 	require.Nil(t, replaced)
 
-	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID)
+	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 	require.Equal(t, "foo", get.Text)
 }

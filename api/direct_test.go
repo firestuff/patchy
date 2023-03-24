@@ -17,7 +17,7 @@ func TestDirectGetNotFound(t *testing.T) {
 
 	ctx := context.Background()
 
-	get, err := api.Get[testType](ctx, ta.api, "doesnotexist")
+	get, err := api.Get[testType](ctx, ta.api, "doesnotexist", nil)
 	require.NoError(t, err)
 	require.Nil(t, get)
 }
@@ -33,7 +33,7 @@ func TestDirectGetInvalidType(t *testing.T) {
 	create, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = api.GetName[testType](ctx, ta.api, "doesnotexist", create.ID)
+	_, err = api.GetName[testType](ctx, ta.api, "doesnotexist", create.ID, nil)
 	require.Error(t, err)
 }
 
@@ -49,7 +49,7 @@ func TestDirectCreateGet(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "foo", create.Text)
 
-	get, err := api.Get[testType](ctx, ta.api, create.ID)
+	get, err := api.Get[testType](ctx, ta.api, create.ID, nil)
 	require.NoError(t, err)
 	require.Equal(t, create.ID, get.ID)
 	require.Equal(t, "foo", get.Text)
@@ -78,7 +78,7 @@ func TestDirectUpdate(t *testing.T) {
 	create, err := api.Create(ctx, ta.api, &testType{Text: "foo", Num: 1})
 	require.NoError(t, err)
 
-	get, err := api.Get[testType](ctx, ta.api, create.ID)
+	get, err := api.Get[testType](ctx, ta.api, create.ID, nil)
 	require.NoError(t, err)
 	require.Equal(t, "foo", get.Text)
 	require.EqualValues(t, 1, get.Num)
@@ -89,7 +89,7 @@ func TestDirectUpdate(t *testing.T) {
 	require.Equal(t, "bar", update.Text)
 	require.EqualValues(t, 1, update.Num)
 
-	get, err = api.Get[testType](ctx, ta.api, create.ID)
+	get, err = api.Get[testType](ctx, ta.api, create.ID, nil)
 	require.NoError(t, err)
 	require.Equal(t, "bar", get.Text)
 	require.EqualValues(t, 1, get.Num)
@@ -121,7 +121,7 @@ func TestDirectReplace(t *testing.T) {
 	create, err := api.Create(ctx, ta.api, &testType{Text: "foo", Num: 1})
 	require.NoError(t, err)
 
-	get, err := api.Get[testType](ctx, ta.api, create.ID)
+	get, err := api.Get[testType](ctx, ta.api, create.ID, nil)
 	require.NoError(t, err)
 	require.Equal(t, "foo", get.Text)
 	require.EqualValues(t, 1, get.Num)
@@ -132,7 +132,7 @@ func TestDirectReplace(t *testing.T) {
 	require.Equal(t, "bar", replace.Text)
 	require.EqualValues(t, 0, replace.Num)
 
-	get, err = api.Get[testType](ctx, ta.api, create.ID)
+	get, err = api.Get[testType](ctx, ta.api, create.ID, nil)
 	require.NoError(t, err)
 	require.Equal(t, "bar", get.Text)
 	require.EqualValues(t, 0, get.Num)
@@ -149,7 +149,7 @@ func TestDirectReplaceInvalidType(t *testing.T) {
 	create, err := api.Create(ctx, ta.api, &testType{Text: "foo", Num: 1})
 	require.NoError(t, err)
 
-	get, err := api.Get[testType](ctx, ta.api, create.ID)
+	get, err := api.Get[testType](ctx, ta.api, create.ID, nil)
 	require.NoError(t, err)
 	require.Equal(t, "foo", get.Text)
 	require.EqualValues(t, 1, get.Num)
@@ -169,13 +169,13 @@ func TestDirectDelete(t *testing.T) {
 	create, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = api.Get[testType](ctx, ta.api, create.ID)
+	_, err = api.Get[testType](ctx, ta.api, create.ID, nil)
 	require.NoError(t, err)
 
 	err = api.Delete[testType](ctx, ta.api, create.ID)
 	require.NoError(t, err)
 
-	get, err := api.Get[testType](ctx, ta.api, create.ID)
+	get, err := api.Get[testType](ctx, ta.api, create.ID, nil)
 	require.NoError(t, err)
 	require.Nil(t, get)
 }

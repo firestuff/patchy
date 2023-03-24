@@ -129,7 +129,7 @@ func TestFileStoreAPI(t *testing.T) {
 	created, err := api.Create(ctx, a, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	get, err := api.Get[testType](ctx, a, created.ID)
+	get, err := api.Get[testType](ctx, a, created.ID, nil)
 	require.NoError(t, err)
 	require.NotNil(t, get)
 	require.Equal(t, "foo", get.Text)
