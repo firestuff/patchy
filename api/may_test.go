@@ -252,7 +252,7 @@ func TestMayReadGetSuccess(t *testing.T) {
 	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
 
-	get, err := patchyc.Get[mayType](ctx, ta.pyc, created.ID)
+	get, err := patchyc.Get[mayType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 	require.NotNil(t, get)
 }
@@ -273,7 +273,7 @@ func TestMayReadGetRefuse(t *testing.T) {
 
 	ta.pyc.SetHeader("X-Refuse-Read", "x")
 
-	get, err := patchyc.Get[mayType](ctx, ta.pyc, created.ID)
+	get, err := patchyc.Get[mayType](ctx, ta.pyc, created.ID, nil)
 	require.Error(t, err)
 	require.Nil(t, get)
 }
@@ -544,7 +544,7 @@ func TestMayWriteMutateCreate(t *testing.T) {
 	created, err := patchyc.Create(ctx, ta.pyc, &mayType{Text1: "foo"})
 	require.NoError(t, err)
 
-	get, err := patchyc.Get[mayType](ctx, ta.pyc, created.ID)
+	get, err := patchyc.Get[mayType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 	require.Equal(t, "1234", get.Text1)
 }
@@ -568,7 +568,7 @@ func TestMayWriteMutateReplace(t *testing.T) {
 	_, err = patchyc.Replace(ctx, ta.pyc, created.ID, &mayType{Text1: "bar"}, nil)
 	require.NoError(t, err)
 
-	get, err := patchyc.Get[mayType](ctx, ta.pyc, created.ID)
+	get, err := patchyc.Get[mayType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 	require.Equal(t, "2345", get.Text1)
 }
@@ -592,7 +592,7 @@ func TestMayWriteMutateUpdate(t *testing.T) {
 	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &mayType{Text1: "bar"}, nil)
 	require.NoError(t, err)
 
-	get, err := patchyc.Get[mayType](ctx, ta.pyc, created.ID)
+	get, err := patchyc.Get[mayType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 	require.Equal(t, "3456", get.Text1)
 }
@@ -613,7 +613,7 @@ func TestMayReadMutateGet(t *testing.T) {
 
 	ta.pyc.SetHeader("X-Text1-Read", "1234")
 
-	get, err := patchyc.Get[mayType](ctx, ta.pyc, created.ID)
+	get, err := patchyc.Get[mayType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 	require.Equal(t, "1234", get.Text1)
 }
@@ -637,7 +637,7 @@ func TestMayReadMutateCreate(t *testing.T) {
 
 	ta.pyc.SetHeader("X-Text1-Read", "")
 
-	get, err := patchyc.Get[mayType](ctx, ta.pyc, created.ID)
+	get, err := patchyc.Get[mayType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 	require.Equal(t, "foo", get.Text1)
 }
@@ -664,7 +664,7 @@ func TestMayReadMutateReplace(t *testing.T) {
 
 	ta.pyc.SetHeader("X-Text1-Read", "")
 
-	get, err := patchyc.Get[mayType](ctx, ta.pyc, created.ID)
+	get, err := patchyc.Get[mayType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 	require.Equal(t, "bar", get.Text1)
 }
@@ -691,7 +691,7 @@ func TestMayReadMutateUpdate(t *testing.T) {
 
 	ta.pyc.SetHeader("X-Text1-Read", "")
 
-	get, err := patchyc.Get[mayType](ctx, ta.pyc, created.ID)
+	get, err := patchyc.Get[mayType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 	require.Equal(t, "bar", get.Text1)
 }
@@ -786,7 +786,7 @@ func TestMayReadSideEffect(t *testing.T) {
 
 	ta.pyc.SetHeader("X-NewText1", "abcd")
 
-	get, err := patchyc.Get[mayType](ctx, ta.pyc, created.ID)
+	get, err := patchyc.Get[mayType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 	require.Equal(t, "foo", get.Text1)
 

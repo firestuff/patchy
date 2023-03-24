@@ -27,7 +27,7 @@ func TestUpdate(t *testing.T) {
 	require.EqualValues(t, 1, updated.Num)
 	require.EqualValues(t, created.Generation+1, updated.Generation)
 
-	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID)
+	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 	require.Equal(t, "bar", get.Text)
 	require.EqualValues(t, 1, get.Num)
@@ -62,7 +62,7 @@ func TestUpdateIfMatchETagSuccess(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "bar", updated.Text)
 
-	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID)
+	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 	require.Equal(t, "bar", get.Text)
 }
@@ -83,7 +83,7 @@ func TestUpdateIfMatchETagMismatch(t *testing.T) {
 	require.ErrorContains(t, err, "etag mismatch")
 	require.Nil(t, updated)
 
-	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID)
+	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 	require.Equal(t, "foo", get.Text)
 }
@@ -103,7 +103,7 @@ func TestUpdateIfMatchGenerationSuccess(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "bar", updated.Text)
 
-	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID)
+	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 	require.Equal(t, "bar", get.Text)
 }
@@ -124,7 +124,7 @@ func TestUpdateIfMatchGenerationMismatch(t *testing.T) {
 	require.ErrorContains(t, err, "generation mismatch")
 	require.Nil(t, updated)
 
-	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID)
+	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 	require.Equal(t, "foo", get.Text)
 }
@@ -147,7 +147,7 @@ func TestUpdateIfMatchInvalid(t *testing.T) {
 	require.ErrorContains(t, err, "invalid If-Match")
 	require.Nil(t, updated)
 
-	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID)
+	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 	require.Equal(t, "foo", get.Text)
 }

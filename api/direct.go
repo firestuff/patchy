@@ -75,7 +75,7 @@ func Find[T any](ctx context.Context, api *API, shortID string) (*T, error) {
 	return FindName[T](ctx, api, objName(new(T)), shortID)
 }
 
-func GetName[T any](ctx context.Context, api *API, name, id string) (*T, error) {
+func GetName[T any](ctx context.Context, api *API, name, id string, opts *GetOpts) (*T, error) {
 	cfg := api.registry[name]
 	if cfg == nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
@@ -89,8 +89,8 @@ func GetName[T any](ctx context.Context, api *API, name, id string) (*T, error) 
 	return convert[T](obj), nil
 }
 
-func Get[T any](ctx context.Context, api *API, id string) (*T, error) {
-	return GetName[T](ctx, api, objName(new(T)), id)
+func Get[T any](ctx context.Context, api *API, id string, opts *GetOpts) (*T, error) {
+	return GetName[T](ctx, api, objName(new(T)), id, opts)
 }
 
 func ListName[T any](ctx context.Context, api *API, name string, opts *ListOpts) ([]*T, error) {

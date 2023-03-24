@@ -12,6 +12,7 @@ type (
 	ListOpts   = api.ListOpts
 	Filter     = api.Filter
 	UpdateOpts = api.UpdateOpts
+	GetOpts    = api.GetOpts
 )
 
 var (
@@ -52,12 +53,12 @@ func Find[T any](ctx context.Context, a *API, shortID string) (*T, error) {
 	return api.Find[T](ctx, a, shortID)
 }
 
-func GetName[T any](ctx context.Context, a *API, name, id string) (*T, error) {
-	return api.GetName[T](ctx, a, name, id)
+func GetName[T any](ctx context.Context, a *API, name, id string, opts *GetOpts) (*T, error) {
+	return api.GetName[T](ctx, a, name, id, opts)
 }
 
-func Get[T any](ctx context.Context, a *API, id string) (*T, error) {
-	return api.Get[T](ctx, a, id)
+func Get[T any](ctx context.Context, a *API, id string, opts *GetOpts) (*T, error) {
+	return api.Get[T](ctx, a, id, opts)
 }
 
 func ListName[T any](ctx context.Context, a *API, name string, opts *ListOpts) ([]*T, error) {

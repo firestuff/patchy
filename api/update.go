@@ -18,7 +18,6 @@ type UpdateOpts struct {
 
 var (
 	ErrInvalidIfMatch           = errors.New("invalid If-Match")
-	ErrIfMatchMissingQuotes     = fmt.Errorf("missing quotes (%w)", ErrInvalidIfMatch)
 	ErrIfMatchUnknownType       = fmt.Errorf("unknown type (%w)", ErrInvalidIfMatch)
 	ErrIfMatchInvalidGeneration = fmt.Errorf("invalid generation (%w)", ErrInvalidIfMatch)
 
@@ -36,11 +35,10 @@ func parseUpdateOpts(r *http.Request) (*UpdateOpts, error) {
 		return ret, nil
 	}
 
-	if len(ifMatch) < 2 || !strings.HasPrefix(ifMatch, `"`) || !strings.HasSuffix(ifMatch, `"`) {
-		return nil, jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", ifMatch, ErrIfMatchMissingQuotes)
+	val, err := trimQuotes(ifMatch)
+	if err != nil {
+		return nil, jsrest.Errorf(jsrest.ErrBadRequest, "trim quotes failed (%w) (%w)", err, ErrInvalidIfMatch)
 	}
-
-	val := strings.TrimPrefix(strings.TrimSuffix(ifMatch, `"`), `"`)
 
 	switch {
 	case strings.HasPrefix(val, "etag:"):
