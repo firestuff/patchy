@@ -107,7 +107,6 @@ func (api *API) streamListFull(ctx context.Context, cfg *config, w http.Response
 }
 
 func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.ResponseWriter, opts *ListOpts) error {
-	// TODO: Support If-None-Match
 	lsi, err := api.streamListInt(ctx, cfg, opts)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read list failed (%w)", err)
@@ -119,6 +118,8 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 	ticker := time.NewTicker(5 * time.Second)
 
 	first := true
+	initialETag := opts.IfNoneMatchETag
+	previousETag := ""
 
 	for {
 		select {
@@ -138,6 +139,27 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "hash list failed (%w)", err)
 			}
+
+			if initialETag != "" {
+				if initialETag == etag {
+					err = writeEvent(w, "notModified", etag, emptyEvent, true)
+					if err != nil {
+						return jsrest.Errorf(jsrest.ErrInternalServerError, "write list failed (%w)", err)
+					}
+
+					initialETag = ""
+
+					continue
+				}
+
+				initialETag = ""
+			}
+
+			if previousETag == etag {
+				continue
+			}
+
+			previousETag = etag
 
 			cur := map[string]any{}
 			changed := false
