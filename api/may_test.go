@@ -292,7 +292,7 @@ func TestMayReadStreamGetSuccess(t *testing.T) {
 	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
 
-	stream, err := patchyc.StreamGet[mayType](ctx, ta.pyc, created.ID)
+	stream, err := patchyc.StreamGet[mayType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 	require.NotNil(t, stream)
 
@@ -318,7 +318,7 @@ func TestMayReadStreamGetRefuse(t *testing.T) {
 
 	ta.pyc.SetHeader("X-Refuse-Read", "x")
 
-	stream, err := patchyc.StreamGet[mayType](ctx, ta.pyc, created.ID)
+	stream, err := patchyc.StreamGet[mayType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 	require.NotNil(t, stream)
 
@@ -712,7 +712,7 @@ func TestMayReadMutateStreamGet(t *testing.T) {
 
 	ta.pyc.SetHeader("X-Text1-Read", "5678")
 
-	stream, err := patchyc.StreamGet[mayType](ctx, ta.pyc, created.ID)
+	stream, err := patchyc.StreamGet[mayType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 
 	defer stream.Close()
