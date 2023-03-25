@@ -61,6 +61,11 @@ func NewAPI(st store.Storer) (*API, error) {
 		func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) { api.handleDebug(w, r) },
 	)
 
+	api.router.GET(
+		"/_openapi",
+		func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) { api.handleOpenAPI(w, r) },
+	)
+
 	return api, nil
 }
 
