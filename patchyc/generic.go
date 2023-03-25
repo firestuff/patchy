@@ -417,6 +417,13 @@ func streamListDiff[T any](scan *bufio.Scanner, stream *ListStream[T], opts *Lis
 
 			stream.writeEvent(event.id, list)
 
+		case "notModified":
+			if opts != nil && opts.Prev != nil {
+				stream.writeEvent(event.id, opts.Prev.([]*T))
+			} else {
+				stream.writeError(fmt.Errorf("notModified without If-None-Match (%w)", ErrInvalidStreamEvent))
+			}
+
 		case "heartbeat":
 			stream.writeHeartbeat()
 		}

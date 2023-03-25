@@ -427,3 +427,79 @@ func TestStreamListDiffSort(t *testing.T) {
 	require.Len(t, ev.List, 1)
 	require.Equal(t, "bar", ev.List[0].Text)
 }
+
+func TestStreamListDiffIgnoreIrrelevant(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	created1, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	require.NoError(t, err)
+
+	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Stream: "diff", Sorts: []string{"+text"}, Limit: 1})
+	require.NoError(t, err)
+
+	defer stream.Close()
+
+	ev := stream.Read()
+	require.NotNil(t, ev, stream.Error())
+	require.Len(t, ev.List, 1)
+	require.Equal(t, "bar", ev.List[0].Text)
+
+	_, err = patchyc.Update(ctx, ta.pyc, created1.ID, &testType{Text: "zig"}, nil)
+	require.NoError(t, err)
+
+	time.Sleep(1 * time.Second)
+
+	select {
+	case ev := <-stream.Chan():
+		require.Fail(t, "unexpected update", ev)
+	default:
+	}
+
+	_, err = patchyc.Update(ctx, ta.pyc, created1.ID, &testType{Text: "aaa"}, nil)
+	require.NoError(t, err)
+
+	ev = stream.Read()
+	require.NotNil(t, ev, stream.Error())
+	require.Len(t, ev.List, 1)
+	require.Equal(t, "aaa", ev.List[0].Text)
+}
+
+func TestStreamListDiffPrev(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	stream1, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Stream: "diff"})
+	require.NoError(t, err)
+
+	defer stream1.Close()
+
+	ev := stream1.Read()
+	require.NotNil(t, ev, stream1.Error())
+	require.Len(t, ev.List, 1)
+	require.Equal(t, "foo", ev.List[0].Text)
+
+	stream2, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Stream: "diff", Prev: ev.List})
+	require.NoError(t, err)
+
+	defer stream2.Close()
+
+	ev = stream2.Read()
+	require.NotNil(t, ev, stream2.Error())
+	require.Len(t, ev.List, 1)
+	require.Equal(t, "foo", ev.List[0].Text)
+}
