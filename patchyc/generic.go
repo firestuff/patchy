@@ -227,13 +227,18 @@ func Update[T any](ctx context.Context, c *Client, id string, obj *T, opts *Upda
 	return UpdateName[T](ctx, c, objName(obj), id, obj, opts)
 }
 
-func StreamGetName[T any](ctx context.Context, c *Client, name, id string) (*GetStream[T], error) {
-	resp, err := c.rst.R().
+func StreamGetName[T any](ctx context.Context, c *Client, name, id string, opts *GetOpts) (*GetStream[T], error) {
+	r := c.rst.R().
 		SetDoNotParseResponse(true).
 		SetHeader("Accept", "text/event-stream").
 		SetPathParam("name", name).
-		SetPathParam("id", id).
-		Get("{name}/{id}")
+		SetPathParam("id", id)
+
+	if opts != nil {
+		applyGetOpts(opts, r)
+	}
+
+	resp, err := r.Get("{name}/{id}")
 	if err != nil {
 		return nil, err
 	}
@@ -272,6 +277,14 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string) (*Get
 
 				stream.writeEvent(event.id, obj)
 
+			case "notModified":
+				if opts != nil && opts.Prev != nil {
+					stream.writeEvent(event.id, opts.Prev.(*T))
+				} else {
+					stream.writeError(fmt.Errorf("notModified without If-None-Match (%w)", ErrInvalidStreamEvent))
+					return
+				}
+
 			case "heartbeat":
 				stream.writeHeartbeat()
 			}
@@ -281,8 +294,8 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string) (*Get
 	return stream, nil
 }
 
-func StreamGet[T any](ctx context.Context, c *Client, id string) (*GetStream[T], error) {
-	return StreamGetName[T](ctx, c, objName(new(T)), id)
+func StreamGet[T any](ctx context.Context, c *Client, id string, opts *GetOpts) (*GetStream[T], error) {
+	return StreamGetName[T](ctx, c, objName(new(T)), id, opts)
 }
 
 func StreamListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts) (*ListStream[T], error) {
@@ -357,6 +370,7 @@ func streamListFull[T any](scan *bufio.Scanner, stream *ListStream[T], opts *Lis
 				stream.writeEvent(event.id, opts.Prev.([]*T))
 			} else {
 				stream.writeError(fmt.Errorf("notModified without If-None-Match (%w)", ErrInvalidStreamEvent))
+				return
 			}
 
 		case "heartbeat":
@@ -422,6 +436,7 @@ func streamListDiff[T any](scan *bufio.Scanner, stream *ListStream[T], opts *Lis
 				stream.writeEvent(event.id, opts.Prev.([]*T))
 			} else {
 				stream.writeError(fmt.Errorf("notModified without If-None-Match (%w)", ErrInvalidStreamEvent))
+				return
 			}
 
 		case "heartbeat":

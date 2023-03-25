@@ -20,7 +20,7 @@ func TestStreamGetHeartbeat(t *testing.T) {
 	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	stream, err := patchyc.StreamGet[testType](ctx, ta.pyc, created.ID)
+	stream, err := patchyc.StreamGet[testType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 
 	defer stream.Close()
@@ -56,7 +56,7 @@ func TestStreamGet(t *testing.T) {
 	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	stream, err := patchyc.StreamGet[testType](ctx, ta.pyc, created.ID)
+	stream, err := patchyc.StreamGet[testType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 
 	defer stream.Close()
@@ -77,7 +77,7 @@ func TestStreamGetUpdate(t *testing.T) {
 	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	stream, err := patchyc.StreamGet[testType](ctx, ta.pyc, created.ID)
+	stream, err := patchyc.StreamGet[testType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 
 	defer stream.Close()
@@ -92,4 +92,39 @@ func TestStreamGetUpdate(t *testing.T) {
 	ev = stream.Read()
 	require.NotNil(t, ev, stream.Error())
 	require.Equal(t, "bar", ev.Obj.Text)
+}
+
+func TestStreamGetPrev(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	stream1, err := patchyc.StreamGet[testType](ctx, ta.pyc, created.ID, nil)
+	require.NoError(t, err)
+
+	defer stream1.Close()
+
+	ev := stream1.Read()
+	require.NotNil(t, ev, stream1.Error())
+	require.Equal(t, "foo", ev.Obj.Text)
+	require.EqualValues(t, 0, ev.Obj.Num)
+
+	// Validate that previous version passing only compares the ETag
+	ev.Obj.Num = 1
+
+	stream2, err := patchyc.StreamGet[testType](ctx, ta.pyc, created.ID, &patchyc.GetOpts{Prev: ev.Obj})
+	require.NoError(t, err)
+
+	defer stream2.Close()
+
+	ev2 := stream2.Read()
+	require.NotNil(t, ev2, stream2.Error())
+	require.Equal(t, "foo", ev2.Obj.Text)
+	require.EqualValues(t, 1, ev2.Obj.Num)
 }
