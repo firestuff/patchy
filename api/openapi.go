@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/firestuff/patchy/jsrest"
 	"github.com/getkin/kin-openapi/openapi3"
@@ -21,7 +22,7 @@ func (api *API) SetOpenAPIInfo(info *OpenAPIInfo) {
 	api.openAPI.info = info
 }
 
-func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
+func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 	// TODO: Wrap in error writer function
 	comp := openapi3.NewComponents()
 	comp.Schemas = openapi3.Schemas{}
@@ -29,6 +30,12 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 	t := openapi3.T{
 		OpenAPI:    "3.0.3",
 		Components: &comp,
+		Paths:      openapi3.Paths{},
+		Servers: openapi3.Servers{
+			&openapi3.Server{
+				URL: strings.TrimSuffix(r.URL.Path, "_openapi"),
+			},
+		},
 	}
 
 	if api.openAPI.info != nil {
@@ -45,6 +52,10 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 		}
 
 		t.Components.Schemas[name] = ref
+
+		t.Paths[name] = &openapi3.PathItem{
+			Get: &openapi3.Operation{},
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
