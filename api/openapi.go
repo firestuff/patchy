@@ -1,8 +1,8 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/firestuff/patchy/jsrest"
 	"github.com/getkin/kin-openapi/openapi3"
@@ -22,20 +22,14 @@ func (api *API) SetOpenAPIInfo(info *OpenAPIInfo) {
 	api.openAPI.info = info
 }
 
-func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
+func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 	// TODO: Wrap in error writer function
-	comp := openapi3.NewComponents()
-	comp.Schemas = openapi3.Schemas{}
-
 	t := openapi3.T{
-		OpenAPI:    "3.0.3",
-		Components: &comp,
-		Paths:      openapi3.Paths{},
-		Servers: openapi3.Servers{
-			&openapi3.Server{
-				URL: strings.TrimSuffix(r.URL.Path, "_openapi"),
-			},
+		OpenAPI: "3.0.3",
+		Components: &openapi3.Components{
+			Schemas: openapi3.Schemas{},
 		},
+		Paths: openapi3.Paths{},
 	}
 
 	if api.openAPI.info != nil {
@@ -54,7 +48,32 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 		t.Components.Schemas[name] = ref
 
 		t.Paths[name] = &openapi3.PathItem{
-			Get: &openapi3.Operation{},
+			Get: &openapi3.Operation{
+				Summary: fmt.Sprintf("List %s objects", name),
+			},
+
+			Post: &openapi3.Operation{
+				Summary: fmt.Sprintf("Create new %s object", name),
+			},
+		}
+
+		idKey := fmt.Sprintf("%s/{id}", name)
+		t.Paths[idKey] = &openapi3.PathItem{
+			Get: &openapi3.Operation{
+				Summary: fmt.Sprintf("Get %s object", name),
+			},
+
+			Put: &openapi3.Operation{
+				Summary: fmt.Sprintf("Replace %s object", name),
+			},
+
+			Patch: &openapi3.Operation{
+				Summary: fmt.Sprintf("Update %s object", name),
+			},
+
+			Delete: &openapi3.Operation{
+				Summary: fmt.Sprintf("Delete %s object", name),
+			},
 		}
 	}
 
