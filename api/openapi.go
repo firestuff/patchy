@@ -64,9 +64,9 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 
 		t.Components.Schemas[name] = ref
 
-		t.Components.RequestBodies[name] = &openapi3.RequestBodyRef{
-			Value: &openapi3.RequestBody{
-				Required: true,
+		t.Components.Responses[name] = &openapi3.ResponseRef{
+			Value: &openapi3.Response{
+				// TODO: Headers (ETag)
 				Content: openapi3.Content{
 					"application/json": &openapi3.MediaType{
 						Schema: &openapi3.SchemaRef{
@@ -80,10 +80,21 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 		t.Paths[fmt.Sprintf("/%s", name)] = &openapi3.PathItem{
 			Get: &openapi3.Operation{
 				Summary: fmt.Sprintf("List %s objects", name),
+				Responses: openapi3.Responses{
+					"200": &openapi3.ResponseRef{
+						// TODO: Make this a list of objects, not a single
+						Ref: fmt.Sprintf("#/components/responses/%s", name),
+					},
+				},
 			},
 
 			Post: &openapi3.Operation{
 				Summary: fmt.Sprintf("Create new %s object", name),
+				Responses: openapi3.Responses{
+					"200": &openapi3.ResponseRef{
+						Ref: fmt.Sprintf("#/components/responses/%s", name),
+					},
+				},
 			},
 		}
 
@@ -96,18 +107,39 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 
 			Get: &openapi3.Operation{
 				Summary: fmt.Sprintf("Get %s object", name),
+				Responses: openapi3.Responses{
+					"200": &openapi3.ResponseRef{
+						Ref: fmt.Sprintf("#/components/responses/%s", name),
+					},
+				},
 			},
 
 			Put: &openapi3.Operation{
 				Summary: fmt.Sprintf("Replace %s object", name),
+				Responses: openapi3.Responses{
+					"200": &openapi3.ResponseRef{
+						Ref: fmt.Sprintf("#/components/responses/%s", name),
+					},
+				},
 			},
 
 			Patch: &openapi3.Operation{
 				Summary: fmt.Sprintf("Update %s object", name),
+				Responses: openapi3.Responses{
+					"200": &openapi3.ResponseRef{
+						Ref: fmt.Sprintf("#/components/responses/%s", name),
+					},
+				},
 			},
 
 			Delete: &openapi3.Operation{
 				Summary: fmt.Sprintf("Delete %s object", name),
+				Responses: openapi3.Responses{
+					"200": &openapi3.ResponseRef{
+						// TODO: Make this an empty response
+						Ref: fmt.Sprintf("#/components/responses/%s", name),
+					},
+				},
 			},
 		}
 	}
