@@ -22,12 +22,14 @@ func (api *API) SetOpenAPIInfo(info *OpenAPIInfo) {
 	api.openAPI.info = info
 }
 
-func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
+func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 	// TODO: Wrap in error writer function
 	t := openapi3.T{
 		OpenAPI: "3.0.3",
 		Components: &openapi3.Components{
-			Schemas: openapi3.Schemas{},
+			Schemas:       openapi3.Schemas{},
+			RequestBodies: openapi3.RequestBodies{},
+			Responses:     openapi3.Responses{},
 		},
 		Paths: openapi3.Paths{},
 	}
@@ -45,7 +47,20 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 			return
 		}
 
-		t.Components.Schemas[name] = ref
+		t.Components.Schemas[fmt.Sprintf("new.%s", name)] = ref
+
+		t.Components.RequestBodies[fmt.Sprintf("new.%s", name)] = &openapi3.RequestBodyRef{
+			Value: &openapi3.RequestBody{
+				Required: true,
+				Content: openapi3.Content{
+					"application/json": &openapi3.MediaType{
+						Schema: &openapi3.SchemaRef{
+							Ref: fmt.Sprintf("#/components/schemas/new.%s", name),
+						},
+					},
+				},
+			},
+		}
 
 		t.Paths[name] = &openapi3.PathItem{
 			Get: &openapi3.Operation{
@@ -76,6 +91,16 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 			},
 		}
 	}
+
+	/*
+	err := t.Validate(r.Context())
+	if err != nil {
+		err = jsrest.Errorf(jsrest.ErrInternalServerError, "validation failed (%w)", err)
+		jsrest.WriteError(w, err)
+
+		return
+	}
+	*/
 
 	w.Header().Set("Content-Type", "application/json")
 
