@@ -67,6 +67,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 		t.Components.Responses[name] = &openapi3.ResponseRef{
 			Value: &openapi3.Response{
 				// TODO: Headers (ETag)
+				Description: P("OK"),
 				Content: openapi3.Content{
 					"application/json": &openapi3.MediaType{
 						Schema: &openapi3.SchemaRef{
