@@ -44,7 +44,13 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 			},
 			Schemas:       openapi3.Schemas{},
 			RequestBodies: openapi3.RequestBodies{},
-			Responses:     openapi3.Responses{},
+			Responses: openapi3.Responses{
+				"no-content": &openapi3.ResponseRef{
+					Value: &openapi3.Response{
+						Description: P("No Content"),
+					},
+				},
+			},
 		},
 		Paths: openapi3.Paths{},
 		Tags:  openapi3.Tags{},
@@ -147,9 +153,8 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 				Tags:    []string{name, "delete"},
 				Summary: fmt.Sprintf("Delete %s object", name),
 				Responses: openapi3.Responses{
-					"200": &openapi3.ResponseRef{
-						// TODO: Make this an empty response
-						Ref: fmt.Sprintf("#/components/responses/%s", name),
+					"204": &openapi3.ResponseRef{
+						Ref: "#/components/responses/no-content",
 					},
 				},
 			},
