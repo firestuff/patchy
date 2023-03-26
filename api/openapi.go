@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/firestuff/patchy/jsrest"
@@ -50,13 +49,13 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	enc := json.NewEncoder(w)
-
-	err := enc.Encode(t)
+	js, err := t.MarshalJSON()
 	if err != nil {
-		err = jsrest.Errorf(jsrest.ErrInternalServerError, "write failed (%w)", err)
+		err = jsrest.Errorf(jsrest.ErrInternalServerError, "marshal JSON failed (%w)", err)
 		jsrest.WriteError(w, err)
 
 		return
 	}
+
+	_, _ = w.Write(js)
 }
