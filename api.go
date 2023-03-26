@@ -7,14 +7,15 @@ import (
 )
 
 type (
-	API        = api.API
-	Metadata   = api.Metadata
-	ListOpts   = api.ListOpts
-	Filter     = api.Filter
-	UpdateOpts = api.UpdateOpts
-	GetOpts    = api.GetOpts
-	DebugInfo  = api.DebugInfo
-	OpenAPI    = api.OpenAPI
+	API         = api.API
+	Metadata    = api.Metadata
+	ListOpts    = api.ListOpts
+	Filter      = api.Filter
+	UpdateOpts  = api.UpdateOpts
+	GetOpts     = api.GetOpts
+	DebugInfo   = api.DebugInfo
+	OpenAPI     = api.OpenAPI
+	OpenAPIInfo = api.OpenAPIInfo
 )
 
 var (
