@@ -27,6 +27,21 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 	t := openapi3.T{
 		OpenAPI: "3.0.3",
 		Components: &openapi3.Components{
+			Parameters: openapi3.ParametersMap{
+				"id": &openapi3.ParameterRef{
+					Value: &openapi3.Parameter{
+						Name:        "id",
+						In:          "path",
+						Description: "Object ID",
+						Required:    true,
+						Schema: &openapi3.SchemaRef{
+							Value: &openapi3.Schema{
+								Type: "string",
+							},
+						},
+					},
+				},
+			},
 			Schemas:       openapi3.Schemas{},
 			RequestBodies: openapi3.RequestBodies{},
 			Responses:     openapi3.Responses{},
@@ -73,6 +88,12 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 		}
 
 		t.Paths[fmt.Sprintf("/%s/{id}", name)] = &openapi3.PathItem{
+			Parameters: openapi3.Parameters{
+				&openapi3.ParameterRef{
+					Ref: "#/components/parameters/id",
+				},
+			},
+
 			Get: &openapi3.Operation{
 				Summary: fmt.Sprintf("Get %s object", name),
 			},
