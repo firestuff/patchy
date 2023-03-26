@@ -47,6 +47,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 			Responses:     openapi3.Responses{},
 		},
 		Paths: openapi3.Paths{},
+		Tags:  openapi3.Tags{},
 	}
 
 	if api.openAPI.info != nil {
@@ -54,6 +55,10 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 	}
 
 	for name, cfg := range api.registry {
+		t.Tags = append(t.Tags, &openapi3.Tag{
+			Name: name,
+		})
+
 		ref, err := openapi3gen.NewSchemaRefForValue(cfg.factory(), t.Components.Schemas)
 		if err != nil {
 			err = jsrest.Errorf(jsrest.ErrInternalServerError, "write failed (%w)", err)
@@ -80,6 +85,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 
 		t.Paths[fmt.Sprintf("/%s", name)] = &openapi3.PathItem{
 			Get: &openapi3.Operation{
+				Tags:    []string{name, "list"},
 				Summary: fmt.Sprintf("List %s objects", name),
 				Responses: openapi3.Responses{
 					"200": &openapi3.ResponseRef{
@@ -90,6 +96,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 			},
 
 			Post: &openapi3.Operation{
+				Tags:    []string{name, "create"},
 				Summary: fmt.Sprintf("Create new %s object", name),
 				Responses: openapi3.Responses{
 					"200": &openapi3.ResponseRef{
@@ -107,6 +114,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 			},
 
 			Get: &openapi3.Operation{
+				Tags:    []string{name, "get"},
 				Summary: fmt.Sprintf("Get %s object", name),
 				Responses: openapi3.Responses{
 					"200": &openapi3.ResponseRef{
@@ -116,6 +124,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 			},
 
 			Put: &openapi3.Operation{
+				Tags:    []string{name, "replace"},
 				Summary: fmt.Sprintf("Replace %s object", name),
 				Responses: openapi3.Responses{
 					"200": &openapi3.ResponseRef{
@@ -125,6 +134,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 			},
 
 			Patch: &openapi3.Operation{
+				Tags:    []string{name, "update"},
 				Summary: fmt.Sprintf("Update %s object", name),
 				Responses: openapi3.Responses{
 					"200": &openapi3.ResponseRef{
@@ -134,6 +144,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 			},
 
 			Delete: &openapi3.Operation{
+				Tags:    []string{name, "delete"},
 				Summary: fmt.Sprintf("Delete %s object", name),
 				Responses: openapi3.Responses{
 					"200": &openapi3.ResponseRef{
@@ -144,6 +155,20 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 			},
 		}
 	}
+
+	/*
+		t.Tags = append(t.Tags, openapi3.Tags{
+			&openapi3.Tag{
+				Name: "list",
+			},
+			&openapi3.Tag{
+				Name: "create",
+			},
+			&openapi3.Tag{
+				Name: "get",
+			},
+		}...)
+	*/
 
 	/*
 		err = t.Validate(r.Context())
