@@ -22,7 +22,7 @@ func (api *API) SetOpenAPIInfo(info *OpenAPIInfo) {
 	api.openAPI.info = info
 }
 
-func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
+func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 	// TODO: Wrap in error writer function
 	t := openapi3.T{
 		OpenAPI: "3.0.3",
@@ -47,22 +47,22 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		t.Components.Schemas[fmt.Sprintf("new.%s", name)] = ref
+		t.Components.Schemas[name] = ref
 
-		t.Components.RequestBodies[fmt.Sprintf("new.%s", name)] = &openapi3.RequestBodyRef{
+		t.Components.RequestBodies[name] = &openapi3.RequestBodyRef{
 			Value: &openapi3.RequestBody{
 				Required: true,
 				Content: openapi3.Content{
 					"application/json": &openapi3.MediaType{
 						Schema: &openapi3.SchemaRef{
-							Ref: fmt.Sprintf("#/components/schemas/new.%s", name),
+							Ref: fmt.Sprintf("#/components/schemas/%s", name),
 						},
 					},
 				},
 			},
 		}
 
-		t.Paths[name] = &openapi3.PathItem{
+		t.Paths[fmt.Sprintf("/%s", name)] = &openapi3.PathItem{
 			Get: &openapi3.Operation{
 				Summary: fmt.Sprintf("List %s objects", name),
 			},
@@ -72,8 +72,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 			},
 		}
 
-		idKey := fmt.Sprintf("%s/{id}", name)
-		t.Paths[idKey] = &openapi3.PathItem{
+		t.Paths[fmt.Sprintf("/%s/{id}", name)] = &openapi3.PathItem{
 			Get: &openapi3.Operation{
 				Summary: fmt.Sprintf("Get %s object", name),
 			},
@@ -93,13 +92,13 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	/*
-	err := t.Validate(r.Context())
-	if err != nil {
-		err = jsrest.Errorf(jsrest.ErrInternalServerError, "validation failed (%w)", err)
-		jsrest.WriteError(w, err)
+		err = t.Validate(r.Context())
+		if err != nil {
+			err = jsrest.Errorf(jsrest.ErrInternalServerError, "validation failed (%w)", err)
+			jsrest.WriteError(w, err)
 
-		return
-	}
+			return
+		}
 	*/
 
 	w.Header().Set("Content-Type", "application/json")
