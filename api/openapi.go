@@ -25,6 +25,7 @@ func (api *API) SetOpenAPIInfo(info *OpenAPIInfo) {
 func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 	// TODO: Wrap in error writer function
 	comp := openapi3.NewComponents()
+	comp.Schemas = openapi3.Schemas{}
 
 	t := openapi3.T{
 		OpenAPI:    "3.0.3",
@@ -35,14 +36,16 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 		t.Info = api.openAPI.info
 	}
 
-	for _, cfg := range api.registry {
-		_, err := openapi3gen.NewSchemaRefForValue(cfg.factory(), t.Components.Schemas)
+	for name, cfg := range api.registry {
+		ref, err := openapi3gen.NewSchemaRefForValue(cfg.factory(), t.Components.Schemas)
 		if err != nil {
 			err = jsrest.Errorf(jsrest.ErrInternalServerError, "write failed (%w)", err)
 			jsrest.WriteError(w, err)
 
 			return
 		}
+
+		t.Components.Schemas[name] = ref
 	}
 
 	w.Header().Set("Content-Type", "application/json")
