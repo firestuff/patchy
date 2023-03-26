@@ -13,6 +13,8 @@ type (
 	Filter     = api.Filter
 	UpdateOpts = api.UpdateOpts
 	GetOpts    = api.GetOpts
+	DebugInfo  = api.DebugInfo
+	OpenAPI    = api.OpenAPI
 )
 
 var (

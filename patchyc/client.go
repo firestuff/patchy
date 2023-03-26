@@ -1,13 +1,21 @@
 package patchyc
 
 import (
+	"context"
 	"crypto/tls"
 
+	"github.com/firestuff/patchy/api"
+	"github.com/firestuff/patchy/jsrest"
 	"github.com/go-resty/resty/v2"
 )
 
 // TODO: Add retries
 // TODO: Add Idempotency-Key support
+
+type (
+	DebugInfo = api.DebugInfo
+	OpenAPI   = api.OpenAPI
+)
 
 type Client struct {
 	rst *resty.Client
@@ -47,4 +55,40 @@ func (c *Client) SetAuthToken(token string) *Client {
 func (c *Client) SetHeader(header, value string) *Client {
 	c.rst.SetHeader(header, value)
 	return c
+}
+
+func (c *Client) DebugInfo(ctx context.Context) (*DebugInfo, error) {
+	ret := &DebugInfo{}
+
+	resp, err := c.rst.R().
+		SetContext(ctx).
+		SetResult(ret).
+		Get("_debug")
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.IsError() {
+		return nil, jsrest.ReadError(resp.Body())
+	}
+
+	return ret, nil
+}
+
+func (c *Client) OpenAPI(ctx context.Context) (*OpenAPI, error) {
+	ret := &OpenAPI{}
+
+	resp, err := c.rst.R().
+		SetContext(ctx).
+		SetResult(ret).
+		Get("_openapi")
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.IsError() {
+		return nil, jsrest.ReadError(resp.Body())
+	}
+
+	return ret, nil
 }

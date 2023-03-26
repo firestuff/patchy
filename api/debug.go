@@ -7,29 +7,29 @@ import (
 	"os"
 )
 
-type debugInfo struct {
-	Server *serverInfo `json:"server"`
-	IP     *ipInfo     `json:"ip"`
-	HTTP   *httpInfo   `json:"http"`
-	TLS    *tlsInfo    `json:"tls"`
+type DebugInfo struct {
+	Server *ServerInfo `json:"server"`
+	IP     *IPInfo     `json:"ip"`
+	HTTP   *HTTPInfo   `json:"http"`
+	TLS    *TLSInfo    `json:"tls"`
 }
 
-type serverInfo struct {
+type ServerInfo struct {
 	Hostname string `json:"hostname"`
 }
 
-type ipInfo struct {
+type IPInfo struct {
 	RemoteAddr string `json:"remoteAddr"`
 }
 
-type httpInfo struct {
+type HTTPInfo struct {
 	Protocol string      `json:"protocol"`
 	Method   string      `json:"method"`
 	Header   http.Header `json:"header"`
 	URL      string      `json:"url"`
 }
 
-type tlsInfo struct {
+type TLSInfo struct {
 	Version            uint16 `json:"version"`
 	DidResume          bool   `json:"didResume"`
 	CipherSuite        uint16 `json:"cipherSuite"`
@@ -48,7 +48,7 @@ func (api *API) handleDebug(w http.ResponseWriter, r *http.Request) {
 		r.TLS = &tls.ConnectionState{}
 	}
 
-	enc.Encode(&debugInfo{ //nolint:errcheck,errchkjson
+	_ = enc.Encode(&DebugInfo{ //nolint:errchkjson
 		Server: buildServerInfo(),
 		IP:     buildIPInfo(r),
 		HTTP:   buildHTTPInfo(r),
@@ -56,22 +56,22 @@ func (api *API) handleDebug(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func buildServerInfo() *serverInfo {
+func buildServerInfo() *ServerInfo {
 	hostname, _ := os.Hostname()
 
-	return &serverInfo{
+	return &ServerInfo{
 		Hostname: hostname,
 	}
 }
 
-func buildIPInfo(r *http.Request) *ipInfo {
-	return &ipInfo{
+func buildIPInfo(r *http.Request) *IPInfo {
+	return &IPInfo{
 		RemoteAddr: r.RemoteAddr,
 	}
 }
 
-func buildHTTPInfo(r *http.Request) *httpInfo {
-	return &httpInfo{
+func buildHTTPInfo(r *http.Request) *HTTPInfo {
+	return &HTTPInfo{
 		Protocol: r.Proto,
 		Method:   r.Method,
 		Header:   r.Header,
@@ -79,8 +79,8 @@ func buildHTTPInfo(r *http.Request) *httpInfo {
 	}
 }
 
-func buildTLSInfo(r *http.Request) *tlsInfo {
-	return &tlsInfo{
+func buildTLSInfo(r *http.Request) *TLSInfo {
+	return &TLSInfo{
 		Version:            r.TLS.Version,
 		DidResume:          r.TLS.DidResume,
 		CipherSuite:        r.TLS.CipherSuite,

@@ -22,6 +22,8 @@ type API struct {
 	potency     *potency.Potency
 	registry    map[string]*config
 	requestHook RequestHook
+
+	openAPI openAPI
 }
 
 type RequestHook func(*http.Request, *API) (*http.Request, error)

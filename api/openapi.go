@@ -8,9 +8,26 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 )
 
+type (
+	OpenAPI     = openapi3.T
+	OpenAPIInfo = openapi3.Info
+)
+
+type openAPI struct {
+	info *OpenAPIInfo
+}
+
+func (api *API) SetOpenAPIInfo(info *OpenAPIInfo) {
+	api.openAPI.info = info
+}
+
 func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 	t := openapi3.T{
 		OpenAPI: "3.0.3",
+	}
+
+	if api.openAPI.info != nil {
+		t.Info = api.openAPI.info
 	}
 
 	w.Header().Set("Content-Type", "application/json")
