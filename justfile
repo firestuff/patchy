@@ -15,4 +15,4 @@ test:
 	{{go}} tool cover -html={{justfile_directory()}}/cover.out -o={{justfile_directory()}}/cover.html
 
 todo:
-	git -C {{justfile_directory()}} grep -e TODO --and --not -e ignoretodo
+	git -C {{justfile_directory()}} grep -e TODO --and --not -e ignoretodo | grep -v ^api/swaggerui
