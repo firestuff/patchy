@@ -122,6 +122,9 @@ func (api *API) CheckSafe() {
 }
 
 func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// TODO: Gate CORs with some kind of flag
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
 	if api.requestHook != nil {
 		var err error
 
