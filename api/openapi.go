@@ -33,13 +33,44 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *API) handleOpenAPIInt(w http.ResponseWriter, r *http.Request) error {
-	// TODO: Split this function up
-	baseURL, err := requestBaseURL(r)
+	t, err := api.buildOpenAPIGlobal(r)
 	if err != nil {
-		return jsrest.Errorf(jsrest.ErrInternalServerError, "get base URL failed (%w)", err)
+		return err
 	}
 
-	t := openapi3.T{
+	names := []string{}
+
+	for name := range api.registry {
+		names = append(names, name)
+	}
+
+	sort.Strings(names)
+
+	for _, name := range names {
+		err = api.buildOpenAPIType(t, api.registry[name])
+		if err != nil {
+			return err
+		}
+	}
+
+	js, err := t.MarshalJSON()
+	if err != nil {
+		return jsrest.Errorf(jsrest.ErrInternalServerError, "marshal JSON failed (%w)", err)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write(js)
+
+	return nil
+}
+
+func (api *API) buildOpenAPIGlobal(r *http.Request) (*openapi3.T, error) {
+	baseURL, err := api.requestBaseURL(r)
+	if err != nil {
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "get base URL failed (%w)", err)
+	}
+
+	t := &openapi3.T{
 		OpenAPI:  "3.0.3",
 		Paths:    openapi3.Paths{},
 		Tags:     openapi3.Tags{},
@@ -130,189 +161,173 @@ func (api *API) handleOpenAPIInt(w http.ResponseWriter, r *http.Request) error {
 		t.Security = append(t.Security, openapi3.SecurityRequirement{"bearerAuth": []string{}})
 	}
 
-	names := []string{}
+	return t, nil
+}
 
-	for name := range api.registry {
-		names = append(names, name)
+func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
+	t.Tags = append(t.Tags, &openapi3.Tag{
+		Name: cfg.typeName,
+	})
+
+	ref, err := openapi3gen.NewSchemaRefForValue(cfg.factory(), t.Components.Schemas)
+	if err != nil {
+		return jsrest.Errorf(jsrest.ErrInternalServerError, "generate schema ref failed (%w)", err)
 	}
 
-	sort.Strings(names)
+	ref.Value.Title = fmt.Sprintf("%s Response", cfg.typeName)
 
-	for _, name := range names {
-		cfg := api.registry[name]
+	ref.Value.Properties["id"] = &openapi3.SchemaRef{Ref: "#/components/schemas/id"}
+	ref.Value.Properties["etag"] = &openapi3.SchemaRef{Ref: "#/components/schemas/etag"}
+	ref.Value.Properties["generation"] = &openapi3.SchemaRef{Ref: "#/components/schemas/generation"}
 
-		t.Tags = append(t.Tags, &openapi3.Tag{
-			Name: name,
-		})
+	t.Components.Schemas[fmt.Sprintf("%s--response", cfg.typeName)] = ref
 
-		ref, err := openapi3gen.NewSchemaRefForValue(cfg.factory(), t.Components.Schemas)
-		if err != nil {
-			return jsrest.Errorf(jsrest.ErrInternalServerError, "generate schema ref failed (%w)", err)
-		}
+	ref2, err := openapi3gen.NewSchemaRefForValue(cfg.factory(), t.Components.Schemas)
+	if err != nil {
+		return jsrest.Errorf(jsrest.ErrInternalServerError, "generate schema ref failed (%w)", err)
+	}
 
-		ref.Value.Title = fmt.Sprintf("%s Response", name)
+	delete(ref2.Value.Properties, "id")
+	delete(ref2.Value.Properties, "etag")
+	delete(ref2.Value.Properties, "generation")
 
-		ref.Value.Properties["id"] = &openapi3.SchemaRef{Ref: "#/components/schemas/id"}
-		ref.Value.Properties["etag"] = &openapi3.SchemaRef{Ref: "#/components/schemas/etag"}
-		ref.Value.Properties["generation"] = &openapi3.SchemaRef{Ref: "#/components/schemas/generation"}
+	ref2.Value.Title = fmt.Sprintf("%s Request", cfg.typeName)
 
-		t.Components.Schemas[fmt.Sprintf("%s--response", name)] = ref
+	t.Components.Schemas[fmt.Sprintf("%s--request", cfg.typeName)] = ref2
 
-		ref2, err := openapi3gen.NewSchemaRefForValue(cfg.factory(), t.Components.Schemas)
-		if err != nil {
-			return jsrest.Errorf(jsrest.ErrInternalServerError, "generate schema ref failed (%w)", err)
-		}
-
-		delete(ref2.Value.Properties, "id")
-		delete(ref2.Value.Properties, "etag")
-		delete(ref2.Value.Properties, "generation")
-
-		ref2.Value.Title = fmt.Sprintf("%s Request", name)
-
-		t.Components.Schemas[fmt.Sprintf("%s--request", name)] = ref2
-
-		t.Components.RequestBodies[name] = &openapi3.RequestBodyRef{
-			Value: &openapi3.RequestBody{
-				Required: true,
-				Content: openapi3.Content{
-					"application/json": &openapi3.MediaType{
-						Schema: &openapi3.SchemaRef{
-							Ref: fmt.Sprintf("#/components/schemas/%s--request", name),
-						},
+	t.Components.RequestBodies[cfg.typeName] = &openapi3.RequestBodyRef{
+		Value: &openapi3.RequestBody{
+			Required: true,
+			Content: openapi3.Content{
+				"application/json": &openapi3.MediaType{
+					Schema: &openapi3.SchemaRef{
+						Ref: fmt.Sprintf("#/components/schemas/%s--request", cfg.typeName),
 					},
 				},
 			},
-		}
+		},
+	}
 
-		t.Components.Responses[name] = &openapi3.ResponseRef{
-			Value: &openapi3.Response{
-				// TODO: Headers (ETag)
-				Description: P("OK (Object)"),
-				Content: openapi3.Content{
-					"application/json": &openapi3.MediaType{
-						Schema: &openapi3.SchemaRef{
-							Ref: fmt.Sprintf("#/components/schemas/%s--response", name),
-						},
+	t.Components.Responses[cfg.typeName] = &openapi3.ResponseRef{
+		Value: &openapi3.Response{
+			// TODO: Headers (ETag)
+			Description: P("OK (Object)"),
+			Content: openapi3.Content{
+				"application/json": &openapi3.MediaType{
+					Schema: &openapi3.SchemaRef{
+						Ref: fmt.Sprintf("#/components/schemas/%s--response", cfg.typeName),
 					},
 				},
 			},
-		}
+		},
+	}
 
-		t.Components.Responses[fmt.Sprintf("%s--list", name)] = &openapi3.ResponseRef{
-			Value: &openapi3.Response{
-				// TODO: Headers (ETag)
-				Description: P("OK (Array)"),
-				Content: openapi3.Content{
-					"application/json": &openapi3.MediaType{
-						Schema: &openapi3.SchemaRef{
-							Value: &openapi3.Schema{
-								Type: "array",
-								Items: &openapi3.SchemaRef{
-									Ref: fmt.Sprintf("#/components/schemas/%s--response", name),
-								},
+	t.Components.Responses[fmt.Sprintf("%s--list", cfg.typeName)] = &openapi3.ResponseRef{
+		Value: &openapi3.Response{
+			// TODO: Headers (ETag)
+			Description: P("OK (Array)"),
+			Content: openapi3.Content{
+				"application/json": &openapi3.MediaType{
+					Schema: &openapi3.SchemaRef{
+						Value: &openapi3.Schema{
+							Type: "array",
+							Items: &openapi3.SchemaRef{
+								Ref: fmt.Sprintf("#/components/schemas/%s--response", cfg.typeName),
 							},
 						},
 					},
 				},
 			},
-		}
-
-		// TODO: Add list arguments
-		// TODO: Add If-None-Match
-		// TODO: Add If-Match
-		// TODO: Add text/event-stream
-		t.Paths[fmt.Sprintf("/%s", name)] = &openapi3.PathItem{
-			Get: &openapi3.Operation{
-				Tags:    []string{name},
-				Summary: fmt.Sprintf("List %s objects", name),
-				Responses: openapi3.Responses{
-					"200": &openapi3.ResponseRef{
-						Ref: fmt.Sprintf("#/components/responses/%s--list", name),
-					},
-				},
-			},
-
-			Post: &openapi3.Operation{
-				Tags:    []string{name},
-				Summary: fmt.Sprintf("Create new %s object", name),
-				RequestBody: &openapi3.RequestBodyRef{
-					Ref: fmt.Sprintf("#/components/requestBodies/%s", name),
-				},
-				Responses: openapi3.Responses{
-					"200": &openapi3.ResponseRef{
-						Ref: fmt.Sprintf("#/components/responses/%s", name),
-					},
-				},
-			},
-		}
-
-		t.Paths[fmt.Sprintf("/%s/{id}", name)] = &openapi3.PathItem{
-			Parameters: openapi3.Parameters{
-				&openapi3.ParameterRef{
-					Ref: "#/components/parameters/id",
-				},
-			},
-
-			Get: &openapi3.Operation{
-				Tags:    []string{name},
-				Summary: fmt.Sprintf("Get %s object", name),
-				Responses: openapi3.Responses{
-					"200": &openapi3.ResponseRef{
-						Ref: fmt.Sprintf("#/components/responses/%s", name),
-					},
-				},
-			},
-
-			Put: &openapi3.Operation{
-				Tags:    []string{name},
-				Summary: fmt.Sprintf("Replace %s object", name),
-				RequestBody: &openapi3.RequestBodyRef{
-					Ref: fmt.Sprintf("#/components/requestBodies/%s", name),
-				},
-				Responses: openapi3.Responses{
-					"200": &openapi3.ResponseRef{
-						Ref: fmt.Sprintf("#/components/responses/%s", name),
-					},
-				},
-			},
-
-			Patch: &openapi3.Operation{
-				Tags:    []string{name},
-				Summary: fmt.Sprintf("Update %s object", name),
-				RequestBody: &openapi3.RequestBodyRef{
-					Ref: fmt.Sprintf("#/components/requestBodies/%s", name),
-				},
-				Responses: openapi3.Responses{
-					"200": &openapi3.ResponseRef{
-						Ref: fmt.Sprintf("#/components/responses/%s", name),
-					},
-				},
-			},
-
-			Delete: &openapi3.Operation{
-				Tags:    []string{name},
-				Summary: fmt.Sprintf("Delete %s object", name),
-				Responses: openapi3.Responses{
-					"204": &openapi3.ResponseRef{
-						Ref: "#/components/responses/no-content",
-					},
-				},
-			},
-		}
+		},
 	}
 
-	js, err := t.MarshalJSON()
-	if err != nil {
-		return jsrest.Errorf(jsrest.ErrInternalServerError, "marshal JSON failed (%w)", err)
+	// TODO: Add list arguments
+	// TODO: Add If-None-Match
+	// TODO: Add If-Match
+	// TODO: Add text/event-stream
+	t.Paths[fmt.Sprintf("/%s", cfg.typeName)] = &openapi3.PathItem{
+		Get: &openapi3.Operation{
+			Tags:    []string{cfg.typeName},
+			Summary: fmt.Sprintf("List %s objects", cfg.typeName),
+			Responses: openapi3.Responses{
+				"200": &openapi3.ResponseRef{
+					Ref: fmt.Sprintf("#/components/responses/%s--list", cfg.typeName),
+				},
+			},
+		},
+
+		Post: &openapi3.Operation{
+			Tags:    []string{cfg.typeName},
+			Summary: fmt.Sprintf("Create new %s object", cfg.typeName),
+			RequestBody: &openapi3.RequestBodyRef{
+				Ref: fmt.Sprintf("#/components/requestBodies/%s", cfg.typeName),
+			},
+			Responses: openapi3.Responses{
+				"200": &openapi3.ResponseRef{
+					Ref: fmt.Sprintf("#/components/responses/%s", cfg.typeName),
+				},
+			},
+		},
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	_, _ = w.Write(js)
+	t.Paths[fmt.Sprintf("/%s/{id}", cfg.typeName)] = &openapi3.PathItem{
+		Parameters: openapi3.Parameters{
+			&openapi3.ParameterRef{
+				Ref: "#/components/parameters/id",
+			},
+		},
+
+		Get: &openapi3.Operation{
+			Tags:    []string{cfg.typeName},
+			Summary: fmt.Sprintf("Get %s object", cfg.typeName),
+			Responses: openapi3.Responses{
+				"200": &openapi3.ResponseRef{
+					Ref: fmt.Sprintf("#/components/responses/%s", cfg.typeName),
+				},
+			},
+		},
+
+		Put: &openapi3.Operation{
+			Tags:    []string{cfg.typeName},
+			Summary: fmt.Sprintf("Replace %s object", cfg.typeName),
+			RequestBody: &openapi3.RequestBodyRef{
+				Ref: fmt.Sprintf("#/components/requestBodies/%s", cfg.typeName),
+			},
+			Responses: openapi3.Responses{
+				"200": &openapi3.ResponseRef{
+					Ref: fmt.Sprintf("#/components/responses/%s", cfg.typeName),
+				},
+			},
+		},
+
+		Patch: &openapi3.Operation{
+			Tags:    []string{cfg.typeName},
+			Summary: fmt.Sprintf("Update %s object", cfg.typeName),
+			RequestBody: &openapi3.RequestBodyRef{
+				Ref: fmt.Sprintf("#/components/requestBodies/%s", cfg.typeName),
+			},
+			Responses: openapi3.Responses{
+				"200": &openapi3.ResponseRef{
+					Ref: fmt.Sprintf("#/components/responses/%s", cfg.typeName),
+				},
+			},
+		},
+
+		Delete: &openapi3.Operation{
+			Tags:    []string{cfg.typeName},
+			Summary: fmt.Sprintf("Delete %s object", cfg.typeName),
+			Responses: openapi3.Responses{
+				"204": &openapi3.ResponseRef{
+					Ref: "#/components/responses/no-content",
+				},
+			},
+		},
+	}
 
 	return nil
 }
 
-func requestBaseURL(r *http.Request) (string, error) {
+func (api *API) requestBaseURL(r *http.Request) (string, error) {
 	scheme := "https"
 	if r.TLS == nil {
 		scheme = "http"
