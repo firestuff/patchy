@@ -27,6 +27,7 @@ func (api *API) SetOpenAPIInfo(info *OpenAPIInfo) {
 
 func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 	// TODO: Wrap in error writer function
+	// TODO: Split this function up
 	scheme := "https"
 	if r.TLS == nil {
 		scheme = "http"
@@ -222,6 +223,10 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 			},
 		}
 
+		// TODO: Add list arguments
+		// TODO: Add If-None-Match
+		// TODO: Add If-Match
+		// TODO: Add text/event-stream
 		t.Paths[fmt.Sprintf("/%s", name)] = &openapi3.PathItem{
 			Get: &openapi3.Operation{
 				Tags:    []string{name, "List"},
