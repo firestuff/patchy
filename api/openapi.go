@@ -87,7 +87,9 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 			return
 		}
 
-		t.Components.Schemas[name] = ref
+		ref.Value.Description = fmt.Sprintf("%s Response", name)
+
+		t.Components.Schemas[fmt.Sprintf("%s--response", name)] = ref
 
 		ref2, err := openapi3gen.NewSchemaRefForValue(cfg.factory(), t.Components.Schemas)
 		if err != nil {
@@ -100,6 +102,8 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 		delete(ref2.Value.Properties, "id")
 		delete(ref2.Value.Properties, "etag")
 		delete(ref2.Value.Properties, "generation")
+
+		ref2.Value.Description = fmt.Sprintf("%s Request", name)
 
 		t.Components.Schemas[fmt.Sprintf("%s--request", name)] = ref2
 
@@ -124,7 +128,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 				Content: openapi3.Content{
 					"application/json": &openapi3.MediaType{
 						Schema: &openapi3.SchemaRef{
-							Ref: fmt.Sprintf("#/components/schemas/%s", name),
+							Ref: fmt.Sprintf("#/components/schemas/%s--response", name),
 						},
 					},
 				},
@@ -142,7 +146,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 								Description: fmt.Sprintf("Array of %s", name),
 								Type:        "array",
 								Items: &openapi3.SchemaRef{
-									Ref: fmt.Sprintf("#/components/schemas/%s", name),
+									Ref: fmt.Sprintf("#/components/schemas/%s--response", name),
 								},
 							},
 						},
@@ -153,7 +157,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 
 		t.Paths[fmt.Sprintf("/%s", name)] = &openapi3.PathItem{
 			Get: &openapi3.Operation{
-				Tags:    []string{name, "list"},
+				Tags:    []string{name, "List"},
 				Summary: fmt.Sprintf("List %s objects", name),
 				Responses: openapi3.Responses{
 					"200": &openapi3.ResponseRef{
@@ -163,7 +167,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 			},
 
 			Post: &openapi3.Operation{
-				Tags:    []string{name, "create"},
+				Tags:    []string{name, "Create"},
 				Summary: fmt.Sprintf("Create new %s object", name),
 				RequestBody: &openapi3.RequestBodyRef{
 					Ref: fmt.Sprintf("#/components/requestBodies/%s", name),
@@ -184,7 +188,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 			},
 
 			Get: &openapi3.Operation{
-				Tags:    []string{name, "get"},
+				Tags:    []string{name, "Get"},
 				Summary: fmt.Sprintf("Get %s object", name),
 				Responses: openapi3.Responses{
 					"200": &openapi3.ResponseRef{
@@ -194,7 +198,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 			},
 
 			Put: &openapi3.Operation{
-				Tags:    []string{name, "replace"},
+				Tags:    []string{name, "Replace"},
 				Summary: fmt.Sprintf("Replace %s object", name),
 				RequestBody: &openapi3.RequestBodyRef{
 					Ref: fmt.Sprintf("#/components/requestBodies/%s", name),
@@ -207,7 +211,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 			},
 
 			Patch: &openapi3.Operation{
-				Tags:    []string{name, "update"},
+				Tags:    []string{name, "Update"},
 				Summary: fmt.Sprintf("Update %s object", name),
 				RequestBody: &openapi3.RequestBodyRef{
 					Ref: fmt.Sprintf("#/components/requestBodies/%s", name),
@@ -220,7 +224,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 			},
 
 			Delete: &openapi3.Operation{
-				Tags:    []string{name, "delete"},
+				Tags:    []string{name, "Delete"},
 				Summary: fmt.Sprintf("Delete %s object", name),
 				Responses: openapi3.Responses{
 					"204": &openapi3.ResponseRef{
@@ -231,18 +235,6 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 		}
 	}
 
-	/*
-		err = t.Validate(r.Context())
-		if err != nil {
-			err = jsrest.Errorf(jsrest.ErrInternalServerError, "validation failed (%w)", err)
-			jsrest.WriteError(w, err)
-
-			return
-		}
-	*/
-
-	w.Header().Set("Content-Type", "application/json")
-
 	js, err := t.MarshalJSON()
 	if err != nil {
 		err = jsrest.Errorf(jsrest.ErrInternalServerError, "marshal JSON failed (%w)", err)
@@ -251,5 +243,6 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	_, _ = w.Write(js)
 }
