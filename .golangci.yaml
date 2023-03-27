@@ -24,6 +24,7 @@ linters:
     - ifshort
     - interfacer
     - lll
+    - maintidx
     - maligned
     - nilnil
     - nestif

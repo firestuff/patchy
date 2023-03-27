@@ -29,13 +29,14 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 	prefix := strings.TrimSuffix(r.RequestURI, "/_openapi")
 
 	t := openapi3.T{
-		OpenAPI: "3.0.3",
-		Paths:   openapi3.Paths{},
-		Tags:    openapi3.Tags{},
+		OpenAPI:  "3.0.3",
+		Paths:    openapi3.Paths{},
+		Tags:     openapi3.Tags{},
+		Security: openapi3.SecurityRequirements{},
 
 		Components: &openapi3.Components{
-			Schemas:       openapi3.Schemas{},
-			RequestBodies: openapi3.RequestBodies{},
+			RequestBodies:   openapi3.RequestBodies{},
+			SecuritySchemes: openapi3.SecuritySchemes{},
 
 			Parameters: openapi3.ParametersMap{
 				"id": &openapi3.ParameterRef{
@@ -45,9 +46,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 						Description: "Object ID",
 						Required:    true,
 						Schema: &openapi3.SchemaRef{
-							Value: &openapi3.Schema{
-								Type: "string",
-							},
+							Ref: "#/components/schemas/id",
 						},
 					},
 				},
@@ -60,11 +59,58 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 					},
 				},
 			},
+
+			Schemas: openapi3.Schemas{
+				"id": &openapi3.SchemaRef{
+					Value: &openapi3.Schema{
+						Type:    "string",
+						Example: "SK7rZ3j13PJpeIiS",
+					},
+				},
+
+				"etag": &openapi3.SchemaRef{
+					Value: &openapi3.Schema{
+						Type:    "string",
+						Example: "etag:20af52b66d85b8854183c82e462771a01606b31104a44a52237e17f6548d4ba7",
+					},
+				},
+
+				"generation": &openapi3.SchemaRef{
+					Value: &openapi3.Schema{
+						Type:    "integer",
+						Format:  "int64",
+						Example: 42,
+					},
+				},
+			},
 		},
 	}
 
 	if api.openAPI.info != nil {
 		t.Info = api.openAPI.info
+	}
+
+	if api.authBasic {
+		t.Components.SecuritySchemes["basicAuth"] = &openapi3.SecuritySchemeRef{
+			Value: &openapi3.SecurityScheme{
+				Type:   "http",
+				Scheme: "basic",
+			},
+		}
+
+		t.Security = append(t.Security, openapi3.SecurityRequirement{"basicAuth": []string{}})
+	}
+
+	if api.authBearer {
+		t.Components.SecuritySchemes["bearerAuth"] = &openapi3.SecuritySchemeRef{
+			Value: &openapi3.SecurityScheme{
+				Type:         "http",
+				Scheme:       "bearer",
+				BearerFormat: "secret-token:*",
+			},
+		}
+
+		t.Security = append(t.Security, openapi3.SecurityRequirement{"bearerAuth": []string{}})
 	}
 
 	names := []string{}
@@ -91,6 +137,10 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 		}
 
 		ref.Value.Title = fmt.Sprintf("%s Response", name)
+
+		ref.Value.Properties["id"] = &openapi3.SchemaRef{Ref: "#/components/schemas/id"}
+		ref.Value.Properties["etag"] = &openapi3.SchemaRef{Ref: "#/components/schemas/etag"}
+		ref.Value.Properties["generation"] = &openapi3.SchemaRef{Ref: "#/components/schemas/generation"}
 
 		t.Components.Schemas[fmt.Sprintf("%s--response", name)] = ref
 
