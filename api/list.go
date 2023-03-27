@@ -154,6 +154,7 @@ func parseListOpts(r *http.Request) (*ListOpts, error) {
 		Filters: []*Filter{},
 	}
 
+	// TODO: Support list
 	ifNoneMatch := r.Header.Get("If-None-Match")
 
 	if ifNoneMatch != "" {

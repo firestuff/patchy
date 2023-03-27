@@ -26,6 +26,7 @@ var (
 func parseGetOpts(r *http.Request) (*GetOpts, error) {
 	ret := &GetOpts{}
 
+	// TODO: Support list
 	ifNoneMatch := r.Header.Get("If-None-Match")
 
 	if ifNoneMatch == "" {
