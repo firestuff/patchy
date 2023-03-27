@@ -27,7 +27,13 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 	// TODO: Wrap in error writer function
 	t := openapi3.T{
 		OpenAPI: "3.0.3",
+		Paths:   openapi3.Paths{},
+		Tags:    openapi3.Tags{},
+
 		Components: &openapi3.Components{
+			Schemas:       openapi3.Schemas{},
+			RequestBodies: openapi3.RequestBodies{},
+
 			Parameters: openapi3.ParametersMap{
 				"id": &openapi3.ParameterRef{
 					Value: &openapi3.Parameter{
@@ -43,8 +49,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 					},
 				},
 			},
-			Schemas:       openapi3.Schemas{},
-			RequestBodies: openapi3.RequestBodies{},
+
 			Responses: openapi3.Responses{
 				"no-content": &openapi3.ResponseRef{
 					Value: &openapi3.Response{
@@ -53,8 +58,6 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 				},
 			},
 		},
-		Paths: openapi3.Paths{},
-		Tags:  openapi3.Tags{},
 	}
 
 	if api.openAPI.info != nil {
@@ -78,13 +81,41 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 
 		ref, err := openapi3gen.NewSchemaRefForValue(cfg.factory(), t.Components.Schemas)
 		if err != nil {
-			err = jsrest.Errorf(jsrest.ErrInternalServerError, "write failed (%w)", err)
+			err = jsrest.Errorf(jsrest.ErrInternalServerError, "generate schema ref failed (%w)", err)
 			jsrest.WriteError(w, err)
 
 			return
 		}
 
 		t.Components.Schemas[name] = ref
+
+		ref2, err := openapi3gen.NewSchemaRefForValue(cfg.factory(), t.Components.Schemas)
+		if err != nil {
+			err = jsrest.Errorf(jsrest.ErrInternalServerError, "generate schema ref failed (%w)", err)
+			jsrest.WriteError(w, err)
+
+			return
+		}
+
+		delete(ref2.Value.Properties, "id")
+		delete(ref2.Value.Properties, "etag")
+		delete(ref2.Value.Properties, "generation")
+
+		t.Components.Schemas[fmt.Sprintf("%s--request", name)] = ref2
+
+		t.Components.RequestBodies[name] = &openapi3.RequestBodyRef{
+			Value: &openapi3.RequestBody{
+				Description: name,
+				Required:    true,
+				Content: openapi3.Content{
+					"application/json": &openapi3.MediaType{
+						Schema: &openapi3.SchemaRef{
+							Ref: fmt.Sprintf("#/components/schemas/%s--request", name),
+						},
+					},
+				},
+			},
+		}
 
 		t.Components.Responses[name] = &openapi3.ResponseRef{
 			Value: &openapi3.Response{
@@ -134,6 +165,9 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 			Post: &openapi3.Operation{
 				Tags:    []string{name, "create"},
 				Summary: fmt.Sprintf("Create new %s object", name),
+				RequestBody: &openapi3.RequestBodyRef{
+					Ref: fmt.Sprintf("#/components/requestBodies/%s", name),
+				},
 				Responses: openapi3.Responses{
 					"200": &openapi3.ResponseRef{
 						Ref: fmt.Sprintf("#/components/responses/%s", name),
@@ -162,6 +196,9 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 			Put: &openapi3.Operation{
 				Tags:    []string{name, "replace"},
 				Summary: fmt.Sprintf("Replace %s object", name),
+				RequestBody: &openapi3.RequestBodyRef{
+					Ref: fmt.Sprintf("#/components/requestBodies/%s", name),
+				},
 				Responses: openapi3.Responses{
 					"200": &openapi3.ResponseRef{
 						Ref: fmt.Sprintf("#/components/responses/%s", name),
@@ -172,6 +209,9 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 			Patch: &openapi3.Operation{
 				Tags:    []string{name, "update"},
 				Summary: fmt.Sprintf("Update %s object", name),
+				RequestBody: &openapi3.RequestBodyRef{
+					Ref: fmt.Sprintf("#/components/requestBodies/%s", name),
+				},
 				Responses: openapi3.Responses{
 					"200": &openapi3.ResponseRef{
 						Ref: fmt.Sprintf("#/components/responses/%s", name),
@@ -190,20 +230,6 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 			},
 		}
 	}
-
-	/*
-		t.Tags = append(t.Tags, openapi3.Tags{
-			&openapi3.Tag{
-				Name: "list",
-			},
-			&openapi3.Tag{
-				Name: "create",
-			},
-			&openapi3.Tag{
-				Name: "get",
-			},
-		}...)
-	*/
 
 	/*
 		err = t.Validate(r.Context())
