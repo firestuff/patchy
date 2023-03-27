@@ -80,6 +80,24 @@ func (api *API) buildOpenAPIGlobal(r *http.Request) (*openapi3.T, error) {
 			RequestBodies:   openapi3.RequestBodies{},
 			SecuritySchemes: openapi3.SecuritySchemes{},
 
+			Headers: openapi3.Headers{
+				"etag": &openapi3.HeaderRef{
+					Value: &openapi3.Header{
+						Parameter: openapi3.Parameter{
+							Name: "ETag",
+							In: "header",
+							Schema: &openapi3.SchemaRef{
+								Value: &openapi3.Schema{
+									Type: "string",
+									Example: `"etag:20af52b66d85b8854183c82e462771a01606b31104a44a52237e17f6548d4ba7"`,
+									Pattern: `^"[^"]+"$`,
+								},
+							},
+						},
+					},
+				},
+			},
+
 			Parameters: openapi3.ParametersMap{
 				"id": &openapi3.ParameterRef{
 					Value: &openapi3.Parameter{
@@ -210,8 +228,12 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 
 	t.Components.Responses[cfg.typeName] = &openapi3.ResponseRef{
 		Value: &openapi3.Response{
-			// TODO: Headers (ETag)
 			Description: P("OK (Object)"),
+			Headers: openapi3.Headers{
+				"ETag": &openapi3.HeaderRef{
+					Ref: "#/components/headers/etag",
+				},
+			},
 			Content: openapi3.Content{
 				"application/json": &openapi3.MediaType{
 					Schema: &openapi3.SchemaRef{
@@ -224,8 +246,12 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 
 	t.Components.Responses[fmt.Sprintf("%s--list", cfg.typeName)] = &openapi3.ResponseRef{
 		Value: &openapi3.Response{
-			// TODO: Headers (ETag)
 			Description: P("OK (Array)"),
+			Headers: openapi3.Headers{
+				"ETag": &openapi3.HeaderRef{
+					Ref: "#/components/headers/etag",
+				},
+			},
 			Content: openapi3.Content{
 				"application/json": &openapi3.MediaType{
 					Schema: &openapi3.SchemaRef{
