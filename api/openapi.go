@@ -26,7 +26,13 @@ func (api *API) SetOpenAPIInfo(info *OpenAPIInfo) {
 }
 
 func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
-	// TODO: Wrap in error writer function
+	err := api.handleOpenAPIInt(w, r)
+	if err != nil {
+		jsrest.WriteError(w, err)
+	}
+}
+
+func (api *API) handleOpenAPIInt(w http.ResponseWriter, r *http.Request) error {
 	// TODO: Split this function up
 	scheme := "https"
 	if r.TLS == nil {
@@ -35,8 +41,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 
 	host, err := idna.ToUnicode(r.Host)
 	if err != nil {
-		err = jsrest.Errorf(jsrest.ErrInternalServerError, "unicode hostname conversion failed (%w)", err)
-		jsrest.WriteError(w, err)
+		return jsrest.Errorf(jsrest.ErrInternalServerError, "unicode hostname conversion failed (%w)", err)
 	}
 
 	t := openapi3.T{
@@ -147,10 +152,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 
 		ref, err := openapi3gen.NewSchemaRefForValue(cfg.factory(), t.Components.Schemas)
 		if err != nil {
-			err = jsrest.Errorf(jsrest.ErrInternalServerError, "generate schema ref failed (%w)", err)
-			jsrest.WriteError(w, err)
-
-			return
+			return jsrest.Errorf(jsrest.ErrInternalServerError, "generate schema ref failed (%w)", err)
 		}
 
 		ref.Value.Title = fmt.Sprintf("%s Response", name)
@@ -163,10 +165,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 
 		ref2, err := openapi3gen.NewSchemaRefForValue(cfg.factory(), t.Components.Schemas)
 		if err != nil {
-			err = jsrest.Errorf(jsrest.ErrInternalServerError, "generate schema ref failed (%w)", err)
-			jsrest.WriteError(w, err)
-
-			return
+			return jsrest.Errorf(jsrest.ErrInternalServerError, "generate schema ref failed (%w)", err)
 		}
 
 		delete(ref2.Value.Properties, "id")
@@ -309,12 +308,11 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 
 	js, err := t.MarshalJSON()
 	if err != nil {
-		err = jsrest.Errorf(jsrest.ErrInternalServerError, "marshal JSON failed (%w)", err)
-		jsrest.WriteError(w, err)
-
-		return
+		return jsrest.Errorf(jsrest.ErrInternalServerError, "marshal JSON failed (%w)", err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	_, _ = w.Write(js)
+
+	return nil
 }
