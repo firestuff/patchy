@@ -229,7 +229,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 		// TODO: Add text/event-stream
 		t.Paths[fmt.Sprintf("/%s", name)] = &openapi3.PathItem{
 			Get: &openapi3.Operation{
-				Tags:    []string{name, "List"},
+				Tags:    []string{name},
 				Summary: fmt.Sprintf("List %s objects", name),
 				Responses: openapi3.Responses{
 					"200": &openapi3.ResponseRef{
@@ -239,7 +239,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 			},
 
 			Post: &openapi3.Operation{
-				Tags:    []string{name, "Create"},
+				Tags:    []string{name},
 				Summary: fmt.Sprintf("Create new %s object", name),
 				RequestBody: &openapi3.RequestBodyRef{
 					Ref: fmt.Sprintf("#/components/requestBodies/%s", name),
@@ -260,7 +260,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 			},
 
 			Get: &openapi3.Operation{
-				Tags:    []string{name, "Get"},
+				Tags:    []string{name},
 				Summary: fmt.Sprintf("Get %s object", name),
 				Responses: openapi3.Responses{
 					"200": &openapi3.ResponseRef{
@@ -270,7 +270,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 			},
 
 			Put: &openapi3.Operation{
-				Tags:    []string{name, "Replace"},
+				Tags:    []string{name},
 				Summary: fmt.Sprintf("Replace %s object", name),
 				RequestBody: &openapi3.RequestBodyRef{
 					Ref: fmt.Sprintf("#/components/requestBodies/%s", name),
@@ -283,7 +283,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 			},
 
 			Patch: &openapi3.Operation{
-				Tags:    []string{name, "Update"},
+				Tags:    []string{name},
 				Summary: fmt.Sprintf("Update %s object", name),
 				RequestBody: &openapi3.RequestBodyRef{
 					Ref: fmt.Sprintf("#/components/requestBodies/%s", name),
@@ -296,7 +296,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 			},
 
 			Delete: &openapi3.Operation{
-				Tags:    []string{name, "Delete"},
+				Tags:    []string{name},
 				Summary: fmt.Sprintf("Delete %s object", name),
 				Responses: openapi3.Responses{
 					"204": &openapi3.ResponseRef{
