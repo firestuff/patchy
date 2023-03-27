@@ -68,6 +68,11 @@ func NewAPI(st store.Storer) (*API, error) {
 		func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) { api.handleOpenAPI(w, r) },
 	)
 
+	api.router.ServeFiles(
+		"/_swaggerui/*filepath",
+		http.FS(swaggerUI),
+	)
+
 	return api, nil
 }
 

@@ -109,7 +109,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 
 		t.Components.RequestBodies[name] = &openapi3.RequestBodyRef{
 			Value: &openapi3.RequestBody{
-				Required:    true,
+				Required: true,
 				Content: openapi3.Content{
 					"application/json": &openapi3.MediaType{
 						Schema: &openapi3.SchemaRef{
@@ -142,7 +142,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 					"application/json": &openapi3.MediaType{
 						Schema: &openapi3.SchemaRef{
 							Value: &openapi3.Schema{
-								Type:        "array",
+								Type: "array",
 								Items: &openapi3.SchemaRef{
 									Ref: fmt.Sprintf("#/components/schemas/%s--response", name),
 								},
