@@ -23,7 +23,9 @@ type API struct {
 	registry    map[string]*config
 	requestHook RequestHook
 
-	openAPI openAPI
+	openAPI    openAPI
+	authBasic  bool
+	authBearer bool
 }
 
 type RequestHook func(*http.Request, *API) (*http.Request, error)
@@ -89,6 +91,16 @@ func RegisterName[T any](api *API, typeName string) {
 
 func (api *API) SetRequestHook(hook RequestHook) {
 	api.requestHook = hook
+}
+
+func (api *API) SetAuthBasic(enable bool) {
+	// TODO: Build in more useful support here
+	api.authBasic = enable
+}
+
+func (api *API) SetAuthBearer(enable bool) {
+	// TODO: Build in more useful support here
+	api.authBearer = enable
 }
 
 func (api *API) IsSafe() error {
@@ -226,6 +238,7 @@ func objName[T any](obj *T) string {
 }
 
 func trimQuotes(in string) (string, error) {
+	// TODO: Support W/
 	if len(in) < 2 || !strings.HasPrefix(in, `"`) || !strings.HasSuffix(in, `"`) {
 		return "", jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", in, ErrHeaderValueMissingQuotes)
 	}
