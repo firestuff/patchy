@@ -238,7 +238,10 @@ func objName[T any](obj *T) string {
 }
 
 func trimQuotes(in string) (string, error) {
-	// TODO: Support W/
+	if len(in) >= 4 && strings.HasPrefix(in, "W/") {
+		in = strings.TrimPrefix(in, "W/")
+	}
+
 	if len(in) < 2 || !strings.HasPrefix(in, `"`) || !strings.HasSuffix(in, `"`) {
 		return "", jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", in, ErrHeaderValueMissingQuotes)
 	}
