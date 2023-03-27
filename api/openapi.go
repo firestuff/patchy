@@ -87,7 +87,9 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 			return
 		}
 
-		t.Components.Schemas[fmt.Sprintf("%s Response", name)] = ref
+		ref.Value.Description = fmt.Sprintf("%s Response", name)
+
+		t.Components.Schemas[fmt.Sprintf("%s--response", name)] = ref
 
 		ref2, err := openapi3gen.NewSchemaRefForValue(cfg.factory(), t.Components.Schemas)
 		if err != nil {
@@ -101,7 +103,9 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 		delete(ref2.Value.Properties, "etag")
 		delete(ref2.Value.Properties, "generation")
 
-		t.Components.Schemas[fmt.Sprintf("%s Request", name)] = ref2
+		ref2.Value.Description = fmt.Sprintf("%s Request", name)
+
+		t.Components.Schemas[fmt.Sprintf("%s--request", name)] = ref2
 
 		t.Components.RequestBodies[name] = &openapi3.RequestBodyRef{
 			Value: &openapi3.RequestBody{
@@ -110,7 +114,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 				Content: openapi3.Content{
 					"application/json": &openapi3.MediaType{
 						Schema: &openapi3.SchemaRef{
-							Ref: fmt.Sprintf("#/components/schemas/%s Request", name),
+							Ref: fmt.Sprintf("#/components/schemas/%s--request", name),
 						},
 					},
 				},
@@ -124,14 +128,14 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 				Content: openapi3.Content{
 					"application/json": &openapi3.MediaType{
 						Schema: &openapi3.SchemaRef{
-							Ref: fmt.Sprintf("#/components/schemas/%s Response", name),
+							Ref: fmt.Sprintf("#/components/schemas/%s--response", name),
 						},
 					},
 				},
 			},
 		}
 
-		t.Components.Responses[fmt.Sprintf("%s List", name)] = &openapi3.ResponseRef{
+		t.Components.Responses[fmt.Sprintf("%s--list", name)] = &openapi3.ResponseRef{
 			Value: &openapi3.Response{
 				// TODO: Headers (ETag)
 				Description: P("OK (Array)"),
@@ -142,7 +146,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 								Description: fmt.Sprintf("Array of %s", name),
 								Type:        "array",
 								Items: &openapi3.SchemaRef{
-									Ref: fmt.Sprintf("#/components/schemas/%s Response", name),
+									Ref: fmt.Sprintf("#/components/schemas/%s--response", name),
 								},
 							},
 						},
@@ -157,7 +161,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 				Summary: fmt.Sprintf("List %s objects", name),
 				Responses: openapi3.Responses{
 					"200": &openapi3.ResponseRef{
-						Ref: fmt.Sprintf("#/components/responses/%s List", name),
+						Ref: fmt.Sprintf("#/components/responses/%s--list", name),
 					},
 				},
 			},
