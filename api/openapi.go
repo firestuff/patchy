@@ -34,14 +34,9 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 
 func (api *API) handleOpenAPIInt(w http.ResponseWriter, r *http.Request) error {
 	// TODO: Split this function up
-	scheme := "https"
-	if r.TLS == nil {
-		scheme = "http"
-	}
-
-	host, err := idna.ToUnicode(r.Host)
+	baseURL, err := requestBaseURL(r)
 	if err != nil {
-		return jsrest.Errorf(jsrest.ErrInternalServerError, "unicode hostname conversion failed (%w)", err)
+		return jsrest.Errorf(jsrest.ErrInternalServerError, "get base URL failed (%w)", err)
 	}
 
 	t := openapi3.T{
@@ -103,7 +98,7 @@ func (api *API) handleOpenAPIInt(w http.ResponseWriter, r *http.Request) error {
 
 		Servers: openapi3.Servers{
 			&openapi3.Server{
-				URL: fmt.Sprintf("%s://%s%s", scheme, host, strings.TrimSuffix(r.RequestURI, "/_openapi")),
+				URL: baseURL,
 			},
 		},
 	}
@@ -315,4 +310,25 @@ func (api *API) handleOpenAPIInt(w http.ResponseWriter, r *http.Request) error {
 	_, _ = w.Write(js)
 
 	return nil
+}
+
+func requestBaseURL(r *http.Request) (string, error) {
+	scheme := "https"
+	if r.TLS == nil {
+		scheme = "http"
+	}
+
+	host, err := idna.ToUnicode(r.Host)
+	if err != nil {
+		return "", jsrest.Errorf(jsrest.ErrInternalServerError, "unicode hostname conversion failed (%w)", err)
+	}
+
+	i := strings.Index(r.RequestURI, "/_openapi")
+	if i == -1 {
+		return "", jsrest.Errorf(jsrest.ErrInternalServerError, "missing /_openapi in URL")
+	}
+
+	path := r.RequestURI[:i]
+
+	return fmt.Sprintf("%s://%s%s", scheme, host, path), nil
 }
