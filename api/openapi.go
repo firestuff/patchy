@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strings"
 
 	"github.com/firestuff/patchy/jsrest"
 	"github.com/getkin/kin-openapi/openapi3"
@@ -23,8 +24,10 @@ func (api *API) SetOpenAPIInfo(info *OpenAPIInfo) {
 	api.openAPI.info = info
 }
 
-func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
+func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 	// TODO: Wrap in error writer function
+	prefix := strings.TrimSuffix(r.RequestURI, "/_openapi")
+
 	t := openapi3.T{
 		OpenAPI: "3.0.3",
 		Paths:   openapi3.Paths{},
@@ -153,7 +156,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 			},
 		}
 
-		t.Paths[fmt.Sprintf("/%s", name)] = &openapi3.PathItem{
+		t.Paths[fmt.Sprintf("%s/%s", prefix, name)] = &openapi3.PathItem{
 			Get: &openapi3.Operation{
 				Tags:    []string{name, "List"},
 				Summary: fmt.Sprintf("List %s objects", name),
@@ -178,7 +181,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 			},
 		}
 
-		t.Paths[fmt.Sprintf("/%s/{id}", name)] = &openapi3.PathItem{
+		t.Paths[fmt.Sprintf("%s/%s/{id}", prefix, name)] = &openapi3.PathItem{
 			Parameters: openapi3.Parameters{
 				&openapi3.ParameterRef{
 					Ref: "#/components/parameters/id",
