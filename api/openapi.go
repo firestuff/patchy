@@ -9,6 +9,7 @@ import (
 	"github.com/firestuff/patchy/jsrest"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3gen"
+	"golang.org/x/net/idna"
 )
 
 type (
@@ -26,7 +27,16 @@ func (api *API) SetOpenAPIInfo(info *OpenAPIInfo) {
 
 func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 	// TODO: Wrap in error writer function
-	prefix := strings.TrimSuffix(r.RequestURI, "/_openapi")
+	scheme := "https"
+	if r.TLS == nil {
+		scheme = "http"
+	}
+
+	host, err := idna.ToUnicode(r.Host)
+	if err != nil {
+		err = jsrest.Errorf(jsrest.ErrInternalServerError, "unicode hostname conversion failed (%w)", err)
+		jsrest.WriteError(w, err)
+	}
 
 	t := openapi3.T{
 		OpenAPI:  "3.0.3",
@@ -82,6 +92,12 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 						Example: 42,
 					},
 				},
+			},
+		},
+
+		Servers: openapi3.Servers{
+			&openapi3.Server{
+				URL: fmt.Sprintf("%s://%s%s", scheme, host, strings.TrimSuffix(r.RequestURI, "/_openapi")),
 			},
 		},
 	}
@@ -206,7 +222,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 			},
 		}
 
-		t.Paths[fmt.Sprintf("%s/%s", prefix, name)] = &openapi3.PathItem{
+		t.Paths[fmt.Sprintf("/%s", name)] = &openapi3.PathItem{
 			Get: &openapi3.Operation{
 				Tags:    []string{name, "List"},
 				Summary: fmt.Sprintf("List %s objects", name),
@@ -231,7 +247,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 			},
 		}
 
-		t.Paths[fmt.Sprintf("%s/%s/{id}", prefix, name)] = &openapi3.PathItem{
+		t.Paths[fmt.Sprintf("/%s/{id}", name)] = &openapi3.PathItem{
 			Parameters: openapi3.Parameters{
 				&openapi3.ParameterRef{
 					Ref: "#/components/parameters/id",
