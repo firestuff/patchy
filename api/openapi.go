@@ -87,7 +87,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 			return
 		}
 
-		ref.Value.Description = fmt.Sprintf("%s Response", name)
+		ref.Value.Title = fmt.Sprintf("%s Response", name)
 
 		t.Components.Schemas[fmt.Sprintf("%s--response", name)] = ref
 
@@ -103,13 +103,12 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 		delete(ref2.Value.Properties, "etag")
 		delete(ref2.Value.Properties, "generation")
 
-		ref2.Value.Description = fmt.Sprintf("%s Request", name)
+		ref2.Value.Title = fmt.Sprintf("%s Request", name)
 
 		t.Components.Schemas[fmt.Sprintf("%s--request", name)] = ref2
 
 		t.Components.RequestBodies[name] = &openapi3.RequestBodyRef{
 			Value: &openapi3.RequestBody{
-				Description: name,
 				Required:    true,
 				Content: openapi3.Content{
 					"application/json": &openapi3.MediaType{
@@ -143,7 +142,6 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 					"application/json": &openapi3.MediaType{
 						Schema: &openapi3.SchemaRef{
 							Value: &openapi3.Schema{
-								Description: fmt.Sprintf("Array of %s", name),
 								Type:        "array",
 								Items: &openapi3.SchemaRef{
 									Ref: fmt.Sprintf("#/components/schemas/%s--response", name),
