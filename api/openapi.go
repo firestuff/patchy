@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"net/http"
+	"sort"
 
 	"github.com/firestuff/patchy/jsrest"
 	"github.com/getkin/kin-openapi/openapi3"
@@ -60,7 +61,17 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 		t.Info = api.openAPI.info
 	}
 
-	for name, cfg := range api.registry {
+	names := []string{}
+
+	for name := range api.registry {
+		names = append(names, name)
+	}
+
+	sort.Strings(names)
+
+	for _, name := range names {
+		cfg := api.registry[name]
+
 		t.Tags = append(t.Tags, &openapi3.Tag{
 			Name: name,
 		})
@@ -78,11 +89,31 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 		t.Components.Responses[name] = &openapi3.ResponseRef{
 			Value: &openapi3.Response{
 				// TODO: Headers (ETag)
-				Description: P("OK"),
+				Description: P("OK (Object)"),
 				Content: openapi3.Content{
 					"application/json": &openapi3.MediaType{
 						Schema: &openapi3.SchemaRef{
 							Ref: fmt.Sprintf("#/components/schemas/%s", name),
+						},
+					},
+				},
+			},
+		}
+
+		t.Components.Responses[fmt.Sprintf("%s--list", name)] = &openapi3.ResponseRef{
+			Value: &openapi3.Response{
+				// TODO: Headers (ETag)
+				Description: P("OK (Array)"),
+				Content: openapi3.Content{
+					"application/json": &openapi3.MediaType{
+						Schema: &openapi3.SchemaRef{
+							Value: &openapi3.Schema{
+								Description: fmt.Sprintf("Array of %s", name),
+								Type:        "array",
+								Items: &openapi3.SchemaRef{
+									Ref: fmt.Sprintf("#/components/schemas/%s", name),
+								},
+							},
 						},
 					},
 				},
@@ -95,8 +126,7 @@ func (api *API) handleOpenAPI(w http.ResponseWriter, _ *http.Request) {
 				Summary: fmt.Sprintf("List %s objects", name),
 				Responses: openapi3.Responses{
 					"200": &openapi3.ResponseRef{
-						// TODO: Make this a list of objects, not a single
-						Ref: fmt.Sprintf("#/components/responses/%s", name),
+						Ref: fmt.Sprintf("#/components/responses/%s--list", name),
 					},
 				},
 			},
