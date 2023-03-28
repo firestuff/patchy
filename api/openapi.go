@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"net/http"
+	"reflect"
 	"sort"
 	"strings"
 
@@ -338,31 +339,33 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 		Name: cfg.typeName,
 	})
 
-	ref, err := openapi3gen.NewSchemaRefForValue(cfg.factory(), t.Components.Schemas)
+	responseSchema, err := generateSchemaRef(cfg.typeOf)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "generate schema ref failed (%w)", err)
 	}
 
-	ref.Value.Title = fmt.Sprintf("%s Response", cfg.typeName)
+	responseSchema.Ref = ""
+	responseSchema.Value.Title = fmt.Sprintf("%s Response", cfg.typeName)
 
-	ref.Value.Properties["id"] = &openapi3.SchemaRef{Ref: "#/components/schemas/id"}
-	ref.Value.Properties["etag"] = &openapi3.SchemaRef{Ref: "#/components/schemas/etag"}
-	ref.Value.Properties["generation"] = &openapi3.SchemaRef{Ref: "#/components/schemas/generation"}
+	responseSchema.Value.Properties["id"] = &openapi3.SchemaRef{Ref: "#/components/schemas/id"}
+	responseSchema.Value.Properties["etag"] = &openapi3.SchemaRef{Ref: "#/components/schemas/etag"}
+	responseSchema.Value.Properties["generation"] = &openapi3.SchemaRef{Ref: "#/components/schemas/generation"}
 
-	t.Components.Schemas[fmt.Sprintf("%s--response", cfg.typeName)] = ref
+	t.Components.Schemas[fmt.Sprintf("%s--response", cfg.typeName)] = responseSchema
 
-	ref2, err := openapi3gen.NewSchemaRefForValue(cfg.factory(), t.Components.Schemas)
+	requestSchema, err := generateSchemaRef(cfg.typeOf)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "generate schema ref failed (%w)", err)
 	}
 
-	delete(ref2.Value.Properties, "id")
-	delete(ref2.Value.Properties, "etag")
-	delete(ref2.Value.Properties, "generation")
+	requestSchema.Ref = ""
+	delete(requestSchema.Value.Properties, "id")
+	delete(requestSchema.Value.Properties, "etag")
+	delete(requestSchema.Value.Properties, "generation")
 
-	ref2.Value.Title = fmt.Sprintf("%s Request", cfg.typeName)
+	requestSchema.Value.Title = fmt.Sprintf("%s Request", cfg.typeName)
 
-	t.Components.Schemas[fmt.Sprintf("%s--request", cfg.typeName)] = ref2
+	t.Components.Schemas[fmt.Sprintf("%s--request", cfg.typeName)] = requestSchema
 
 	t.Components.RequestBodies[cfg.typeName] = &openapi3.RequestBodyRef{
 		Value: &openapi3.RequestBody{
@@ -379,7 +382,7 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 
 	t.Components.Responses[cfg.typeName] = &openapi3.ResponseRef{
 		Value: &openapi3.Response{
-			Description: P("OK (Object)"),
+			Description: P(fmt.Sprintf("OK: `%s`", cfg.typeName)),
 			Headers: openapi3.Headers{
 				"ETag": &openapi3.HeaderRef{
 					Ref: "#/components/headers/etag",
@@ -402,7 +405,7 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 
 	t.Components.Responses[fmt.Sprintf("%s--list", cfg.typeName)] = &openapi3.ResponseRef{
 		Value: &openapi3.Response{
-			Description: P("OK (Array)"),
+			Description: P(fmt.Sprintf("OK: List of `%s`", cfg.typeName)),
 			Headers: openapi3.Headers{
 				"ETag": &openapi3.HeaderRef{
 					Ref: "#/components/headers/etag",
@@ -428,22 +431,37 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 		},
 	}
 
-	paths, err := path.List(cfg.factory())
+	paths, err := path.ListType(cfg.typeOf)
 	if err != nil {
 		return err
 	}
 
 	sorts := []any{}
-	for _, name := range paths {
-		sorts = append(sorts, fmt.Sprintf("+%s", name), fmt.Sprintf("-%s", name))
+	filters := openapi3.Parameters{}
+
+	for _, pth := range paths {
+		sorts = append(sorts, fmt.Sprintf("+%s", pth), fmt.Sprintf("-%s", pth))
+
+		pthSchema, err := generateSchemaRef(path.GetFieldType(cfg.typeOf, pth))
+		if err != nil {
+			return jsrest.Errorf(jsrest.ErrInternalServerError, "generate schema ref failed (%w)", err)
+		}
+
+		filters = append(filters, &openapi3.ParameterRef{
+			Value: &openapi3.Parameter{
+				Name:        pth,
+				In:          "query",
+				Description: fmt.Sprintf("Filter list by `%s` equality", pth),
+				Schema:      pthSchema,
+			},
+		})
 	}
 
-	// TODO: Field filter list params, with operations
 	t.Paths[fmt.Sprintf("/%s", cfg.typeName)] = &openapi3.PathItem{
 		Get: &openapi3.Operation{
 			Tags:    []string{cfg.typeName},
 			Summary: fmt.Sprintf("List %s objects", cfg.typeName),
-			Parameters: openapi3.Parameters{
+			Parameters: append(filters, openapi3.Parameters{
 				&openapi3.ParameterRef{
 					Ref: "#/components/headers/if-none-match",
 				},
@@ -463,7 +481,7 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 					Value: &openapi3.Parameter{
 						Name:        "_sort",
 						In:          "query",
-						Description: "Direction (+ ascending or - descending) and field path to sort by",
+						Description: "Direction (`+` ascending or `-` descending) and field path to sort by",
 						Explode:     P(true),
 						Schema: &openapi3.SchemaRef{
 							Value: &openapi3.Schema{
@@ -478,7 +496,7 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 						},
 					},
 				},
-			},
+			}...),
 			Responses: openapi3.Responses{
 				"200": &openapi3.ResponseRef{
 					Ref: fmt.Sprintf("#/components/responses/%s--list", cfg.typeName),
@@ -596,4 +614,19 @@ func (api *API) requestBaseURL(r *http.Request) (string, error) {
 	path := r.RequestURI[:i]
 
 	return fmt.Sprintf("%s://%s%s", scheme, host, path), nil
+}
+
+func generateSchemaRef(t reflect.Type) (*openapi3.SchemaRef, error) {
+	gen := openapi3gen.NewGenerator()
+
+	schemaRef, err := gen.GenerateSchemaRef(t)
+	if err != nil {
+		return nil, err
+	}
+
+	for ref := range gen.SchemaRefs {
+		ref.Ref = ""
+	}
+
+	return schemaRef, nil
 }

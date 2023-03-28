@@ -114,7 +114,11 @@ func setRecursive(v reflect.Value, parts []string, prev []string, val string) er
 }
 
 func List(obj any) ([]string, error) {
-	list, err := listRecursive(reflect.TypeOf(obj), []string{}, []string{})
+	return ListType(reflect.TypeOf(obj))
+}
+
+func ListType(t reflect.Type) ([]string, error) {
+	list, err := listRecursive(t, []string{}, []string{})
 	if err != nil {
 		return nil, err
 	}
@@ -158,24 +162,23 @@ func listRecursive(t reflect.Type, prev []string, list []string) ([]string, erro
 	return list, nil
 }
 
-func GetFieldType(obj any, path string) reflect.Type {
+func GetFieldType(t reflect.Type, path string) reflect.Type {
 	parts := strings.Split(path, ".")
-	iter := reflect.TypeOf(obj)
 
 	for _, part := range parts {
-		if iter.Kind() == reflect.Pointer {
-			iter = iter.Elem()
+		if t.Kind() == reflect.Pointer {
+			t = t.Elem()
 		}
 
-		field, found := getStructField(iter, part)
+		field, found := getStructField(t, part)
 		if !found {
 			return nil
 		}
 
-		iter = field.Type
+		t = field.Type
 	}
 
-	return iter
+	return t
 }
 
 func getStructField(t reflect.Type, name string) (reflect.StructField, bool) {
