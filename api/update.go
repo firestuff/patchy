@@ -1,74 +1,38 @@
 package api
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
-	"strings"
 
 	"github.com/firestuff/patchy/jsrest"
 	"github.com/firestuff/patchy/metadata"
+	"github.com/vfaronov/httpheader"
 )
 
 type UpdateOpts struct {
-	IfMatchETag       string
-	IfMatchGeneration int64
+	IfMatch []httpheader.EntityTag
+
+	Prev any
 }
 
-var (
-	ErrInvalidIfMatch           = errors.New("invalid If-Match")
-	ErrIfMatchUnknownType       = fmt.Errorf("unknown type (%w)", ErrInvalidIfMatch)
-	ErrIfMatchInvalidGeneration = fmt.Errorf("invalid generation (%w)", ErrInvalidIfMatch)
-
-	ErrMismatch           = errors.New("If-Match mismatch")
-	ErrEtagMismatch       = fmt.Errorf("etag mismatch (%w)", ErrMismatch)
-	ErrGenerationMismatch = fmt.Errorf("generation mismatch (%w)", ErrMismatch)
-)
-
-func parseUpdateOpts(r *http.Request) (*UpdateOpts, error) {
-	ret := &UpdateOpts{}
-
-	ifMatch := r.Header.Get("If-Match")
-
-	if ifMatch == "" {
-		return ret, nil
+func parseUpdateOpts(r *http.Request) *UpdateOpts {
+	return &UpdateOpts{
+		IfMatch: httpheader.IfMatch(r.Header),
 	}
-
-	val, err := trimQuotes(ifMatch)
-	if err != nil {
-		return nil, jsrest.Errorf(jsrest.ErrBadRequest, "trim quotes failed (%w) (%w)", err, ErrInvalidIfMatch)
-	}
-
-	switch {
-	case strings.HasPrefix(val, "etag:"):
-		ret.IfMatchETag = val
-
-	case strings.HasPrefix(val, "generation:"):
-		gen, err := strconv.ParseInt(strings.TrimPrefix(val, "generation:"), 10, 64)
-		if err != nil {
-			return nil, jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", ifMatch, ErrIfMatchInvalidGeneration)
-		}
-
-		ret.IfMatchGeneration = gen
-
-	default:
-		return nil, jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", ifMatch, ErrIfMatchUnknownType)
-	}
-
-	return ret, nil
 }
 
-func ifMatch(obj any, opts *UpdateOpts) error {
-	objMD := metadata.GetMetadata(obj)
-
-	if opts.IfMatchETag != "" && opts.IfMatchETag != objMD.ETag {
-		return jsrest.Errorf(jsrest.ErrPreconditionFailed, "%s vs %s (%w)", opts.IfMatchETag, objMD.ETag, ErrEtagMismatch)
+func (opts *UpdateOpts) ifMatch(obj any) error {
+	if len(opts.IfMatch) == 0 {
+		return nil
 	}
 
-	if opts.IfMatchGeneration > 0 && opts.IfMatchGeneration != objMD.Generation {
-		return jsrest.Errorf(jsrest.ErrPreconditionFailed, "%d vs %d (%w)", opts.IfMatchGeneration, objMD.Generation, ErrGenerationMismatch)
+	md := metadata.GetMetadata(obj)
+	gen := fmt.Sprintf("generation:%d", md.Generation)
+
+	if httpheader.Match(opts.IfMatch, httpheader.EntityTag{Opaque: md.ETag}) ||
+		httpheader.Match(opts.IfMatch, httpheader.EntityTag{Opaque: gen}) {
+		return nil
 	}
 
-	return nil
+	return jsrest.Errorf(jsrest.ErrPreconditionFailed, "If-Match mismatch")
 }

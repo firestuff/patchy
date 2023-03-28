@@ -8,15 +8,11 @@ import (
 
 func (api *API) put(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
 	replace := cfg.factory()
+	opts := parseUpdateOpts(r)
 
 	err := jsrest.Read(r, replace)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read request failed (%w)", err)
-	}
-
-	opts, err := parseUpdateOpts(r)
-	if err != nil {
-		return jsrest.Errorf(jsrest.ErrBadRequest, "parse update options (%w)", err)
 	}
 
 	replace, err = api.replaceInt(r.Context(), cfg, id, replace, opts)

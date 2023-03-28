@@ -16,6 +16,7 @@ import (
 	"github.com/firestuff/patchy/jsrest"
 	"github.com/firestuff/patchy/metadata"
 	"github.com/firestuff/patchy/path"
+	"github.com/vfaronov/httpheader"
 )
 
 type ListOpts struct {
@@ -26,7 +27,7 @@ type ListOpts struct {
 	Sorts   []string
 	Filters []*Filter
 
-	IfNoneMatchETag string
+	IfNoneMatch []httpheader.EntityTag
 
 	Prev any
 }
@@ -150,26 +151,9 @@ func HashList(list any) (string, error) {
 
 func parseListOpts(r *http.Request) (*ListOpts, error) {
 	ret := &ListOpts{
-		Sorts:   []string{},
-		Filters: []*Filter{},
-	}
-
-	// TODO: Support list
-	ifNoneMatch := r.Header.Get("If-None-Match")
-
-	if ifNoneMatch != "" {
-		val, err := trimQuotes(ifNoneMatch)
-		if err != nil {
-			return nil, jsrest.Errorf(jsrest.ErrBadRequest, "trim quotes failed (%w) (%w)", err, ErrInvalidIfNoneMatch)
-		}
-
-		switch {
-		case strings.HasPrefix(val, "etag:"):
-			ret.IfNoneMatchETag = val
-
-		default:
-			return nil, jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", ifNoneMatch, ErrIfNoneMatchUnknownType)
-		}
+		Sorts:       []string{},
+		Filters:     []*Filter{},
+		IfNoneMatch: httpheader.IfNoneMatch(r.Header),
 	}
 
 	params, err := url.ParseQuery(r.URL.RawQuery)

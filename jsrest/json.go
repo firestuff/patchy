@@ -3,20 +3,16 @@ package jsrest
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
-	"mime"
 	"net/http"
 
 	"github.com/firestuff/patchy/metadata"
+	"github.com/vfaronov/httpheader"
 )
 
 var ErrUnsupportedContentType = errors.New("unsupported Content-Type")
 
 func Read(r *http.Request, obj any) error {
-	contentType, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
-	if err != nil {
-		return Errorf(ErrUnsupportedMediaType, "Content-Type: %s (%w)", r.Header.Get("Content-Type"), err)
-	}
+	contentType, _ := httpheader.ContentType(r.Header)
 
 	switch contentType {
 	case "":
@@ -31,7 +27,7 @@ func Read(r *http.Request, obj any) error {
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 
-	err = dec.Decode(obj)
+	err := dec.Decode(obj)
 	if err != nil {
 		return Errorf(ErrBadRequest, "decode JSON request body failed (%w)", err)
 	}
@@ -43,7 +39,7 @@ func Write(w http.ResponseWriter, obj any) error {
 	m := metadata.GetMetadata(obj)
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("ETag", fmt.Sprintf(`"%s"`, m.ETag))
+	httpheader.SetETag(w.Header(), httpheader.EntityTag{Opaque: m.ETag})
 
 	enc := json.NewEncoder(w)
 
@@ -57,7 +53,7 @@ func Write(w http.ResponseWriter, obj any) error {
 
 func WriteList(w http.ResponseWriter, list []any, etag string) error {
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("ETag", fmt.Sprintf(`"%s"`, etag))
+	httpheader.SetETag(w.Header(), httpheader.EntityTag{Opaque: etag})
 
 	enc := json.NewEncoder(w)
 

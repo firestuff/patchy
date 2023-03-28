@@ -20,11 +20,7 @@ func applyListOpts(opts *ListOpts, req *resty.Request) error {
 			return err
 		}
 
-		opts.IfNoneMatchETag = etag
-	}
-
-	if opts.IfNoneMatchETag != "" {
-		req.SetHeader("If-None-Match", fmt.Sprintf(`"%s"`, opts.IfNoneMatchETag))
+		req.SetHeader("If-None-Match", fmt.Sprintf(`"%s"`, etag))
 	}
 
 	if opts.Stream != "" {

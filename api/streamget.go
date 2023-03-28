@@ -3,25 +3,23 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/firestuff/patchy/jsrest"
 	"github.com/firestuff/patchy/metadata"
+	"github.com/vfaronov/httpheader"
 )
 
 var ErrStreamingNotSupported = errors.New("streaming not supported")
 
 func (api *API) streamGet(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
+	opts := parseGetOpts(r)
 
 	if _, ok := w.(http.Flusher); !ok {
 		return jsrest.Errorf(jsrest.ErrBadRequest, "stream failed (%w)", ErrStreamingNotSupported)
-	}
-
-	opts, err := parseGetOpts(r)
-	if err != nil {
-		return jsrest.Errorf(jsrest.ErrBadRequest, "parse get parameters failed (%w)", err)
 	}
 
 	gsi, err := api.streamGetInt(ctx, cfg, id)
@@ -44,11 +42,8 @@ func (api *API) streamGet(cfg *config, id string, w http.ResponseWriter, r *http
 }
 
 func (api *API) streamGetWrite(ctx context.Context, w http.ResponseWriter, ch <-chan any, opts *GetOpts) error {
-	eventType := "initial"
+	first := true
 	ticker := time.NewTicker(5 * time.Second)
-
-	initialETag := opts.IfNoneMatchETag
-	initialGeneration := opts.IfNoneMatchGeneration
 
 	for {
 		select {
@@ -65,33 +60,31 @@ func (api *API) streamGetWrite(ctx context.Context, w http.ResponseWriter, ch <-
 				return nil
 			}
 
-			md := metadata.GetMetadata(obj)
+			eventType := "update"
 
-			if initialETag != "" || initialGeneration > 0 {
-				if md.ETag == initialETag || md.Generation == initialGeneration {
+			md := metadata.GetMetadata(obj)
+			gen := fmt.Sprintf("generation:%d", md.Generation)
+
+			if first {
+				first = false
+				eventType = "initial"
+
+				if httpheader.MatchWeak(opts.IfNoneMatch, httpheader.EntityTag{Opaque: md.ETag}) ||
+					httpheader.MatchWeak(opts.IfNoneMatch, httpheader.EntityTag{Opaque: gen}) {
 					err := writeEvent(w, "notModified", md.ETag, emptyEvent, true)
 					if err != nil {
 						return jsrest.Errorf(jsrest.ErrInternalServerError, "write update failed (%w)", err)
 					}
 
-					initialETag = ""
-					initialGeneration = 0
-					eventType = "update"
+					first = false
 
 					continue
 				}
-
-				initialETag = ""
-				initialGeneration = 0
 			}
 
 			err := writeEvent(w, eventType, md.ETag, obj, true)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "write update failed (%w)", err)
-			}
-
-			if eventType == "initial" {
-				eventType = "update"
 			}
 
 		case <-ticker.C:
