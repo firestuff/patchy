@@ -116,11 +116,13 @@ func TestList(t *testing.T) {
 func TestGetFieldType(t *testing.T) {
 	t.Parallel()
 
-	typ := path.GetFieldType(&testType4{}, "bool2")
-	require.NotNil(t, typ)
-	require.Equal(t, reflect.TypeOf(true), typ)
+	typ := reflect.TypeOf(&testType4{})
 
-	typ = path.GetFieldType(&testType4{}, "foo.UInt")
-	require.NotNil(t, typ)
-	require.Equal(t, reflect.TypeOf(uint(1)), typ)
+	typ2 := path.GetFieldType(typ, "bool2")
+	require.NotNil(t, typ2)
+	require.Equal(t, reflect.TypeOf(true), typ2)
+
+	typ2 = path.GetFieldType(typ, "foo.UInt")
+	require.NotNil(t, typ2)
+	require.Equal(t, reflect.TypeOf(uint(1)), typ2)
 }

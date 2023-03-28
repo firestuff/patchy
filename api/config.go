@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"sync"
 
 	"github.com/firestuff/patchy/jsrest"
@@ -15,6 +16,7 @@ var ErrMissingAuthCheck = errors.New("missing auth check")
 
 type config struct {
 	typeName string
+	typeOf   reflect.Type
 
 	factory func() any
 
@@ -43,6 +45,7 @@ type mayWrite[T any] interface {
 func newConfig[T any](typeName string) *config {
 	cfg := &config{
 		typeName: typeName,
+		typeOf:   reflect.TypeOf(new(T)).Elem(),
 		factory:  func() any { return new(T) },
 		locks:    map[string]*lock{},
 	}
