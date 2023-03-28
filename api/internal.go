@@ -48,7 +48,11 @@ func (api *API) createInt(ctx context.Context, cfg *config, obj any) (any, error
 	return obj, nil
 }
 
-func (api *API) deleteInt(ctx context.Context, cfg *config, id string) error {
+func (api *API) deleteInt(ctx context.Context, cfg *config, id string, opts *UpdateOpts) error {
+	if opts == nil {
+		opts = &UpdateOpts{}
+	}
+
 	obj, err := api.sb.Read(ctx, cfg.typeName, id, cfg.factory)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read failed: %s (%w)", id, err)
@@ -56,6 +60,11 @@ func (api *API) deleteInt(ctx context.Context, cfg *config, id string) error {
 
 	if obj == nil {
 		return jsrest.Errorf(jsrest.ErrNotFound, "%s", id)
+	}
+
+	err = opts.ifMatch(obj)
+	if err != nil {
+		return jsrest.Errorf(jsrest.ErrInternalServerError, "match failed (%w)", err)
 	}
 
 	_, err = cfg.checkWrite(ctx, nil, obj, api)

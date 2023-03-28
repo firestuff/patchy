@@ -26,13 +26,13 @@ func Create[T any](ctx context.Context, api *API, obj *T) (*T, error) {
 	return CreateName[T](ctx, api, objName(obj), obj)
 }
 
-func DeleteName(ctx context.Context, api *API, name, id string) error {
+func DeleteName(ctx context.Context, api *API, name, id string, opts *UpdateOpts) error {
 	cfg := api.registry[name]
 	if cfg == nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
 	}
 
-	err := api.deleteInt(ctx, cfg, id)
+	err := api.deleteInt(ctx, cfg, id, opts)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "delete failed (%w)", err)
 	}
@@ -40,8 +40,8 @@ func DeleteName(ctx context.Context, api *API, name, id string) error {
 	return nil
 }
 
-func Delete[T any](ctx context.Context, api *API, id string) error {
-	return DeleteName(ctx, api, objName(new(T)), id)
+func Delete[T any](ctx context.Context, api *API, id string, opts *UpdateOpts) error {
+	return DeleteName(ctx, api, objName(new(T)), id, opts)
 }
 
 func FindName[T any](ctx context.Context, api *API, name, shortID string) (*T, error) {

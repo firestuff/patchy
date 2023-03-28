@@ -44,8 +44,8 @@ func Create[T any](ctx context.Context, a *API, obj *T) (*T, error) {
 	return api.Create[T](ctx, a, obj)
 }
 
-func Delete[T any](ctx context.Context, a *API, id string) error {
-	return api.Delete[T](ctx, a, id)
+func Delete[T any](ctx context.Context, a *API, id string, opts *UpdateOpts) error {
+	return api.Delete[T](ctx, a, id, opts)
 }
 
 func FindName[T any](ctx context.Context, a *API, name, shortID string) (*T, error) {
