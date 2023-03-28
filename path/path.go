@@ -6,7 +6,9 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"time"
 
+	"cloud.google.com/go/civil"
 	"github.com/firestuff/patchy/jsrest"
 )
 
@@ -150,7 +152,7 @@ func listRecursive(t reflect.Type, prev []string, list []string) ([]string, erro
 		t = t.Elem()
 	}
 
-	if t.Kind() != reflect.Struct {
+	if t.Kind() != reflect.Struct || t == reflect.TypeOf(time.Time{}) || t == reflect.TypeOf(civil.Date{}) {
 		if len(prev) > 0 {
 			list = append(list, strings.Join(prev, "."))
 		}

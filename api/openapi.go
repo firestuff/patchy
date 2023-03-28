@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/firestuff/patchy/jsrest"
+	"github.com/firestuff/patchy/path"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3gen"
 	"golang.org/x/net/idna"
@@ -427,7 +428,16 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 		},
 	}
 
-	// TODO: _sort (with field list enum)
+	paths, err := path.List(cfg.factory())
+	if err != nil {
+		return err
+	}
+
+	sorts := []any{}
+	for _, name := range paths {
+		sorts = append(sorts, fmt.Sprintf("+%s", name), fmt.Sprintf("-%s", name))
+	}
+
 	// TODO: Field filter list params, with operations
 	t.Paths[fmt.Sprintf("/%s", cfg.typeName)] = &openapi3.PathItem{
 		Get: &openapi3.Operation{
@@ -448,6 +458,25 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 				},
 				&openapi3.ParameterRef{
 					Ref: "#/components/parameters/_after",
+				},
+				&openapi3.ParameterRef{
+					Value: &openapi3.Parameter{
+						Name:        "_sort",
+						In:          "query",
+						Description: "Direction (+ ascending or - descending) and field path to sort by",
+						Explode:     P(true),
+						Schema: &openapi3.SchemaRef{
+							Value: &openapi3.Schema{
+								Type: "array",
+								Items: &openapi3.SchemaRef{
+									Value: &openapi3.Schema{
+										Type: "enum",
+										Enum: sorts,
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 			Responses: openapi3.Responses{
