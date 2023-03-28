@@ -127,7 +127,7 @@ func (api *API) replaceInt(ctx context.Context, cfg *config, id string, replace 
 		return nil, jsrest.Errorf(jsrest.ErrNotFound, "%s", id)
 	}
 
-	err = ifMatch(obj, opts)
+	err = opts.ifMatch(obj)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "match failed (%w)", err)
 	}
@@ -182,7 +182,7 @@ func (api *API) updateInt(ctx context.Context, cfg *config, id string, patch any
 		return nil, jsrest.Errorf(jsrest.ErrNotFound, "%s", id)
 	}
 
-	err = ifMatch(obj, opts)
+	err = opts.ifMatch(obj)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "match failed (%w)", err)
 	}

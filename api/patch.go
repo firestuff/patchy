@@ -8,15 +8,11 @@ import (
 
 func (api *API) patch(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
 	patch := cfg.factory()
+	opts := parseUpdateOpts(r)
 
 	err := jsrest.Read(r, patch)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read request failed (%w)", err)
-	}
-
-	opts, err := parseUpdateOpts(r)
-	if err != nil {
-		return jsrest.Errorf(jsrest.ErrBadRequest, "parse update options (%w)", err)
 	}
 
 	obj, err := api.updateInt(r.Context(), cfg, id, patch, opts)

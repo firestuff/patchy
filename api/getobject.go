@@ -1,17 +1,16 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/firestuff/patchy/jsrest"
 	"github.com/firestuff/patchy/metadata"
+	"github.com/vfaronov/httpheader"
 )
 
 func (api *API) getObject(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
-	opts, err := parseGetOpts(r)
-	if err != nil {
-		return jsrest.Errorf(jsrest.ErrBadRequest, "parse get options (%w)", err)
-	}
+	opts := parseGetOpts(r)
 
 	obj, err := api.getInt(r.Context(), cfg, id)
 	if err != nil {
@@ -23,9 +22,10 @@ func (api *API) getObject(cfg *config, id string, w http.ResponseWriter, r *http
 	}
 
 	md := metadata.GetMetadata(obj)
+	gen := fmt.Sprintf("generation:%d", md.Generation)
 
-	if (opts.IfNoneMatchETag != "" && opts.IfNoneMatchETag == md.ETag) ||
-		(opts.IfNoneMatchGeneration > 0 && opts.IfNoneMatchGeneration == md.Generation) {
+	if httpheader.MatchWeak(opts.IfNoneMatch, httpheader.EntityTag{Opaque: md.ETag}) ||
+		httpheader.MatchWeak(opts.IfNoneMatch, httpheader.EntityTag{Opaque: gen}) {
 		w.WriteHeader(http.StatusNotModified)
 		return nil
 	}

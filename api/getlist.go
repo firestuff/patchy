@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/firestuff/patchy/jsrest"
+	"github.com/vfaronov/httpheader"
 )
 
 func (api *API) getList(cfg *config, w http.ResponseWriter, r *http.Request) error {
@@ -22,7 +23,7 @@ func (api *API) getList(cfg *config, w http.ResponseWriter, r *http.Request) err
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "hash list failed (%w)", err)
 	}
 
-	if opts.IfNoneMatchETag != "" && opts.IfNoneMatchETag == etag {
+	if httpheader.MatchWeak(opts.IfNoneMatch, httpheader.EntityTag{Opaque: etag}) {
 		w.WriteHeader(http.StatusNotModified)
 		return nil
 	}

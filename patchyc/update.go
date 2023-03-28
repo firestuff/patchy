@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/firestuff/patchy/api"
+	"github.com/firestuff/patchy/metadata"
 	"github.com/go-resty/resty/v2"
 )
 
@@ -12,11 +13,8 @@ type (
 )
 
 func applyUpdateOpts(opts *UpdateOpts, req *resty.Request) {
-	if opts.IfMatchETag != "" {
-		req.SetHeader("If-Match", fmt.Sprintf(`"%s"`, opts.IfMatchETag))
-	}
-
-	if opts.IfMatchGeneration > 0 {
-		req.SetHeader("If-Match", fmt.Sprintf(`"generation:%d"`, opts.IfMatchGeneration))
+	if opts.Prev != nil {
+		md := metadata.GetMetadata(opts.Prev)
+		req.SetHeader("If-Match", fmt.Sprintf(`"%s"`, md.ETag))
 	}
 }

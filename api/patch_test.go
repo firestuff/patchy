@@ -58,7 +58,7 @@ func TestUpdateIfMatchETagSuccess(t *testing.T) {
 	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	updated, err := patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, &patchyc.UpdateOpts{IfMatchETag: created.ETag})
+	updated, err := patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, &patchyc.UpdateOpts{Prev: created})
 	require.NoError(t, err)
 	require.Equal(t, "bar", updated.Text)
 
@@ -78,50 +78,10 @@ func TestUpdateIfMatchETagMismatch(t *testing.T) {
 	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	updated, err := patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, &patchy.UpdateOpts{IfMatchETag: "etag:doesnotmatch"})
+	created.ETag = "etag:doesnotmatch"
+
+	updated, err := patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, &patchy.UpdateOpts{Prev: created})
 	require.Error(t, err)
-	require.ErrorContains(t, err, "etag mismatch")
-	require.Nil(t, updated)
-
-	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID, nil)
-	require.NoError(t, err)
-	require.Equal(t, "foo", get.Text)
-}
-
-func TestUpdateIfMatchGenerationSuccess(t *testing.T) {
-	t.Parallel()
-
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
-	ctx := context.Background()
-
-	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
-	require.NoError(t, err)
-
-	updated, err := patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, &patchy.UpdateOpts{IfMatchGeneration: created.Generation})
-	require.NoError(t, err)
-	require.Equal(t, "bar", updated.Text)
-
-	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID, nil)
-	require.NoError(t, err)
-	require.Equal(t, "bar", get.Text)
-}
-
-func TestUpdateIfMatchGenerationMismatch(t *testing.T) {
-	t.Parallel()
-
-	ta := newTestAPI(t)
-	defer ta.shutdown(t)
-
-	ctx := context.Background()
-
-	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
-	require.NoError(t, err)
-
-	updated, err := patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, &patchy.UpdateOpts{IfMatchGeneration: 50})
-	require.Error(t, err)
-	require.ErrorContains(t, err, "generation mismatch")
 	require.Nil(t, updated)
 
 	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID, nil)
@@ -144,7 +104,6 @@ func TestUpdateIfMatchInvalid(t *testing.T) {
 
 	updated, err := patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
 	require.Error(t, err)
-	require.ErrorContains(t, err, "invalid If-Match")
 	require.Nil(t, updated)
 
 	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID, nil)

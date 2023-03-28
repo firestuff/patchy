@@ -239,15 +239,3 @@ func (api *API) wrapErrorID(cb func(*config, string, http.ResponseWriter, *http.
 func objName[T any](obj *T) string {
 	return strings.ToLower(reflect.TypeOf(*obj).Name())
 }
-
-func trimQuotes(in string) (string, error) {
-	if len(in) >= 4 && strings.HasPrefix(in, "W/") {
-		in = strings.TrimPrefix(in, "W/")
-	}
-
-	if len(in) < 2 || !strings.HasPrefix(in, `"`) || !strings.HasSuffix(in, `"`) {
-		return "", jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", in, ErrHeaderValueMissingQuotes)
-	}
-
-	return strings.TrimPrefix(strings.TrimSuffix(in, `"`), `"`), nil
-}

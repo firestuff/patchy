@@ -7,6 +7,7 @@ import (
 
 	"github.com/firestuff/patchy/jsrest"
 	"github.com/firestuff/patchy/metadata"
+	"github.com/vfaronov/httpheader"
 )
 
 func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) error {
@@ -57,7 +58,7 @@ func (api *API) streamListFull(ctx context.Context, cfg *config, w http.Response
 	defer lsi.Close()
 
 	ticker := time.NewTicker(5 * time.Second)
-	initialETag := opts.IfNoneMatchETag
+	first := true
 	previousETag := ""
 
 	for {
@@ -77,19 +78,17 @@ func (api *API) streamListFull(ctx context.Context, cfg *config, w http.Response
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "hash list failed (%w)", err)
 			}
 
-			if initialETag != "" {
-				if initialETag == etag {
+			if first {
+				first = false
+
+				if httpheader.MatchWeak(opts.IfNoneMatch, httpheader.EntityTag{Opaque: etag}) {
 					err = writeEvent(w, "notModified", etag, emptyEvent, true)
 					if err != nil {
 						return jsrest.Errorf(jsrest.ErrInternalServerError, "write list failed (%w)", err)
 					}
 
-					initialETag = ""
-
 					continue
 				}
-
-				initialETag = ""
 			}
 
 			if previousETag == etag {
@@ -118,7 +117,6 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 	ticker := time.NewTicker(5 * time.Second)
 
 	first := true
-	initialETag := opts.IfNoneMatchETag
 	previousETag := ""
 
 	for {
@@ -140,19 +138,13 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "hash list failed (%w)", err)
 			}
 
-			if initialETag != "" {
-				if initialETag == etag {
-					err = writeEvent(w, "notModified", etag, emptyEvent, true)
-					if err != nil {
-						return jsrest.Errorf(jsrest.ErrInternalServerError, "write list failed (%w)", err)
-					}
-
-					initialETag = ""
-
-					continue
+			if first && httpheader.MatchWeak(opts.IfNoneMatch, httpheader.EntityTag{Opaque: etag}) {
+				err = writeEvent(w, "notModified", etag, emptyEvent, true)
+				if err != nil {
+					return jsrest.Errorf(jsrest.ErrInternalServerError, "write list failed (%w)", err)
 				}
 
-				initialETag = ""
+				continue
 			}
 
 			if previousETag == etag {

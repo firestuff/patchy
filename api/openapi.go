@@ -85,10 +85,10 @@ func (api *API) buildOpenAPIGlobal(r *http.Request) (*openapi3.T, error) {
 					Value: &openapi3.Header{
 						Parameter: openapi3.Parameter{
 							Name: "ETag",
-							In: "header",
+							In:   "header",
 							Schema: &openapi3.SchemaRef{
 								Value: &openapi3.Schema{
-									Type: "string",
+									Type:    "string",
 									Example: `"etag:20af52b66d85b8854183c82e462771a01606b31104a44a52237e17f6548d4ba7"`,
 									Pattern: `^"[^"]+"$`,
 								},
