@@ -90,9 +90,7 @@ func (api *API) buildOpenAPIGlobal(r *http.Request) (*openapi3.T, error) {
 							In:   "header",
 							Schema: &openapi3.SchemaRef{
 								Value: &openapi3.Schema{
-									Type:    "string",
-									Example: `"etag:20af52b66d85b8854183c82e462771a01606b31104a44a52237e17f6548d4ba7"`,
-									Pattern: `^"[^"]+"$`,
+									Type: "string",
 								},
 							},
 						},
@@ -106,9 +104,7 @@ func (api *API) buildOpenAPIGlobal(r *http.Request) (*openapi3.T, error) {
 							In:   "header",
 							Schema: &openapi3.SchemaRef{
 								Value: &openapi3.Schema{
-									Type:    "string",
-									Example: `"etag:20af52b66d85b8854183c82e462771a01606b31104a44a52237e17f6548d4ba7"`,
-									Pattern: `^"[^"]+"(, *"[^"]+")*$`,
+									Type: "string",
 								},
 							},
 						},
@@ -122,9 +118,7 @@ func (api *API) buildOpenAPIGlobal(r *http.Request) (*openapi3.T, error) {
 							In:   "header",
 							Schema: &openapi3.SchemaRef{
 								Value: &openapi3.Schema{
-									Type:    "string",
-									Example: `"etag:20af52b66d85b8854183c82e462771a01606b31104a44a52237e17f6548d4ba7"`,
-									Pattern: `^"[^"]+"(, *"[^"]+")*$`,
+									Type: "string",
 								},
 							},
 						},
@@ -169,8 +163,7 @@ func (api *API) buildOpenAPIGlobal(r *http.Request) (*openapi3.T, error) {
 						Description: "Limit number of objects returned",
 						Schema: &openapi3.SchemaRef{
 							Value: &openapi3.Schema{
-								Type:    "integer",
-								Example: 10,
+								Type: "integer",
 							},
 						},
 					},
@@ -183,8 +176,7 @@ func (api *API) buildOpenAPIGlobal(r *http.Request) (*openapi3.T, error) {
 						Description: "Skip number of objects at start of list",
 						Schema: &openapi3.SchemaRef{
 							Value: &openapi3.Schema{
-								Type:    "integer",
-								Example: 10,
+								Type: "integer",
 							},
 						},
 					},
@@ -213,23 +205,26 @@ func (api *API) buildOpenAPIGlobal(r *http.Request) (*openapi3.T, error) {
 			Schemas: openapi3.Schemas{
 				"id": &openapi3.SchemaRef{
 					Value: &openapi3.Schema{
-						Type:    "string",
-						Example: "SK7rZ3j13PJpeIiS",
+						Type: "string",
 					},
 				},
 
 				"etag": &openapi3.SchemaRef{
 					Value: &openapi3.Schema{
-						Type:    "string",
-						Example: "etag:20af52b66d85b8854183c82e462771a01606b31104a44a52237e17f6548d4ba7",
+						Type: "string",
 					},
 				},
 
 				"generation": &openapi3.SchemaRef{
 					Value: &openapi3.Schema{
-						Type:    "integer",
-						Format:  "int64",
-						Example: 42,
+						Type:   "integer",
+						Format: "int64",
+					},
+				},
+
+				"prefix": &openapi3.SchemaRef{
+					Value: &openapi3.Schema{
+						Type: "string",
 					},
 				},
 
@@ -447,14 +442,60 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 			return jsrest.Errorf(jsrest.ErrInternalServerError, "generate schema ref failed (%w)", err)
 		}
 
-		filters = append(filters, &openapi3.ParameterRef{
-			Value: &openapi3.Parameter{
-				Name:        pth,
-				In:          "query",
-				Description: fmt.Sprintf("Filter list by `%s` equality", pth),
-				Schema:      pthSchema,
+		filters = append(filters, openapi3.Parameters{
+			&openapi3.ParameterRef{
+				Value: &openapi3.Parameter{
+					Name:        pth,
+					In:          "query",
+					Description: fmt.Sprintf("Filter list by `%s` equal to", pth),
+					Schema:      pthSchema,
+				},
 			},
-		})
+
+			&openapi3.ParameterRef{
+				Value: &openapi3.Parameter{
+					Name:        fmt.Sprintf("%s[gt]", pth),
+					In:          "query",
+					Description: fmt.Sprintf("Filter list by `%s` greater than", pth),
+					Schema:      pthSchema,
+				},
+			},
+
+			&openapi3.ParameterRef{
+				Value: &openapi3.Parameter{
+					Name:        fmt.Sprintf("%s[gte]", pth),
+					In:          "query",
+					Description: fmt.Sprintf("Filter list by `%s` greater than or equal to", pth),
+					Schema:      pthSchema,
+				},
+			},
+
+			&openapi3.ParameterRef{
+				Value: &openapi3.Parameter{
+					Name:        fmt.Sprintf("%s[hp]", pth),
+					In:          "query",
+					Description: fmt.Sprintf("Filter list by `%s` has prefix", pth),
+					Schema: &openapi3.SchemaRef{
+						Ref: "#/components/schemas/prefix",
+					},
+				},
+			},
+
+			&openapi3.ParameterRef{
+				Value: &openapi3.Parameter{
+					Name:        fmt.Sprintf("%s[in]", pth),
+					In:          "query",
+					Description: fmt.Sprintf("Filter list by `%s` one of", pth),
+					Explode:     P(false),
+					Schema: &openapi3.SchemaRef{
+						Value: &openapi3.Schema{
+							Type:  "array",
+							Items: pthSchema,
+						},
+					},
+				},
+			},
+		}...)
 	}
 
 	t.Paths[fmt.Sprintf("/%s", cfg.typeName)] = &openapi3.PathItem{
