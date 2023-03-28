@@ -96,6 +96,7 @@ func (api *API) buildOpenAPIGlobal(r *http.Request) (*openapi3.T, error) {
 						},
 					},
 				},
+
 				"if-match": &openapi3.HeaderRef{
 					Value: &openapi3.Header{
 						Parameter: openapi3.Parameter{
@@ -111,6 +112,7 @@ func (api *API) buildOpenAPIGlobal(r *http.Request) (*openapi3.T, error) {
 						},
 					},
 				},
+
 				"if-none-match": &openapi3.HeaderRef{
 					Value: &openapi3.Header{
 						Parameter: openapi3.Parameter{
@@ -135,6 +137,62 @@ func (api *API) buildOpenAPIGlobal(r *http.Request) (*openapi3.T, error) {
 						In:          "path",
 						Description: "Object ID",
 						Required:    true,
+						Schema: &openapi3.SchemaRef{
+							Ref: "#/components/schemas/id",
+						},
+					},
+				},
+
+				"_stream": &openapi3.ParameterRef{
+					Value: &openapi3.Parameter{
+						Name: "_stream",
+						In: "query",
+						Description: "EventStream (List) format",
+						Schema: &openapi3.SchemaRef{
+							Value: &openapi3.Schema{
+								Type: "enum",
+								Enum: []any{
+									"full",
+									"diff",
+								},
+							},
+						},
+					},
+				},
+
+				"_limit": &openapi3.ParameterRef{
+					Value: &openapi3.Parameter{
+						Name: "_limit",
+						In: "query",
+						Description: "Limit number of objects returned",
+						Schema: &openapi3.SchemaRef{
+							Value: &openapi3.Schema{
+								Type: "integer",
+								Example: 10,
+							},
+						},
+					},
+				},
+
+				"_offset": &openapi3.ParameterRef{
+					Value: &openapi3.Parameter{
+						Name: "_offset",
+						In: "query",
+						Description: "Skip number of objects at start of list",
+						Schema: &openapi3.SchemaRef{
+							Value: &openapi3.Schema{
+								Type: "integer",
+								Example: 10,
+							},
+						},
+					},
+				},
+
+				"_after": &openapi3.ParameterRef{
+					Value: &openapi3.Parameter{
+						Name: "_after",
+						In: "query",
+						Description: "Skip objects up to and including this ID",
 						Schema: &openapi3.SchemaRef{
 							Ref: "#/components/schemas/id",
 						},
@@ -369,7 +427,8 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 		},
 	}
 
-	// TODO: Add list arguments
+	// TODO: _sort (with field list enum)
+	// TODO: Field filter list params, with operations
 	t.Paths[fmt.Sprintf("/%s", cfg.typeName)] = &openapi3.PathItem{
 		Get: &openapi3.Operation{
 			Tags:    []string{cfg.typeName},
@@ -377,6 +436,18 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 			Parameters: openapi3.Parameters{
 				&openapi3.ParameterRef{
 					Ref: "#/components/headers/if-none-match",
+				},
+				&openapi3.ParameterRef{
+					Ref: "#/components/parameters/_stream",
+				},
+				&openapi3.ParameterRef{
+					Ref: "#/components/parameters/_limit",
+				},
+				&openapi3.ParameterRef{
+					Ref: "#/components/parameters/_offset",
+				},
+				&openapi3.ParameterRef{
+					Ref: "#/components/parameters/_after",
 				},
 			},
 			Responses: openapi3.Responses{
