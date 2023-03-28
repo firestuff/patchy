@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/firestuff/patchy/jsrest"
@@ -46,7 +47,7 @@ func getRecursive(v reflect.Value, parts []string, prev []string) (any, error) {
 	}
 
 	newPrev := []string{}
-	copy(newPrev, prev)
+	newPrev = append(newPrev, prev...)
 	newPrev = append(newPrev, part)
 
 	return getRecursive(sub, parts[1:], newPrev)
@@ -125,10 +126,55 @@ func setRecursive(v reflect.Value, parts []string, prev []string, val string) er
 	}
 
 	newPrev := []string{}
-	copy(newPrev, prev)
+	newPrev = append(newPrev, prev...)
 	newPrev = append(newPrev, part)
 
 	return setRecursive(sub, parts[1:], newPrev, val)
+}
+
+func List(obj any) ([]string, error) {
+	list, err := listRecursive(reflect.TypeOf(obj), []string{}, []string{})
+	if err != nil {
+		return nil, err
+	}
+
+	sort.Strings(list)
+
+	return list, nil
+}
+
+func listRecursive(t reflect.Type, prev []string, list []string) ([]string, error) {
+	var err error
+
+	if t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
+
+	if t.Kind() != reflect.Struct {
+		if len(prev) > 0 {
+			list = append(list, strings.Join(prev, "."))
+		}
+
+		return list, nil
+	}
+
+	for i := 0; i < t.NumField(); i++ {
+		sub := t.Field(i)
+
+		newPrev := []string{}
+		newPrev = append(newPrev, prev...)
+
+		if !sub.Anonymous {
+			newPrev = append(newPrev, fieldName(sub)) //nolint:makezero
+		}
+
+		list, err = listRecursive(sub.Type, newPrev, list)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return list, nil
 }
 
 func errorPath(prev []string, part string) string {
@@ -137,4 +183,19 @@ func errorPath(prev []string, part string) string {
 	}
 
 	return fmt.Sprintf("%s.%s", strings.Join(prev, "."), part)
+}
+
+func fieldName(field reflect.StructField) string {
+	tag := field.Tag.Get("json")
+	if tag != "" {
+		if tag == "-" {
+			return ""
+		}
+
+		parts := strings.SplitN(tag, ",", 2)
+
+		return parts[0]
+	}
+
+	return field.Name
 }
