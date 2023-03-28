@@ -1,6 +1,7 @@
 package path_test
 
 import (
+	"reflect"
 	"testing"
 	"time"
 
@@ -110,4 +111,16 @@ func TestList(t *testing.T) {
 		"foo.string2",
 		"string2",
 	}, list)
+}
+
+func TestGetFieldType(t *testing.T) {
+	t.Parallel()
+
+	typ := path.GetFieldType(&testType4{}, "bool2")
+	require.NotNil(t, typ)
+	require.Equal(t, reflect.TypeOf(true), typ)
+
+	typ = path.GetFieldType(&testType4{}, "foo.UInt")
+	require.NotNil(t, typ)
+	require.Equal(t, reflect.TypeOf(uint(1)), typ)
 }
