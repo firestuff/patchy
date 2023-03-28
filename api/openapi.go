@@ -145,8 +145,8 @@ func (api *API) buildOpenAPIGlobal(r *http.Request) (*openapi3.T, error) {
 
 				"_stream": &openapi3.ParameterRef{
 					Value: &openapi3.Parameter{
-						Name: "_stream",
-						In: "query",
+						Name:        "_stream",
+						In:          "query",
 						Description: "EventStream (List) format",
 						Schema: &openapi3.SchemaRef{
 							Value: &openapi3.Schema{
@@ -162,12 +162,12 @@ func (api *API) buildOpenAPIGlobal(r *http.Request) (*openapi3.T, error) {
 
 				"_limit": &openapi3.ParameterRef{
 					Value: &openapi3.Parameter{
-						Name: "_limit",
-						In: "query",
+						Name:        "_limit",
+						In:          "query",
 						Description: "Limit number of objects returned",
 						Schema: &openapi3.SchemaRef{
 							Value: &openapi3.Schema{
-								Type: "integer",
+								Type:    "integer",
 								Example: 10,
 							},
 						},
@@ -176,12 +176,12 @@ func (api *API) buildOpenAPIGlobal(r *http.Request) (*openapi3.T, error) {
 
 				"_offset": &openapi3.ParameterRef{
 					Value: &openapi3.Parameter{
-						Name: "_offset",
-						In: "query",
+						Name:        "_offset",
+						In:          "query",
 						Description: "Skip number of objects at start of list",
 						Schema: &openapi3.SchemaRef{
 							Value: &openapi3.Schema{
-								Type: "integer",
+								Type:    "integer",
 								Example: 10,
 							},
 						},
@@ -190,8 +190,8 @@ func (api *API) buildOpenAPIGlobal(r *http.Request) (*openapi3.T, error) {
 
 				"_after": &openapi3.ParameterRef{
 					Value: &openapi3.Parameter{
-						Name: "_after",
-						In: "query",
+						Name:        "_after",
+						In:          "query",
 						Description: "Skip objects up to and including this ID",
 						Schema: &openapi3.SchemaRef{
 							Ref: "#/components/schemas/id",

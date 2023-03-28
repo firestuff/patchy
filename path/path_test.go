@@ -47,6 +47,17 @@ type testType3 struct {
 	testType1
 }
 
+type testType4 struct {
+	Foo *testType5 `json:"foo"`
+	testType5
+}
+
+type testType5 struct {
+	String string `json:"string2,omitempty"`
+	Bool   bool   `json:"bool2"`
+	UInt   uint
+}
+
 func TestSet(t *testing.T) {
 	t.Parallel()
 
@@ -84,4 +95,19 @@ func TestEmbed(t *testing.T) {
 	err := path.Set(tt3, "int", "1234")
 	require.NoError(t, err)
 	require.Equal(t, 1234, tt3.Int)
+}
+
+func TestList(t *testing.T) {
+	t.Parallel()
+
+	list, err := path.List(&testType4{})
+	require.NoError(t, err)
+	require.Equal(t, []string{
+		"UInt",
+		"bool2",
+		"foo.UInt",
+		"foo.bool2",
+		"foo.string2",
+		"string2",
+	}, list)
 }
