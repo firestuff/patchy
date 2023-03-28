@@ -262,7 +262,7 @@ func TestAcceptJSON(t *testing.T) {
 	read := &testType{}
 
 	resp, err := ta.r().
-		SetHeader("Accept", "text/event-stream;q=0.3, text/xml;q=0.1, application/json;q=0.5").
+		SetHeader("Accept", "text/xml, application/json").
 		SetResult(read).
 		SetPathParam("id", created.ID).
 		Get("testtype/{id}")
@@ -286,7 +286,7 @@ func TestAcceptEventStream(t *testing.T) {
 
 	resp, err := ta.r().
 		SetDoNotParseResponse(true).
-		SetHeader("Accept", "text/event-stream;q=0.7, text/xml;q=0.1, application/json;q=0.5").
+		SetHeader("Accept", "text/event-stream, text/xml").
 		SetPathParam("id", created.ID).
 		Get("testtype/{id}")
 	require.NoError(t, err)
