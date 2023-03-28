@@ -495,6 +495,24 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 					},
 				},
 			},
+
+			&openapi3.ParameterRef{
+				Value: &openapi3.Parameter{
+					Name:        fmt.Sprintf("%s[lt]", pth),
+					In:          "query",
+					Description: fmt.Sprintf("Filter list by `%s` less than", pth),
+					Schema:      pthSchema,
+				},
+			},
+
+			&openapi3.ParameterRef{
+				Value: &openapi3.Parameter{
+					Name:        fmt.Sprintf("%s[lte]", pth),
+					In:          "query",
+					Description: fmt.Sprintf("Filter list by `%s` less than or equal to", pth),
+					Schema:      pthSchema,
+				},
+			},
 		}...)
 	}
 
