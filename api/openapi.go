@@ -96,6 +96,36 @@ func (api *API) buildOpenAPIGlobal(r *http.Request) (*openapi3.T, error) {
 						},
 					},
 				},
+				"if-match": &openapi3.HeaderRef{
+					Value: &openapi3.Header{
+						Parameter: openapi3.Parameter{
+							Name: "If-Match",
+							In:   "header",
+							Schema: &openapi3.SchemaRef{
+								Value: &openapi3.Schema{
+									Type:    "string",
+									Example: `"etag:20af52b66d85b8854183c82e462771a01606b31104a44a52237e17f6548d4ba7"`,
+									Pattern: `^"[^"]+"(, *"[^"]+")*$`,
+								},
+							},
+						},
+					},
+				},
+				"if-none-match": &openapi3.HeaderRef{
+					Value: &openapi3.Header{
+						Parameter: openapi3.Parameter{
+							Name: "If-None-Match",
+							In:   "header",
+							Schema: &openapi3.SchemaRef{
+								Value: &openapi3.Schema{
+									Type:    "string",
+									Example: `"etag:20af52b66d85b8854183c82e462771a01606b31104a44a52237e17f6548d4ba7"`,
+									Pattern: `^"[^"]+"(, *"[^"]+")*$`,
+								},
+							},
+						},
+					},
+				},
 			},
 
 			Parameters: openapi3.ParametersMap{
@@ -268,13 +298,16 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 	}
 
 	// TODO: Add list arguments
-	// TODO: Add If-None-Match
-	// TODO: Add If-Match
 	// TODO: Add text/event-stream
 	t.Paths[fmt.Sprintf("/%s", cfg.typeName)] = &openapi3.PathItem{
 		Get: &openapi3.Operation{
 			Tags:    []string{cfg.typeName},
 			Summary: fmt.Sprintf("List %s objects", cfg.typeName),
+			Parameters: openapi3.Parameters{
+				&openapi3.ParameterRef{
+					Ref: "#/components/headers/if-none-match",
+				},
+			},
 			Responses: openapi3.Responses{
 				"200": &openapi3.ResponseRef{
 					Ref: fmt.Sprintf("#/components/responses/%s--list", cfg.typeName),
@@ -306,6 +339,11 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 		Get: &openapi3.Operation{
 			Tags:    []string{cfg.typeName},
 			Summary: fmt.Sprintf("Get %s object", cfg.typeName),
+			Parameters: openapi3.Parameters{
+				&openapi3.ParameterRef{
+					Ref: "#/components/parameters/if-none-match",
+				},
+			},
 			Responses: openapi3.Responses{
 				"200": &openapi3.ResponseRef{
 					Ref: fmt.Sprintf("#/components/responses/%s", cfg.typeName),
@@ -316,6 +354,11 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 		Put: &openapi3.Operation{
 			Tags:    []string{cfg.typeName},
 			Summary: fmt.Sprintf("Replace %s object", cfg.typeName),
+			Parameters: openapi3.Parameters{
+				&openapi3.ParameterRef{
+					Ref: "#/components/headers/if-match",
+				},
+			},
 			RequestBody: &openapi3.RequestBodyRef{
 				Ref: fmt.Sprintf("#/components/requestBodies/%s", cfg.typeName),
 			},
@@ -329,6 +372,11 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 		Patch: &openapi3.Operation{
 			Tags:    []string{cfg.typeName},
 			Summary: fmt.Sprintf("Update %s object", cfg.typeName),
+			Parameters: openapi3.Parameters{
+				&openapi3.ParameterRef{
+					Ref: "#/components/headers/if-match",
+				},
+			},
 			RequestBody: &openapi3.RequestBodyRef{
 				Ref: fmt.Sprintf("#/components/requestBodies/%s", cfg.typeName),
 			},
@@ -342,6 +390,11 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 		Delete: &openapi3.Operation{
 			Tags:    []string{cfg.typeName},
 			Summary: fmt.Sprintf("Delete %s object", cfg.typeName),
+			Parameters: openapi3.Parameters{
+				&openapi3.ParameterRef{
+					Ref: "#/components/headers/if-match",
+				},
+			},
 			Responses: openapi3.Responses{
 				"204": &openapi3.ResponseRef{
 					Ref: "#/components/responses/no-content",
