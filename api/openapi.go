@@ -172,6 +172,68 @@ func (api *API) buildOpenAPIGlobal(r *http.Request) (*openapi3.T, error) {
 						Example: 42,
 					},
 				},
+
+				"event-stream-object": &openapi3.SchemaRef{
+					Value: &openapi3.Schema{
+						Title: "EventStream (Object)",
+						Type:  "string",
+						Extensions: map[string]any{
+							"x-event-types": []string{
+								"notModified",
+								"initial",
+								"update",
+								"delete",
+								"heartbeat",
+								"error",
+							},
+						},
+					},
+				},
+
+				"event-stream-list": &openapi3.SchemaRef{
+					Value: &openapi3.Schema{
+						Title: "EventStream (List)",
+						OneOf: openapi3.SchemaRefs{
+							&openapi3.SchemaRef{
+								Ref: "#/components/schemas/event-stream-list-full",
+							},
+							&openapi3.SchemaRef{
+								Ref: "#/components/schemas/event-stream-list-diff",
+							},
+						},
+					},
+				},
+
+				"event-stream-list-full": &openapi3.SchemaRef{
+					Value: &openapi3.Schema{
+						Title: "EventStream (List; _stream=full)",
+						Extensions: map[string]any{
+							"x-event-types": []string{
+								"notModified",
+								"list",
+								"heartbeat",
+								"error",
+							},
+						},
+					},
+				},
+
+				"event-stream-list-diff": &openapi3.SchemaRef{
+					Value: &openapi3.Schema{
+						Title: "EventStream (List; _stream=diff)",
+						Extensions: map[string]any{
+							"x-event-types": []string{
+								"notModified",
+								"add",
+								"remove",
+								"update",
+								"sync",
+								"heartbeat",
+								"error",
+							},
+						},
+					},
+				},
 			},
 		},
 
@@ -270,6 +332,11 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 						Ref: fmt.Sprintf("#/components/schemas/%s--response", cfg.typeName),
 					},
 				},
+				"text/event-stream": &openapi3.MediaType{
+					Schema: &openapi3.SchemaRef{
+						Ref: "#/components/schemas/event-stream-object",
+					},
+				},
 			},
 		},
 	}
@@ -293,12 +360,16 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 						},
 					},
 				},
+				"text/event-stream": &openapi3.MediaType{
+					Schema: &openapi3.SchemaRef{
+						Ref: "#/components/schemas/event-stream-list",
+					},
+				},
 			},
 		},
 	}
 
 	// TODO: Add list arguments
-	// TODO: Add text/event-stream
 	t.Paths[fmt.Sprintf("/%s", cfg.typeName)] = &openapi3.PathItem{
 		Get: &openapi3.Operation{
 			Tags:    []string{cfg.typeName},
@@ -341,7 +412,7 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 			Summary: fmt.Sprintf("Get %s object", cfg.typeName),
 			Parameters: openapi3.Parameters{
 				&openapi3.ParameterRef{
-					Ref: "#/components/parameters/if-none-match",
+					Ref: "#/components/headers/if-none-match",
 				},
 			},
 			Responses: openapi3.Responses{
