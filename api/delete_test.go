@@ -24,7 +24,7 @@ func TestDeleteSuccess(t *testing.T) {
 	require.NotNil(t, get)
 	require.Equal(t, "foo", get.Text)
 
-	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID)
+	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 
 	get, err = patchyc.Get[testType](ctx, ta.pyc, created.ID, nil)
@@ -40,7 +40,7 @@ func TestDeleteInvalidID(t *testing.T) {
 
 	ctx := context.Background()
 
-	err := patchyc.Delete[testType](ctx, ta.pyc, "doesnotexist")
+	err := patchyc.Delete[testType](ctx, ta.pyc, "doesnotexist", nil)
 	require.Error(t, err)
 }
 
@@ -55,10 +55,10 @@ func TestDeleteTwice(t *testing.T) {
 	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID)
+	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 
-	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID)
+	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID, nil)
 	require.Error(t, err)
 }
 
@@ -83,10 +83,52 @@ func TestDeleteStream(t *testing.T) {
 	require.NoError(t, stream.Error())
 	require.Equal(t, "foo", ev.Obj.Text)
 
-	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID)
+	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 
 	ev = stream.Read()
 	require.Nil(t, ev, stream.Error())
 	require.Error(t, stream.Error())
+}
+
+func TestDeleteIfMatchETagSuccess(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID, &patchyc.UpdateOpts{Prev: created})
+	require.NoError(t, err)
+
+	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID, nil)
+	require.NoError(t, err)
+	require.Nil(t, get)
+}
+
+func TestDeleteIfMatchETagMismatch(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
+	require.NoError(t, err)
+
+	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID, &patchyc.UpdateOpts{Prev: created})
+	require.Error(t, err)
+
+	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID, nil)
+	require.NoError(t, err)
+	require.NotNil(t, get)
+	require.Equal(t, "bar", get.Text)
 }

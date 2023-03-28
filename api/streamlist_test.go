@@ -144,7 +144,7 @@ func TestStreamListDelete(t *testing.T) {
 	require.Len(t, ev.List, 1)
 	require.Equal(t, "foo", ev.List[0].Text)
 
-	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID)
+	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 
 	ev = stream.Read()
@@ -386,7 +386,7 @@ func TestStreamListDiffDelete(t *testing.T) {
 	require.Len(t, ev.List, 1)
 	require.Equal(t, "foo", ev.List[0].Text)
 
-	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID)
+	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 
 	ev = stream.Read()

@@ -214,7 +214,7 @@ func TestMayWriteDeleteSuccess(t *testing.T) {
 	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
 
-	err = patchyc.Delete[mayType](ctx, ta.pyc, created.ID)
+	err = patchyc.Delete[mayType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 }
 
@@ -234,7 +234,7 @@ func TestMayWriteDeleteRefuse(t *testing.T) {
 
 	ta.pyc.SetHeader("X-Refuse-Write", "x")
 
-	err = patchyc.Delete[mayType](ctx, ta.pyc, created.ID)
+	err = patchyc.Delete[mayType](ctx, ta.pyc, created.ID, nil)
 	require.Error(t, err)
 }
 

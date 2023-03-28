@@ -172,7 +172,7 @@ func TestDirectDelete(t *testing.T) {
 	_, err = api.Get[testType](ctx, ta.api, create.ID, nil)
 	require.NoError(t, err)
 
-	err = api.Delete[testType](ctx, ta.api, create.ID)
+	err = api.Delete[testType](ctx, ta.api, create.ID, nil)
 	require.NoError(t, err)
 
 	get, err := api.Get[testType](ctx, ta.api, create.ID, nil)
@@ -191,7 +191,7 @@ func TestDirectDeleteInvalidType(t *testing.T) {
 	create, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	err = api.DeleteName(ctx, ta.api, "doesnotexist", create.ID)
+	err = api.DeleteName(ctx, ta.api, "doesnotexist", create.ID, nil)
 	require.Error(t, err)
 }
 
@@ -203,7 +203,7 @@ func TestDirectDeleteNotFound(t *testing.T) {
 
 	ctx := context.Background()
 
-	err := api.Delete[testType](ctx, ta.api, "doesnotexist")
+	err := api.Delete[testType](ctx, ta.api, "doesnotexist", nil)
 	require.Error(t, err)
 }
 
@@ -460,7 +460,7 @@ func TestDirectStreamListDelete(t *testing.T) {
 	require.Len(t, ev.List, 1)
 	require.Equal(t, "foo", ev.List[0].Text)
 
-	err = api.Delete[testType](ctx, ta.api, created.ID)
+	err = api.Delete[testType](ctx, ta.api, created.ID, nil)
 	require.NoError(t, err)
 
 	ev = stream.Read()

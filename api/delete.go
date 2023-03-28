@@ -7,8 +7,9 @@ import (
 )
 
 func (api *API) delete(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
-	// TODO: Support If-Match
-	err := api.deleteInt(r.Context(), cfg, id)
+	opts := parseUpdateOpts(r)
+
+	err := api.deleteInt(r.Context(), cfg, id, opts)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "delete failed (%w)", err)
 	}
