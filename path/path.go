@@ -43,8 +43,8 @@ func getRecursive(v reflect.Value, parts []string, prev []string) (any, error) {
 
 	part := parts[0]
 
-	sub := getField(v, part)
-	if !sub.IsValid() {
+	sub, found := getField(v, part)
+	if !found {
 		return nil, jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", errorPath(prev, part), ErrUnknownFieldName)
 	}
 
@@ -55,34 +55,13 @@ func getRecursive(v reflect.Value, parts []string, prev []string) (any, error) {
 	return getRecursive(sub, parts[1:], newPrev)
 }
 
-func getField(v reflect.Value, name string) reflect.Value {
-	name = strings.ToLower(name)
-	typ := v.Type()
-
-	field, ok := typ.FieldByNameFunc(func(iterName string) bool {
-		iterField, iterOK := typ.FieldByName(iterName)
-		if !iterOK {
-			panic(iterName)
-		}
-
-		tag := iterField.Tag.Get("json")
-		if tag != "" {
-			if tag == "-" {
-				return false
-			}
-
-			parts := strings.SplitN(tag, ",", 2)
-			iterName = parts[0]
-		}
-
-		return strings.ToLower(iterName) == name
-	})
-
-	if ok {
-		return v.FieldByName(field.Name)
+func getField(v reflect.Value, name string) (reflect.Value, bool) {
+	field, found := getStructField(v.Type(), name)
+	if !found {
+		return reflect.Value{}, false
 	}
 
-	return reflect.Value{}
+	return v.FieldByName(field.Name), true
 }
 
 func Set(obj any, path string, val string) error {
@@ -122,8 +101,8 @@ func setRecursive(v reflect.Value, parts []string, prev []string, val string) er
 
 	part := parts[0]
 
-	sub := getField(v, part)
-	if !sub.IsValid() {
+	sub, found := getField(v, part)
+	if !found {
 		return jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", errorPath(prev, part), ErrUnknownFieldName)
 	}
 
@@ -177,6 +156,49 @@ func listRecursive(t reflect.Type, prev []string, list []string) ([]string, erro
 	}
 
 	return list, nil
+}
+
+func GetFieldType(obj any, path string) reflect.Type {
+	parts := strings.Split(path, ".")
+	iter := reflect.TypeOf(obj)
+
+	for _, part := range parts {
+		if iter.Kind() == reflect.Pointer {
+			iter = iter.Elem()
+		}
+
+		field, found := getStructField(iter, part)
+		if !found {
+			return nil
+		}
+
+		iter = field.Type
+	}
+
+	return iter
+}
+
+func getStructField(t reflect.Type, name string) (reflect.StructField, bool) {
+	name = strings.ToLower(name)
+
+	return t.FieldByNameFunc(func(iterName string) bool {
+		iterField, iterOK := t.FieldByName(iterName)
+		if !iterOK {
+			panic(iterName)
+		}
+
+		tag := iterField.Tag.Get("json")
+		if tag != "" {
+			if tag == "-" {
+				return false
+			}
+
+			parts := strings.SplitN(tag, ",", 2)
+			iterName = parts[0]
+		}
+
+		return strings.ToLower(iterName) == name
+	})
 }
 
 func errorPath(prev []string, part string) string {
