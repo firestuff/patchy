@@ -110,7 +110,7 @@ func (p *Potency) serveHTTP(w http.ResponseWriter, r *http.Request, val string) 
 
 		hexed := hex.EncodeToString(h.Sum(nil))
 		if hexed != saved.Sha256 {
-			return jsrest.Errorf(jsrest.ErrUnprocessableEntity, "%s vs %s (%w)", hexed, saved.Sha256, ErrBodyMismatch)
+			return jsrest.Errorf(jsrest.ErrBadRequest, "%s vs %s (%w)", hexed, saved.Sha256, ErrBodyMismatch)
 		}
 
 		for key, vals := range saved.ResponseHeader {
