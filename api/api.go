@@ -174,7 +174,7 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: Gate CORs with some kind of flag
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Cache-Control", "no-store")
 
 	api.potency.ServeHTTP(w, r)
 }
