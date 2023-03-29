@@ -72,6 +72,11 @@ func (api *API) buildOpenAPIGlobal(r *http.Request) (*openapi3.T, error) {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "get base URL failed (%w)", err)
 	}
 
+	errorSchema, err := generateSchemaRef(reflect.TypeOf(&jsrest.JSONError{}))
+	if err != nil {
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "generate schema ref failed (%w)", err)
+	}
+
 	t := &openapi3.T{
 		OpenAPI:  "3.0.3",
 		Paths:    openapi3.Paths{},
@@ -195,9 +200,101 @@ func (api *API) buildOpenAPIGlobal(r *http.Request) (*openapi3.T, error) {
 			},
 
 			Responses: openapi3.Responses{
+				// 204
 				"no-content": &openapi3.ResponseRef{
 					Value: &openapi3.Response{
 						Description: P("No Content"),
+					},
+				},
+
+				// 304
+				"not-modified": &openapi3.ResponseRef{
+					Value: &openapi3.Response{
+						Description: P("Not Modified"),
+					},
+				},
+
+				// 400
+				"bad-request": &openapi3.ResponseRef{
+					Value: &openapi3.Response{
+						Description: P("Bad Request"),
+						Content: openapi3.Content{
+							"application/json": &openapi3.MediaType{
+								Schema: &openapi3.SchemaRef{
+									Ref: "#/components/schemas/error",
+								},
+							},
+						},
+					},
+				},
+
+				// 401
+				"unauthorized": &openapi3.ResponseRef{
+					Value: &openapi3.Response{
+						Description: P("Unauthorized"),
+						Content: openapi3.Content{
+							"application/json": &openapi3.MediaType{
+								Schema: &openapi3.SchemaRef{
+									Ref: "#/components/schemas/error",
+								},
+							},
+						},
+					},
+				},
+
+				// 403
+				"forbidden": &openapi3.ResponseRef{
+					Value: &openapi3.Response{
+						Description: P("Forbidden"),
+						Content: openapi3.Content{
+							"application/json": &openapi3.MediaType{
+								Schema: &openapi3.SchemaRef{
+									Ref: "#/components/schemas/error",
+								},
+							},
+						},
+					},
+				},
+
+				// 404
+				"not-found": &openapi3.ResponseRef{
+					Value: &openapi3.Response{
+						Description: P("Not Found"),
+						Content: openapi3.Content{
+							"application/json": &openapi3.MediaType{
+								Schema: &openapi3.SchemaRef{
+									Ref: "#/components/schemas/error",
+								},
+							},
+						},
+					},
+				},
+
+				// 412
+				"precondition-failed": &openapi3.ResponseRef{
+					Value: &openapi3.Response{
+						Description: P("Precondition Failed"),
+						Content: openapi3.Content{
+							"application/json": &openapi3.MediaType{
+								Schema: &openapi3.SchemaRef{
+									Ref: "#/components/schemas/error",
+								},
+							},
+						},
+					},
+				},
+
+				// 415
+				"unsupported-media-type": &openapi3.ResponseRef{
+					Value: &openapi3.Response{
+						Description: P("Unsupported Media Type"),
+						Content: openapi3.Content{
+							"application/json": &openapi3.MediaType{
+								Schema: &openapi3.SchemaRef{
+									Ref: "#/components/schemas/error",
+								},
+							},
+						},
 					},
 				},
 			},
@@ -289,6 +386,8 @@ func (api *API) buildOpenAPIGlobal(r *http.Request) (*openapi3.T, error) {
 						},
 					},
 				},
+
+				"error": errorSchema,
 			},
 		},
 
@@ -334,33 +433,37 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 		Name: cfg.typeName,
 	})
 
-	responseSchema, err := generateSchemaRef(cfg.typeOf)
-	if err != nil {
-		return jsrest.Errorf(jsrest.ErrInternalServerError, "generate schema ref failed (%w)", err)
+	{
+		responseSchema, err := generateSchemaRef(cfg.typeOf)
+		if err != nil {
+			return jsrest.Errorf(jsrest.ErrInternalServerError, "generate schema ref failed (%w)", err)
+		}
+
+		responseSchema.Ref = ""
+		responseSchema.Value.Title = fmt.Sprintf("%s Response", cfg.typeName)
+
+		responseSchema.Value.Properties["id"] = &openapi3.SchemaRef{Ref: "#/components/schemas/id"}
+		responseSchema.Value.Properties["etag"] = &openapi3.SchemaRef{Ref: "#/components/schemas/etag"}
+		responseSchema.Value.Properties["generation"] = &openapi3.SchemaRef{Ref: "#/components/schemas/generation"}
+
+		t.Components.Schemas[fmt.Sprintf("%s--response", cfg.typeName)] = responseSchema
 	}
 
-	responseSchema.Ref = ""
-	responseSchema.Value.Title = fmt.Sprintf("%s Response", cfg.typeName)
+	{
+		requestSchema, err := generateSchemaRef(cfg.typeOf)
+		if err != nil {
+			return jsrest.Errorf(jsrest.ErrInternalServerError, "generate schema ref failed (%w)", err)
+		}
 
-	responseSchema.Value.Properties["id"] = &openapi3.SchemaRef{Ref: "#/components/schemas/id"}
-	responseSchema.Value.Properties["etag"] = &openapi3.SchemaRef{Ref: "#/components/schemas/etag"}
-	responseSchema.Value.Properties["generation"] = &openapi3.SchemaRef{Ref: "#/components/schemas/generation"}
+		requestSchema.Ref = ""
+		delete(requestSchema.Value.Properties, "id")
+		delete(requestSchema.Value.Properties, "etag")
+		delete(requestSchema.Value.Properties, "generation")
 
-	t.Components.Schemas[fmt.Sprintf("%s--response", cfg.typeName)] = responseSchema
+		requestSchema.Value.Title = fmt.Sprintf("%s Request", cfg.typeName)
 
-	requestSchema, err := generateSchemaRef(cfg.typeOf)
-	if err != nil {
-		return jsrest.Errorf(jsrest.ErrInternalServerError, "generate schema ref failed (%w)", err)
+		t.Components.Schemas[fmt.Sprintf("%s--request", cfg.typeName)] = requestSchema
 	}
-
-	requestSchema.Ref = ""
-	delete(requestSchema.Value.Properties, "id")
-	delete(requestSchema.Value.Properties, "etag")
-	delete(requestSchema.Value.Properties, "generation")
-
-	requestSchema.Value.Title = fmt.Sprintf("%s Request", cfg.typeName)
-
-	t.Components.Schemas[fmt.Sprintf("%s--request", cfg.typeName)] = requestSchema
 
 	t.Components.RequestBodies[cfg.typeName] = &openapi3.RequestBodyRef{
 		Value: &openapi3.RequestBody{
@@ -556,6 +659,18 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 				"200": &openapi3.ResponseRef{
 					Ref: fmt.Sprintf("#/components/responses/%s--list", cfg.typeName),
 				},
+				"304": &openapi3.ResponseRef{
+					Ref: "#/components/responses/not-modified",
+				},
+				"400": &openapi3.ResponseRef{
+					Ref: "#/components/responses/bad-request",
+				},
+				"401": &openapi3.ResponseRef{
+					Ref: "#/components/responses/unauthorized",
+				},
+				"403": &openapi3.ResponseRef{
+					Ref: "#/components/responses/forbidden",
+				},
 			},
 		},
 
@@ -568,6 +683,18 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 			Responses: openapi3.Responses{
 				"200": &openapi3.ResponseRef{
 					Ref: fmt.Sprintf("#/components/responses/%s", cfg.typeName),
+				},
+				"400": &openapi3.ResponseRef{
+					Ref: "#/components/responses/bad-request",
+				},
+				"401": &openapi3.ResponseRef{
+					Ref: "#/components/responses/unauthorized",
+				},
+				"403": &openapi3.ResponseRef{
+					Ref: "#/components/responses/forbidden",
+				},
+				"415": &openapi3.ResponseRef{
+					Ref: "#/components/responses/unsupported-media-type",
 				},
 			},
 		},
@@ -592,6 +719,21 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 				"200": &openapi3.ResponseRef{
 					Ref: fmt.Sprintf("#/components/responses/%s", cfg.typeName),
 				},
+				"304": &openapi3.ResponseRef{
+					Ref: "#/components/responses/not-modified",
+				},
+				"400": &openapi3.ResponseRef{
+					Ref: "#/components/responses/bad-request",
+				},
+				"401": &openapi3.ResponseRef{
+					Ref: "#/components/responses/unauthorized",
+				},
+				"403": &openapi3.ResponseRef{
+					Ref: "#/components/responses/forbidden",
+				},
+				"404": &openapi3.ResponseRef{
+					Ref: "#/components/responses/not-found",
+				},
 			},
 		},
 
@@ -609,6 +751,24 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 			Responses: openapi3.Responses{
 				"200": &openapi3.ResponseRef{
 					Ref: fmt.Sprintf("#/components/responses/%s", cfg.typeName),
+				},
+				"400": &openapi3.ResponseRef{
+					Ref: "#/components/responses/bad-request",
+				},
+				"401": &openapi3.ResponseRef{
+					Ref: "#/components/responses/unauthorized",
+				},
+				"403": &openapi3.ResponseRef{
+					Ref: "#/components/responses/forbidden",
+				},
+				"404": &openapi3.ResponseRef{
+					Ref: "#/components/responses/not-found",
+				},
+				"412": &openapi3.ResponseRef{
+					Ref: "#/components/responses/precondition-failed",
+				},
+				"415": &openapi3.ResponseRef{
+					Ref: "#/components/responses/unsupported-media-type",
 				},
 			},
 		},
@@ -628,6 +788,24 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 				"200": &openapi3.ResponseRef{
 					Ref: fmt.Sprintf("#/components/responses/%s", cfg.typeName),
 				},
+				"400": &openapi3.ResponseRef{
+					Ref: "#/components/responses/bad-request",
+				},
+				"401": &openapi3.ResponseRef{
+					Ref: "#/components/responses/unauthorized",
+				},
+				"403": &openapi3.ResponseRef{
+					Ref: "#/components/responses/forbidden",
+				},
+				"404": &openapi3.ResponseRef{
+					Ref: "#/components/responses/not-found",
+				},
+				"412": &openapi3.ResponseRef{
+					Ref: "#/components/responses/precondition-failed",
+				},
+				"415": &openapi3.ResponseRef{
+					Ref: "#/components/responses/unsupported-media-type",
+				},
 			},
 		},
 
@@ -642,6 +820,21 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 			Responses: openapi3.Responses{
 				"204": &openapi3.ResponseRef{
 					Ref: "#/components/responses/no-content",
+				},
+				"400": &openapi3.ResponseRef{
+					Ref: "#/components/responses/bad-request",
+				},
+				"401": &openapi3.ResponseRef{
+					Ref: "#/components/responses/unauthorized",
+				},
+				"403": &openapi3.ResponseRef{
+					Ref: "#/components/responses/forbidden",
+				},
+				"404": &openapi3.ResponseRef{
+					Ref: "#/components/responses/not-found",
+				},
+				"412": &openapi3.ResponseRef{
+					Ref: "#/components/responses/precondition-failed",
 				},
 			},
 		},
