@@ -8,14 +8,14 @@ import (
 
 type (
 	API         = api.API
-	Metadata    = api.Metadata
-	ListOpts    = api.ListOpts
-	Filter      = api.Filter
-	UpdateOpts  = api.UpdateOpts
-	GetOpts     = api.GetOpts
 	DebugInfo   = api.DebugInfo
+	Filter      = api.Filter
+	GetOpts     = api.GetOpts
+	ListOpts    = api.ListOpts
+	Metadata    = api.Metadata
 	OpenAPI     = api.OpenAPI
 	OpenAPIInfo = api.OpenAPIInfo
+	UpdateOpts  = api.UpdateOpts
 )
 
 var (
@@ -26,6 +26,12 @@ var (
 	NewAPI          = api.NewAPI
 
 	DeleteName = api.DeleteName
+)
+
+const (
+	ContextInternal = api.ContextInternal
+
+	ContextBearer = api.ContextBearer
 )
 
 func Register[T any](a *API) {
@@ -86,6 +92,10 @@ func UpdateName[T any](ctx context.Context, a *API, name, id string, obj *T, opt
 
 func Update[T any](ctx context.Context, a *API, id string, obj *T, opts *UpdateOpts) (*T, error) {
 	return api.Update[T](ctx, a, id, obj, opts)
+}
+
+func SetAuthBearer[T any](a *API, path string) {
+	api.SetAuthBearer[T](a, path)
 }
 
 func IsCreate[T any](obj *T, prev *T) bool {
