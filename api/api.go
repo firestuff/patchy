@@ -9,6 +9,7 @@ import (
 
 	"github.com/firestuff/patchy/jsrest"
 	"github.com/firestuff/patchy/metadata"
+	"github.com/firestuff/patchy/path"
 	"github.com/firestuff/patchy/potency"
 	"github.com/firestuff/patchy/store"
 	"github.com/firestuff/patchy/storebus"
@@ -97,6 +98,21 @@ func RegisterName[T any](api *API, typeName string) {
 	cfg := newConfig[T](typeName)
 	api.registry[cfg.typeName] = cfg
 	api.registerHandlers(fmt.Sprintf("/%s", cfg.typeName), cfg)
+
+	authBasicUserPath, ok := path.FindTagValueType(cfg.typeOf, "patchy", "authBasicUser")
+	if ok {
+		authBasicPassPath, ok := path.FindTagValueType(cfg.typeOf, "patchy", "authBasicPass")
+		if !ok {
+			panic("patchy:authBasicUser without patchy:authBasicPass")
+		}
+
+		SetAuthBasicName[T](api, typeName, authBasicUserPath, authBasicPassPath)
+	}
+
+	authBearerTokenPath, ok := path.FindTagValueType(cfg.typeOf, "patchy", "authBearerToken")
+	if ok {
+		SetAuthBearerName[T](api, typeName, authBearerTokenPath)
+	}
 }
 
 func (api *API) SetRequestHook(hook RequestHook) {
