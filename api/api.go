@@ -17,24 +17,33 @@ import (
 )
 
 type API struct {
-	router      *httprouter.Router
-	sb          *storebus.StoreBus
-	potency     *potency.Potency
-	registry    map[string]*config
-	requestHook RequestHook
+	router   *httprouter.Router
+	sb       *storebus.StoreBus
+	potency  *potency.Potency
+	registry map[string]*config
 
-	openAPI    openAPI
-	authBasic  bool
-	authBearer bool
+	openAPI   openAPI
+	authBasic bool
+
+	requestHook RequestHook
+	authBearer  RequestHook
 }
 
-type RequestHook func(*http.Request, *API) (*http.Request, error)
-
-type Metadata = metadata.Metadata
+type (
+	RequestHook func(*http.Request, *API) (*http.Request, error)
+	ContextKey  int
+	Metadata    = metadata.Metadata
+)
 
 var (
 	ErrHeaderValueMissingQuotes = errors.New("header missing quotes")
 	ErrUnknownAcceptType        = errors.New("unknown Accept type")
+)
+
+const (
+	ContextInternal ContextKey = iota
+
+	ContextBearer
 )
 
 func NewFileStoreAPI(root string) (*API, error) {
@@ -98,11 +107,6 @@ func (api *API) SetAuthBasic(enable bool) {
 	api.authBasic = enable
 }
 
-func (api *API) SetAuthBearer(enable bool) {
-	// TODO: Build in more useful support here
-	api.authBearer = enable
-}
-
 func (api *API) IsSafe() error {
 	for _, cfg := range api.registry {
 		err := cfg.isSafe()
@@ -122,8 +126,17 @@ func (api *API) CheckSafe() {
 }
 
 func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// TODO: Gate CORs with some kind of flag
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	var err error
+
+	if api.authBearer != nil {
+		r, err = api.authBearer(r, api)
+		if err != nil {
+			err = jsrest.Errorf(jsrest.ErrUnauthorized, "bearer authentication failed (%w)", err)
+			jsrest.WriteError(w, err)
+
+			return
+		}
+	}
 
 	if api.requestHook != nil {
 		var err error
@@ -136,6 +149,9 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+
+	// TODO: Gate CORs with some kind of flag
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	api.potency.ServeHTTP(w, r)
 }

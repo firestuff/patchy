@@ -8,19 +8,19 @@ import (
 	"github.com/firestuff/patchy/jsrest"
 )
 
-func ParseAuthorization(r *http.Request) (string, string, error) {
+func ParseAuthorization(r *http.Request) (string, string) {
 	auth := r.Header.Get("Authorization")
 
 	if auth == "" {
-		return "", "", jsrest.Errorf(jsrest.ErrBadRequest, "Authorization header missing")
+		return "", ""
 	}
 
 	parts := strings.Split(auth, " ")
 	if len(parts) != 2 {
-		return "", "", jsrest.Errorf(jsrest.ErrBadRequest, "Authorization header malformed")
+		return "", ""
 	}
 
-	return parts[0], parts[1], nil
+	return parts[0], parts[1]
 }
 
 func ParseBasic(val string) (string, string, error) {

@@ -314,7 +314,7 @@ func (api *API) buildOpenAPIGlobal(r *http.Request) (*openapi3.T, error) {
 		t.Security = append(t.Security, openapi3.SecurityRequirement{"basicAuth": []string{}})
 	}
 
-	if api.authBearer {
+	if api.authBearer != nil {
 		t.Components.SecuritySchemes["bearerAuth"] = &openapi3.SecuritySchemeRef{
 			Value: &openapi3.SecurityScheme{
 				Type:         "http",
