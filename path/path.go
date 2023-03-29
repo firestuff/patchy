@@ -113,53 +113,20 @@ func setRecursive(v reflect.Value, parts []string, prev []string, val string) er
 	return setRecursive(sub, parts[1:], newPrev, val)
 }
 
-func List(obj any) ([]string, error) {
+func List(obj any) []string {
 	return ListType(reflect.TypeOf(obj))
 }
 
-func ListType(t reflect.Type) ([]string, error) {
-	list, err := listRecursive(t, []string{}, []string{})
-	if err != nil {
-		return nil, err
-	}
+func ListType(t reflect.Type) []string {
+	list := []string{}
+
+	WalkType(t, func(path string, _ reflect.Type) {
+		list = append(list, path)
+	})
 
 	sort.Strings(list)
 
-	return list, nil
-}
-
-func listRecursive(t reflect.Type, prev []string, list []string) ([]string, error) {
-	var err error
-
-	if t.Kind() == reflect.Pointer {
-		t = t.Elem()
-	}
-
-	if t.Kind() != reflect.Struct || t == reflect.TypeOf(time.Time{}) || t == reflect.TypeOf(civil.Date{}) {
-		if len(prev) > 0 {
-			list = append(list, strings.Join(prev, "."))
-		}
-
-		return list, nil
-	}
-
-	for i := 0; i < t.NumField(); i++ {
-		sub := t.Field(i)
-
-		newPrev := []string{}
-		newPrev = append(newPrev, prev...)
-
-		if !sub.Anonymous {
-			newPrev = append(newPrev, fieldName(sub)) //nolint:makezero
-		}
-
-		list, err = listRecursive(sub.Type, newPrev, list)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return list, nil
+	return list
 }
 
 func GetFieldType(t reflect.Type, path string) reflect.Type {
@@ -179,6 +146,41 @@ func GetFieldType(t reflect.Type, path string) reflect.Type {
 	}
 
 	return t
+}
+
+func Walk(obj any, cb func(string, reflect.Type)) {
+	WalkType(reflect.TypeOf(obj), cb)
+}
+
+func WalkType(t reflect.Type, cb func(string, reflect.Type)) {
+	walkRecursive(t, cb, []string{})
+}
+
+func walkRecursive(t reflect.Type, cb func(string, reflect.Type), prev []string) {
+	if t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
+
+	if t.Kind() != reflect.Struct || t == reflect.TypeOf(time.Time{}) || t == reflect.TypeOf(civil.Date{}) {
+		if len(prev) > 0 {
+			cb(strings.Join(prev, "."), t)
+		}
+
+		return
+	}
+
+	for i := 0; i < t.NumField(); i++ {
+		sub := t.Field(i)
+
+		newPrev := []string{}
+		newPrev = append(newPrev, prev...)
+
+		if !sub.Anonymous {
+			newPrev = append(newPrev, fieldName(sub))
+		}
+
+		walkRecursive(sub.Type, cb, newPrev)
+	}
 }
 
 func getStructField(t reflect.Type, name string) (reflect.StructField, bool) {

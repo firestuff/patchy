@@ -101,8 +101,7 @@ func TestEmbed(t *testing.T) {
 func TestList(t *testing.T) {
 	t.Parallel()
 
-	list, err := path.List(&testType4{})
-	require.NoError(t, err)
+	list := path.List(&testType4{})
 	require.Equal(t, []string{
 		"UInt",
 		"bool2",

@@ -426,11 +426,7 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 		},
 	}
 
-	paths, err := path.ListType(cfg.typeOf)
-	if err != nil {
-		return err
-	}
-
+	paths := path.ListType(cfg.typeOf)
 	sorts := []any{}
 	filters := openapi3.Parameters{}
 
