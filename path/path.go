@@ -120,7 +120,7 @@ func List(obj any) []string {
 func ListType(t reflect.Type) []string {
 	list := []string{}
 
-	WalkType(t, func(path string, _ reflect.Type) {
+	WalkType(t, func(path string, _ reflect.StructField) {
 		list = append(list, path)
 	})
 
@@ -133,11 +133,7 @@ func GetFieldType(t reflect.Type, path string) reflect.Type {
 	parts := strings.Split(path, ".")
 
 	for _, part := range parts {
-		if t.Kind() == reflect.Pointer {
-			t = t.Elem()
-		}
-
-		field, found := getStructField(t, part)
+		field, found := getStructField(indirect(t), part)
 		if !found {
 			return nil
 		}
@@ -148,27 +144,15 @@ func GetFieldType(t reflect.Type, path string) reflect.Type {
 	return t
 }
 
-func Walk(obj any, cb func(string, reflect.Type)) {
+func Walk(obj any, cb func(string, reflect.StructField)) {
 	WalkType(reflect.TypeOf(obj), cb)
 }
 
-func WalkType(t reflect.Type, cb func(string, reflect.Type)) {
-	walkRecursive(t, cb, []string{})
+func WalkType(t reflect.Type, cb func(string, reflect.StructField)) {
+	walkRecursive(indirect(t), cb, []string{})
 }
 
-func walkRecursive(t reflect.Type, cb func(string, reflect.Type), prev []string) {
-	if t.Kind() == reflect.Pointer {
-		t = t.Elem()
-	}
-
-	if t.Kind() != reflect.Struct || t == reflect.TypeOf(time.Time{}) || t == reflect.TypeOf(civil.Date{}) {
-		if len(prev) > 0 {
-			cb(strings.Join(prev, "."), t)
-		}
-
-		return
-	}
-
+func walkRecursive(t reflect.Type, cb func(string, reflect.StructField), prev []string) {
 	for i := 0; i < t.NumField(); i++ {
 		sub := t.Field(i)
 
@@ -179,7 +163,13 @@ func walkRecursive(t reflect.Type, cb func(string, reflect.Type), prev []string)
 			newPrev = append(newPrev, fieldName(sub))
 		}
 
-		walkRecursive(sub.Type, cb, newPrev)
+		t := indirect(sub.Type)
+
+		if t.Kind() == reflect.Struct && t != reflect.TypeOf(time.Time{}) && t != reflect.TypeOf(civil.Date{}) {
+			walkRecursive(t, cb, newPrev)
+		} else {
+			cb(strings.Join(newPrev, "."), sub)
+		}
 	}
 }
 
@@ -227,4 +217,12 @@ func fieldName(field reflect.StructField) string {
 	}
 
 	return field.Name
+}
+
+func indirect(t reflect.Type) reflect.Type {
+	if t.Kind() == reflect.Pointer {
+		return t.Elem()
+	}
+
+	return t
 }
