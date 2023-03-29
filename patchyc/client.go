@@ -42,13 +42,24 @@ func (c *Client) SetDebug(debug bool) *Client {
 	return c
 }
 
+func (c *Client) ResetAuth() *Client {
+	c.rst.Token = ""
+	c.rst.UserInfo = nil
+
+	return c
+}
+
 func (c *Client) SetBasicAuth(user, pass string) *Client {
+	c.ResetAuth()
 	c.rst.SetBasicAuth(user, pass)
+
 	return c
 }
 
 func (c *Client) SetAuthToken(token string) *Client {
+	c.ResetAuth()
 	c.rst.SetAuthToken(token)
+
 	return c
 }
 
