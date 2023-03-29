@@ -102,6 +102,20 @@ func (api *API) buildOpenAPIGlobal(r *http.Request) (*openapi3.T, error) {
 					},
 				},
 
+				"idempotency-key": &openapi3.HeaderRef{
+					Value: &openapi3.Header{
+						Parameter: openapi3.Parameter{
+							Name: "Idempotency-Key",
+							In:   "header",
+							Schema: &openapi3.SchemaRef{
+								Value: &openapi3.Schema{
+									Type: "string",
+								},
+							},
+						},
+					},
+				},
+
 				"if-match": &openapi3.HeaderRef{
 					Value: &openapi3.Header{
 						Parameter: openapi3.Parameter{
@@ -260,6 +274,20 @@ func (api *API) buildOpenAPIGlobal(r *http.Request) (*openapi3.T, error) {
 				"not-found": &openapi3.ResponseRef{
 					Value: &openapi3.Response{
 						Description: P("Not Found"),
+						Content: openapi3.Content{
+							"application/json": &openapi3.MediaType{
+								Schema: &openapi3.SchemaRef{
+									Ref: "#/components/schemas/error",
+								},
+							},
+						},
+					},
+				},
+
+				// 409
+				"conflict": &openapi3.ResponseRef{
+					Value: &openapi3.Response{
+						Description: P("Conflict"),
 						Content: openapi3.Content{
 							"application/json": &openapi3.MediaType{
 								Schema: &openapi3.SchemaRef{
@@ -677,6 +705,11 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 		Post: &openapi3.Operation{
 			Tags:    []string{cfg.typeName},
 			Summary: fmt.Sprintf("Create new %s object", cfg.typeName),
+			Parameters: openapi3.Parameters{
+				&openapi3.ParameterRef{
+					Ref: "#/components/headers/idempotency-key",
+				},
+			},
 			RequestBody: &openapi3.RequestBodyRef{
 				Ref: fmt.Sprintf("#/components/requestBodies/%s", cfg.typeName),
 			},
@@ -692,6 +725,9 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 				},
 				"403": &openapi3.ResponseRef{
 					Ref: "#/components/responses/forbidden",
+				},
+				"409": &openapi3.ResponseRef{
+					Ref: "#/components/responses/conflict",
 				},
 				"415": &openapi3.ResponseRef{
 					Ref: "#/components/responses/unsupported-media-type",
@@ -744,6 +780,9 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 				&openapi3.ParameterRef{
 					Ref: "#/components/headers/if-match",
 				},
+				&openapi3.ParameterRef{
+					Ref: "#/components/headers/idempotency-key",
+				},
 			},
 			RequestBody: &openapi3.RequestBodyRef{
 				Ref: fmt.Sprintf("#/components/requestBodies/%s", cfg.typeName),
@@ -763,6 +802,9 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 				},
 				"404": &openapi3.ResponseRef{
 					Ref: "#/components/responses/not-found",
+				},
+				"409": &openapi3.ResponseRef{
+					Ref: "#/components/responses/conflict",
 				},
 				"412": &openapi3.ResponseRef{
 					Ref: "#/components/responses/precondition-failed",
@@ -780,6 +822,9 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 				&openapi3.ParameterRef{
 					Ref: "#/components/headers/if-match",
 				},
+				&openapi3.ParameterRef{
+					Ref: "#/components/headers/idempotency-key",
+				},
 			},
 			RequestBody: &openapi3.RequestBodyRef{
 				Ref: fmt.Sprintf("#/components/requestBodies/%s", cfg.typeName),
@@ -800,6 +845,9 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 				"404": &openapi3.ResponseRef{
 					Ref: "#/components/responses/not-found",
 				},
+				"409": &openapi3.ResponseRef{
+					Ref: "#/components/responses/conflict",
+				},
 				"412": &openapi3.ResponseRef{
 					Ref: "#/components/responses/precondition-failed",
 				},
@@ -815,6 +863,9 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 			Parameters: openapi3.Parameters{
 				&openapi3.ParameterRef{
 					Ref: "#/components/headers/if-match",
+				},
+				&openapi3.ParameterRef{
+					Ref: "#/components/headers/idempotency-key",
 				},
 			},
 			Responses: openapi3.Responses{
@@ -832,6 +883,9 @@ func (api *API) buildOpenAPIType(t *openapi3.T, cfg *config) error {
 				},
 				"404": &openapi3.ResponseRef{
 					Ref: "#/components/responses/not-found",
+				},
+				"409": &openapi3.ResponseRef{
+					Ref: "#/components/responses/conflict",
 				},
 				"412": &openapi3.ResponseRef{
 					Ref: "#/components/responses/precondition-failed",
