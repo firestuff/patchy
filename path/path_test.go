@@ -56,7 +56,7 @@ type testType4 struct {
 type testType5 struct {
 	String string `json:"string2,omitempty"`
 	Bool   bool   `json:"bool2"`
-	UInt   uint
+	UInt   uint   `xtest:"foo,bar,zig"`
 }
 
 func TestSet(t *testing.T) {
@@ -124,4 +124,18 @@ func TestGetFieldType(t *testing.T) {
 	typ2 = path.GetFieldType(typ, "foo.UInt")
 	require.NotNil(t, typ2)
 	require.Equal(t, reflect.TypeOf(uint(1)), typ2)
+}
+
+func TestFindTagValueType(t *testing.T) {
+	t.Parallel()
+
+	typ := reflect.TypeOf(&testType4{})
+
+	p, ok := path.FindTagValueType(typ, "xtest", "foo")
+	require.True(t, ok)
+	require.Equal(t, "UInt", p)
+
+	p, ok = path.FindTagValueType(typ, "xtest", "zag")
+	require.False(t, ok)
+	require.Empty(t, p)
 }
