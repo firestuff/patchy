@@ -86,6 +86,8 @@ func NewAPI(st store.Storer) (*API, error) {
 		http.FS(swaggerUI),
 	)
 
+	api.registerTemplates()
+
 	return api, nil
 }
 
