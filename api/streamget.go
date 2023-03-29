@@ -30,7 +30,6 @@ func (api *API) streamGet(cfg *config, id string, w http.ResponseWriter, r *http
 	defer gsi.Close()
 
 	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
 
 	err = api.streamGetWrite(ctx, w, gsi.ch, opts)
 	if err != nil {
