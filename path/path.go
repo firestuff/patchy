@@ -10,6 +10,7 @@ import (
 
 	"cloud.google.com/go/civil"
 	"github.com/firestuff/patchy/jsrest"
+	"golang.org/x/exp/slices"
 )
 
 var (
@@ -144,6 +145,25 @@ func GetFieldType(t reflect.Type, path string) reflect.Type {
 	return t
 }
 
+func FindTagValueType(t reflect.Type, key, value string) (string, bool) {
+	ret := ""
+
+	WalkType(t, func(path string, field reflect.StructField) {
+		tag, found := field.Tag.Lookup(key)
+		if !found {
+			return
+		}
+
+		parts := strings.Split(tag, ",")
+
+		if slices.Contains(parts, value) {
+			ret = path
+		}
+	})
+
+	return ret, ret != ""
+}
+
 func Walk(obj any, cb func(string, reflect.StructField)) {
 	WalkType(reflect.TypeOf(obj), cb)
 }
@@ -182,17 +202,7 @@ func getStructField(t reflect.Type, name string) (reflect.StructField, bool) {
 			panic(iterName)
 		}
 
-		tag := iterField.Tag.Get("json")
-		if tag != "" {
-			if tag == "-" {
-				return false
-			}
-
-			parts := strings.SplitN(tag, ",", 2)
-			iterName = parts[0]
-		}
-
-		return strings.ToLower(iterName) == name
+		return strings.ToLower(fieldName(iterField)) == name
 	})
 }
 
