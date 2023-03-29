@@ -31,7 +31,8 @@ var (
 const (
 	ContextInternal = api.ContextInternal
 
-	ContextBearer = api.ContextBearer
+	ContextAuthBasic  = api.ContextAuthBasic
+	ContextAuthBearer = api.ContextAuthBearer
 )
 
 func Register[T any](a *API) {
@@ -94,8 +95,20 @@ func Update[T any](ctx context.Context, a *API, id string, obj *T, opts *UpdateO
 	return api.Update[T](ctx, a, id, obj, opts)
 }
 
-func SetAuthBearer[T any](a *API, path string) {
-	api.SetAuthBearer[T](a, path)
+func SetAuthBasicName[T any](a *API, name, pathUser, pathPass string) {
+	api.SetAuthBasicName[T](a, name, pathUser, pathPass)
+}
+
+func SetAuthBasic[T any](a *API, pathUser, pathPass string) {
+	api.SetAuthBasic[T](a, pathUser, pathPass)
+}
+
+func SetAuthBearerName[T any](a *API, name, pathToken string) {
+	api.SetAuthBearerName[T](a, name, pathToken)
+}
+
+func SetAuthBearer[T any](a *API, pathToken string) {
+	api.SetAuthBearer[T](a, pathToken)
 }
 
 func IsCreate[T any](obj *T, prev *T) bool {

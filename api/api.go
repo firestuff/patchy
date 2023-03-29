@@ -22,10 +22,10 @@ type API struct {
 	potency  *potency.Potency
 	registry map[string]*config
 
-	openAPI   openAPI
-	authBasic bool
+	openAPI openAPI
 
 	requestHook RequestHook
+	authBasic   RequestHook
 	authBearer  RequestHook
 }
 
@@ -43,7 +43,8 @@ var (
 const (
 	ContextInternal ContextKey = iota
 
-	ContextBearer
+	ContextAuthBearer
+	ContextAuthBasic
 )
 
 func NewFileStoreAPI(root string) (*API, error) {
@@ -102,11 +103,6 @@ func (api *API) SetRequestHook(hook RequestHook) {
 	api.requestHook = hook
 }
 
-func (api *API) SetAuthBasic(enable bool) {
-	// TODO: Build in more useful support here
-	api.authBasic = enable
-}
-
 func (api *API) IsSafe() error {
 	for _, cfg := range api.registry {
 		err := cfg.isSafe()
@@ -127,6 +123,16 @@ func (api *API) CheckSafe() {
 
 func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var err error
+
+	if api.authBasic != nil {
+		r, err = api.authBasic(r, api)
+		if err != nil {
+			err = jsrest.Errorf(jsrest.ErrUnauthorized, "basic authentication failed (%w)", err)
+			jsrest.WriteError(w, err)
+
+			return
+		}
+	}
 
 	if api.authBearer != nil {
 		r, err = api.authBearer(r, api)
