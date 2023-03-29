@@ -303,7 +303,7 @@ func (api *API) buildOpenAPIGlobal(r *http.Request) (*openapi3.T, error) {
 		t.Info = api.openAPI.info
 	}
 
-	if api.authBasic {
+	if api.authBasic != nil {
 		t.Components.SecuritySchemes["basicAuth"] = &openapi3.SecuritySchemeRef{
 			Value: &openapi3.SecurityScheme{
 				Type:   "http",

@@ -7,9 +7,10 @@ import (
 
 	"github.com/firestuff/patchy/header"
 	"github.com/firestuff/patchy/jsrest"
+	"github.com/firestuff/patchy/path"
 )
 
-func authBearer[T any](r *http.Request, api *API, name, path string) (*http.Request, error) {
+func authBearer[T any](r *http.Request, api *API, name, pathToken string) (*http.Request, error) {
 	scheme, val := header.ParseAuthorization(r)
 
 	if strings.ToLower(scheme) != "bearer" {
@@ -23,7 +24,7 @@ func authBearer[T any](r *http.Request, api *API, name, path string) (*http.Requ
 		&ListOpts{
 			Filters: []*Filter{
 				{
-					Path:  path,
+					Path:  pathToken,
 					Op:    "eq",
 					Value: val,
 				},
@@ -35,18 +36,25 @@ func authBearer[T any](r *http.Request, api *API, name, path string) (*http.Requ
 	}
 
 	if len(bearers) != 1 {
-		return r, nil
+		return r, jsrest.Errorf(jsrest.ErrUnauthorized, "token not found")
 	}
 
-	return r.WithContext(context.WithValue(r.Context(), ContextBearer, bearers[0])), nil
+	bearer := bearers[0]
+
+	err = path.Set(bearer, pathToken, "")
+	if err != nil {
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "clear token failed (%w)", err)
+	}
+
+	return r.WithContext(context.WithValue(r.Context(), ContextAuthBearer, bearer)), nil
 }
 
-func SetAuthBearerName[T any](api *API, name, path string) {
+func SetAuthBearerName[T any](api *API, name, pathToken string) {
 	api.authBearer = func(r *http.Request, a *API) (*http.Request, error) {
-		return authBearer[T](r, a, name, path)
+		return authBearer[T](r, a, name, pathToken)
 	}
 }
 
-func SetAuthBearer[T any](api *API, path string) {
-	SetAuthBearerName[T](api, objName(new(T)), path)
+func SetAuthBearer[T any](api *API, pathToken string) {
+	SetAuthBearerName[T](api, objName(new(T)), pathToken)
 }
