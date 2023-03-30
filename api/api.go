@@ -185,7 +185,6 @@ func (api *API) ListenTSFunnel(bind, name, authKey string) error {
 	var err error
 
 	ts := &tsnet.Server{
-		Ephemeral: true,
 		AuthKey:   authKey,
 	}
 
