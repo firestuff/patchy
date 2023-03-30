@@ -13,6 +13,8 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+type WalkCallback func(string, []string, reflect.StructField)
+
 var (
 	ErrNotAStruct       = errors.New("not a struct")
 	ErrUnknownFieldName = errors.New("unknown field name")
@@ -121,7 +123,7 @@ func List(obj any) []string {
 func ListType(t reflect.Type) []string {
 	list := []string{}
 
-	WalkType(t, func(path string, _ reflect.StructField) {
+	WalkType(t, func(path string, _ []string, _ reflect.StructField) {
 		list = append(list, path)
 	})
 
@@ -148,7 +150,7 @@ func GetFieldType(t reflect.Type, path string) reflect.Type {
 func FindTagValueType(t reflect.Type, key, value string) (string, bool) {
 	ret := ""
 
-	WalkType(t, func(path string, field reflect.StructField) {
+	WalkType(t, func(path string, _ []string, field reflect.StructField) {
 		tag, found := field.Tag.Lookup(key)
 		if !found {
 			return
@@ -164,15 +166,15 @@ func FindTagValueType(t reflect.Type, key, value string) (string, bool) {
 	return ret, ret != ""
 }
 
-func Walk(obj any, cb func(string, reflect.StructField)) {
+func Walk(obj any, cb WalkCallback) {
 	WalkType(reflect.TypeOf(obj), cb)
 }
 
-func WalkType(t reflect.Type, cb func(string, reflect.StructField)) {
+func WalkType(t reflect.Type, cb WalkCallback) {
 	walkRecursive(indirect(t), cb, []string{})
 }
 
-func walkRecursive(t reflect.Type, cb func(string, reflect.StructField), prev []string) {
+func walkRecursive(t reflect.Type, cb WalkCallback, prev []string) {
 	for i := 0; i < t.NumField(); i++ {
 		sub := t.Field(i)
 
@@ -188,7 +190,7 @@ func walkRecursive(t reflect.Type, cb func(string, reflect.StructField), prev []
 		if t.Kind() == reflect.Struct && t != reflect.TypeOf(time.Time{}) && t != reflect.TypeOf(civil.Date{}) {
 			walkRecursive(t, cb, newPrev)
 		} else {
-			cb(strings.Join(newPrev, "."), sub)
+			cb(strings.Join(newPrev, "."), newPrev, sub)
 		}
 	}
 }

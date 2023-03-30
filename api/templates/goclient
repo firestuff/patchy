@@ -1,6 +1,10 @@
 package {{if .Form.Has "packageName" -}} {{.Form.Get "packageName"}} {{- else -}} goclient {{- end}}
 
-{{range .Types}}
+{{- range .Types}}
+
 type {{.GoName}} struct {
+{{- range .Fields}}
+    {{.GoName}} string `json:"{{.APIName}}"`
+{{- end}}
 }
-{{end}}
+{{- end}}

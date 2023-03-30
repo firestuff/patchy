@@ -5,10 +5,12 @@ import (
 	"embed"
 	"net/http"
 	"net/url"
+	"reflect"
 	"strings"
 	"text/template"
 
 	"github.com/firestuff/patchy/jsrest"
+	"github.com/firestuff/patchy/path"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -22,8 +24,14 @@ type templateInput struct {
 }
 
 type templateType struct {
-	EndpointName string
-	GoName       string
+	APIName string
+	GoName  string
+	Fields  []*templateField
+}
+
+type templateField struct {
+	APIName string
+	GoName  string
 }
 
 func (api *API) registerTemplates() {
@@ -48,10 +56,20 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 		for _, name := range api.names() {
 			cfg := api.registry[name]
 
-			input.Types = append(input.Types, &templateType{
-				EndpointName: name,
-				GoName:       upperFirst(cfg.typeOf.Name()),
+			tt := &templateType{
+				APIName: name,
+				GoName:  upperFirst(cfg.typeOf.Name()),
+			}
+
+			path.WalkType(cfg.typeOf, func(_ string, parts []string, field reflect.StructField) {
+				// TODO: Support nested structs
+				tt.Fields = append(tt.Fields, &templateField{
+					APIName: parts[0],
+					GoName:  upperFirst(field.Name),
+				})
 			})
+
+			input.Types = append(input.Types, tt)
 		}
 
 		// Buffer this so we can handle the error before sending any template output
