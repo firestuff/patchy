@@ -1,3 +1,6 @@
 package {{if .Form.Has "packageName" -}} {{.Form.Get "packageName"}} {{- else -}} goclient {{- end}}
 
-{{range .Types}} {{.Name}} {{end}}
+{{range .Types}}
+type {{.GoName}} struct {
+}
+{{end}}

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
-	"sort"
 	"strings"
 
 	"github.com/firestuff/patchy/jsrest"
@@ -40,15 +39,7 @@ func (api *API) handleOpenAPIInt(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	names := []string{}
-
-	for name := range api.registry {
-		names = append(names, name)
-	}
-
-	sort.Strings(names)
-
-	for _, name := range names {
+	for _, name := range api.names() {
 		err = api.buildOpenAPIType(t, api.registry[name])
 		if err != nil {
 			return err
