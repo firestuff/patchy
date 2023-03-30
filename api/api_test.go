@@ -31,10 +31,10 @@ func newTestAPI(t *testing.T) *testAPI {
 	require.NoError(t, err)
 
 	api.Register[testType](a)
+	a.SetStripPrefix("/api")
 
 	mux := http.NewServeMux()
-	// Test that prefix stripping works
-	mux.Handle("/api/", http.StripPrefix("/api", a))
+	mux.Handle("/api/", a)
 
 	listener, err := net.Listen("tcp", "[::]:0")
 	require.NoError(t, err)
