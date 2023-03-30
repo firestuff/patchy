@@ -185,7 +185,8 @@ func (api *API) ListenTSFunnel(bind, name, authKey string) error {
 	var err error
 
 	ts := &tsnet.Server{
-		AuthKey:   authKey,
+		Hostname: name,
+		AuthKey:  authKey,
 	}
 
 	api.listener, err = ts.ListenFunnel("tcp", bind)
