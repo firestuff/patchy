@@ -5,6 +5,7 @@ import (
 	"embed"
 	"net/http"
 	"net/url"
+	"strings"
 	"text/template"
 
 	"github.com/firestuff/patchy/jsrest"
@@ -21,7 +22,8 @@ type templateInput struct {
 }
 
 type templateType struct {
-	Name string
+	EndpointName string
+	GoName       string
 }
 
 func (api *API) registerTemplates() {
@@ -43,9 +45,12 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 			Form: r.Form,
 		}
 
-		for name := range api.registry {
+		for _, name := range api.names() {
+			cfg := api.registry[name]
+
 			input.Types = append(input.Types, &templateType{
-				Name: name,
+				EndpointName: name,
+				GoName:       upperFirst(cfg.typeOf.Name()),
 			})
 		}
 
@@ -64,4 +69,8 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 
 		_, _ = buf.WriteTo(w)
 	}
+}
+
+func upperFirst(in string) string {
+	return strings.ToUpper(in[:1]) + in[1:]
 }

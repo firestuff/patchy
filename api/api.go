@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/firestuff/patchy/jsrest"
@@ -271,6 +272,17 @@ func (api *API) wrapErrorID(cb func(*config, string, http.ResponseWriter, *http.
 	if err != nil {
 		jsrest.WriteError(w, err)
 	}
+}
+
+func (api *API) names() []string {
+	names := []string{}
+	for name := range api.registry {
+		names = append(names, name)
+	}
+
+	sort.Strings(names)
+
+	return names
 }
 
 func objName[T any](obj *T) string {
