@@ -250,18 +250,18 @@ func TestAcceptJSON(t *testing.T) {
 	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	read := &testType{}
+	get := &testType{}
 
 	resp, err := ta.r().
 		SetHeader("Accept", "text/xml, application/json").
-		SetResult(read).
+		SetResult(get).
 		SetPathParam("id", created.ID).
 		Get("testtype/{id}")
 	require.NoError(t, err)
 	require.False(t, resp.IsError())
 	require.Equal(t, "application/json", resp.Header().Get("Content-Type"))
-	require.Equal(t, "foo", read.Text)
-	require.Equal(t, created.ID, read.ID)
+	require.Equal(t, "foo", get.Text)
+	require.Equal(t, created.ID, get.ID)
 }
 
 func TestAcceptEventStream(t *testing.T) {

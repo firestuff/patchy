@@ -21,6 +21,7 @@ import (
 	"github.com/firestuff/patchy/storebus"
 	"github.com/julienschmidt/httprouter"
 	"github.com/vfaronov/httpheader"
+	"tailscale.com/tsnet"
 )
 
 type API struct {
@@ -173,6 +174,22 @@ func (api *API) ListenSelfCert(bind string) error {
 	}
 
 	api.listener, err = tls.Listen("tcp", bind, tlsConfig)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (api *API) ListenTSFunnel(bind, name, authKey string) error {
+	var err error
+
+	ts := &tsnet.Server{
+		Ephemeral: true,
+		AuthKey:   authKey,
+	}
+
+	api.listener, err = ts.ListenFunnel("tcp", bind)
 	if err != nil {
 		return err
 	}
