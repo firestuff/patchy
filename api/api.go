@@ -26,9 +26,10 @@ type API struct {
 
 	openAPI openAPI
 
-	requestHook RequestHook
+	stripPrefix RequestHook
 	authBasic   RequestHook
 	authBearer  RequestHook
+	requestHook RequestHook
 }
 
 type (
@@ -118,6 +119,18 @@ func RegisterName[T any](api *API, typeName string) {
 	}
 }
 
+func (api *API) SetStripPrefix(prefix string) {
+	api.stripPrefix = func(r *http.Request, _ *API) (*http.Request, error) {
+		if !strings.HasPrefix(r.URL.Path, prefix) {
+			return nil, jsrest.Errorf(jsrest.ErrNotFound, "not found")
+		}
+
+		r.URL.Path = strings.TrimPrefix(r.URL.Path, prefix)
+
+		return r, nil
+	}
+}
+
 func (api *API) SetRequestHook(hook RequestHook) {
 	api.requestHook = hook
 }
@@ -142,6 +155,16 @@ func (api *API) CheckSafe() {
 
 func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var err error
+
+	if api.stripPrefix != nil {
+		r, err = api.stripPrefix(r, api)
+		if err != nil {
+			err = jsrest.Errorf(jsrest.ErrUnauthorized, "strip prefix failed (%w)", err)
+			jsrest.WriteError(w, err)
+
+			return
+		}
+	}
 
 	if api.authBasic != nil {
 		r, err = api.authBasic(r, api)
