@@ -2,12 +2,11 @@ package api_test
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
-	"net"
 	"net/http"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/dchest/uniuri"
 	"github.com/firestuff/patchy"
@@ -19,7 +18,6 @@ import (
 
 type testAPI struct {
 	api *api.API
-	srv *http.Server
 	rst *resty.Client
 	pyc *patchyc.Client
 }
@@ -33,32 +31,25 @@ func newTestAPI(t *testing.T) *testAPI {
 	api.Register[testType](a)
 	a.SetStripPrefix("/api")
 
-	mux := http.NewServeMux()
-	mux.Handle("/api/", a)
-
-	listener, err := net.Listen("tcp", "[::]:0")
+	err = a.ListenSelfCert("[::1]:0")
 	require.NoError(t, err)
 
-	srv := &http.Server{
-		Handler:           mux,
-		ReadHeaderTimeout: 1 * time.Second,
-	}
-
 	go func() {
-		_ = srv.Serve(listener)
+		_ = a.Serve()
 	}()
 
-	baseURL := fmt.Sprintf("http://[::1]:%d/api/", listener.Addr().(*net.TCPAddr).Port)
+	baseURL := fmt.Sprintf("https://[::1]:%d/api/", a.Addr().Port)
 
 	rst := resty.New().
+		SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true}). //nolint:gosec
 		SetHeader("Content-Type", "application/json").
 		SetBaseURL(baseURL)
 
-	pyc := patchyc.NewClient(baseURL)
+	pyc := patchyc.NewClient(baseURL).
+		SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true}) //nolint:gosec
 
 	return &testAPI{
 		api: a,
-		srv: srv,
 		rst: rst,
 		pyc: pyc,
 	}
@@ -69,7 +60,7 @@ func (ta *testAPI) r() *resty.Request {
 }
 
 func (ta *testAPI) shutdown(t *testing.T) {
-	err := ta.srv.Shutdown(context.Background())
+	err := ta.api.Shutdown(context.Background())
 	require.NoError(t, err)
 
 	ta.api.Close()

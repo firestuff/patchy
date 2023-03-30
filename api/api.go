@@ -1,17 +1,22 @@
 package api
 
 import (
+	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"reflect"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/firestuff/patchy/jsrest"
 	"github.com/firestuff/patchy/metadata"
 	"github.com/firestuff/patchy/path"
 	"github.com/firestuff/patchy/potency"
+	"github.com/firestuff/patchy/selfcert"
 	"github.com/firestuff/patchy/store"
 	"github.com/firestuff/patchy/storebus"
 	"github.com/julienschmidt/httprouter"
@@ -23,6 +28,9 @@ type API struct {
 	sb       *storebus.StoreBus
 	potency  *potency.Potency
 	registry map[string]*config
+
+	listener net.Listener
+	srv      *http.Server
 
 	openAPI openAPI
 
@@ -71,7 +79,12 @@ func NewAPI(st store.Storer) (*API, error) {
 		sb:       storebus.NewStoreBus(st),
 		potency:  potency.NewPotency(st, router),
 		registry: map[string]*config{},
+		srv: &http.Server{
+			ReadHeaderTimeout: 30 * time.Second,
+		},
 	}
+
+	api.srv.Handler = api
 
 	api.router.GET(
 		"/_debug",
@@ -151,6 +164,32 @@ func (api *API) CheckSafe() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func (api *API) ListenSelfCert(bind string) error {
+	tlsConfig, err := selfcert.NewTLSConfigFromHostPort(bind)
+	if err != nil {
+		return err
+	}
+
+	api.listener, err = tls.Listen("tcp", bind, tlsConfig)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (api *API) Addr() *net.TCPAddr {
+	return api.listener.Addr().(*net.TCPAddr)
+}
+
+func (api *API) Serve() error {
+	return api.srv.Serve(api.listener)
+}
+
+func (api *API) Shutdown(ctx context.Context) error {
+	return api.srv.Shutdown(ctx)
 }
 
 func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
