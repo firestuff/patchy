@@ -180,6 +180,26 @@ func (api *API) ListenSelfCert(bind string) error {
 	return nil
 }
 
+func (api *API) ListenTLS(bind, certFile, keyFile string) error {
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		return err
+	}
+
+	cfg := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		MinVersion:   tls.VersionTLS13,
+		NextProtos:   []string{"h2"},
+	}
+
+	api.listener, err = tls.Listen("tcp", bind, cfg)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (api *API) Addr() *net.TCPAddr {
 	return api.listener.Addr().(*net.TCPAddr)
 }
