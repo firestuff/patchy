@@ -73,18 +73,61 @@ func (c *Client) SetAuthToken(token string) *Client {
 }
 {{- end }}
 
-// TODO: Add APIName-specific methods
+{{- range $type := .Types }}
+{{- if $type.APIName }}
+
+//// {{ upperFirst $type.APIName }}
+
+func (c *Client) Create {{- upperFirst $type.APIName -}}(ctx context.Context, obj * {{- $type.GoName -}} ) (* {{- $type.GoName -}}, error) {
+	return CreateName[ {{- $type.GoName -}} ](ctx, c, " {{- $type.APIName -}} ", obj)
+}
+
+// TODO: Delete {{- upperFirst $type.APIName -}} ()
+
+func (c *Client) Find {{- upperFirst $type.APIName -}}(ctx context.Context, shortID string) (* {{- $type.GoName -}}, error) {
+	return FindName[ {{- $type.GoName -}} ](ctx, c, " {{- $type.APIName -}} ", shortID)
+}
+
+func (c *Client) Get {{- upperFirst $type.APIName -}}(ctx context.Context, id string, opts *GetOpts) (* {{- $type.GoName -}}, error) {
+	return GetName[ {{- $type.GoName -}} ](ctx, c, " {{- $type.APIName -}} ", id, opts)
+}
+
+func (c *Client) List {{- upperFirst $type.APIName -}}(ctx context.Context, opts *ListOpts) ([]* {{- $type.GoName -}}, error) {
+	return ListName[ {{- $type.GoName -}} ](ctx, c, " {{- $type.APIName -}} ", opts)
+}
+
+func (c *Client) Replace {{- upperFirst $type.APIName -}}(ctx context.Context, id string, obj * {{- $type.GoName -}}, opts *UpdateOpts) (* {{- $type.GoName -}}, error) {
+	return ReplaceName[ {{- $type.GoName -}} ](ctx, c, " {{- $type.APIName -}} ", id, obj, opts)
+}
+
+func (c *Client) Update {{- upperFirst $type.APIName -}}(ctx context.Context, id string, obj * {{- $type.GoName -}}, opts *UpdateOpts) (* {{- $type.GoName -}}, error) {
+	return UpdateName[ {{- $type.GoName -}} ](ctx, c, " {{- $type.APIName -}} ", id, obj, opts)
+}
+
+func (c *Client) StreamGet {{- upperFirst $type.APIName -}}(ctx context.Context, id string, opts *GetOpts) (*patchyc.GetStream[ {{- $type.GoName -}} ], error) {
+	return StreamGetName[ {{- $type.GoName -}} ](ctx, c, " {{- $type.APIName -}} ", id, opts)
+}
+
+func (c *Client) StreamList {{- upperFirst $type.APIName -}}(ctx context.Context, opts *ListOpts) (*patchyc.ListStream[ {{- $type.GoName -}} ], error) {
+	return StreamListName[ {{- $type.GoName -}} ](ctx, c, " {{- $type.APIName -}} ", opts)
+}
+{{- end }}
+{{- end }}
+
+//// Generic
 
 func CreateName[T any](ctx context.Context, c *Client, name string, obj *T) (*T, error) {
 	return patchyc.CreateName[T](ctx, c.patchyClient, name, obj)
 }
 
+/*
 func DeleteName[T any](ctx context.Context, c *Client, name, id string, opts *UpdateOpts) error {
 	return patchyc.DeleteName[T](ctx, c.patchyClient, name, id, opts)
 }
+*/
 
 func FindName[T any](ctx context.Context, c *Client, name, shortID string) (*T, error) {
-	return patchyc.FindName[T](ctx, c.patchyClient, shortID)
+	return patchyc.FindName[T](ctx, c.patchyClient, name, shortID)
 }
 
 func GetName[T any](ctx context.Context, c *Client, name, id string, opts *GetOpts) (*T, error) {
@@ -110,6 +153,8 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string, opts 
 func StreamListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts) (*patchyc.ListStream[T], error) {
 	return patchyc.StreamListName[T](ctx, c.patchyClient, name, opts)
 }
+
+//// Utility generic
 
 func P[T any](v T) *T {
     return patchyc.P(v)
