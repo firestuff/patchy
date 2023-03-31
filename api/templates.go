@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"embed"
+	"fmt"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -16,7 +17,13 @@ import (
 
 //go:embed templates/*
 var templateFS embed.FS
-var templates = template.Must(template.ParseFS(templateFS, "templates/*"))
+
+var templates = template.Must(
+	template.New("templates").
+		Funcs(template.FuncMap{
+			"padRight": padRight,
+		}).
+		ParseFS(templateFS, "templates/*"))
 
 type templateInput struct {
 	Form  url.Values
@@ -24,14 +31,17 @@ type templateInput struct {
 }
 
 type templateType struct {
-	APIName string
-	GoName  string
-	Fields  []*templateField
+	APIName      string
+	GoName       string
+	Fields       []*templateField
+	GoNameMaxLen int
+	GoTypeMaxLen int
 }
 
 type templateField struct {
 	APIName string
 	GoName  string
+	GoType  string
 }
 
 func (api *API) registerTemplates() {
@@ -63,10 +73,21 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 
 			path.WalkType(cfg.typeOf, func(_ string, parts []string, field reflect.StructField) {
 				// TODO: Support nested structs
-				tt.Fields = append(tt.Fields, &templateField{
+				tf := &templateField{
 					APIName: parts[0],
 					GoName:  upperFirst(field.Name),
-				})
+					GoType:  field.Type.String(),
+				}
+
+				if len(tf.GoName) > tt.GoNameMaxLen {
+					tt.GoNameMaxLen = len(tf.GoName)
+				}
+
+				if len(tf.GoType) > tt.GoTypeMaxLen {
+					tt.GoTypeMaxLen = len(tf.GoType)
+				}
+
+				tt.Fields = append(tt.Fields, tf)
 			})
 
 			input.Types = append(input.Types, tt)
@@ -87,6 +108,10 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 
 		_, _ = buf.WriteTo(w)
 	}
+}
+
+func padRight(in string, l int) string {
+	return fmt.Sprintf(fmt.Sprintf("%%-%ds", l), in)
 }
 
 func upperFirst(in string) string {
