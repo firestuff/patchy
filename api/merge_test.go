@@ -1,13 +1,15 @@
-//nolint:testpackage
-package api
+package api_test
 
 import (
 	"testing"
 
+	"github.com/firestuff/patchy/api"
 	"github.com/stretchr/testify/require"
 )
 
 type mergeTestType struct {
+	api.Metadata
+
 	A string
 	B int
 	C []string
@@ -27,7 +29,7 @@ func TestMergeString(t *testing.T) {
 		B: 42,
 	}
 
-	merge(to, &mergeTestType{
+	api.Merge(to, &mergeTestType{
 		A: "bar",
 	})
 
@@ -43,7 +45,7 @@ func TestMergeSlice(t *testing.T) {
 		C: []string{"foo", "bar"},
 	}
 
-	merge(to, &mergeTestType{
+	api.Merge(to, &mergeTestType{
 		C: []string{"zig", "zag"},
 	})
 
@@ -61,7 +63,7 @@ func TestMergeNested(t *testing.T) {
 		},
 	}
 
-	merge(to, &mergeTestType{
+	api.Merge(to, &mergeTestType{
 		D: nestedType{
 			F: []int{44, 45},
 		},
@@ -81,7 +83,7 @@ func TestMergeNestedPointer(t *testing.T) {
 		},
 	}
 
-	merge(to, &mergeTestType{
+	api.Merge(to, &mergeTestType{
 		E: &nestedType{
 			F: []int{49, 50},
 		},

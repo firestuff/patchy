@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/firestuff/patchy/api"
 	"github.com/stretchr/testify/require"
 )
 
@@ -17,11 +18,15 @@ func TestTemplateGoClient(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
+	api.Register[mergeTestType](ta.api)
+
 	ctx := context.Background()
 
 	gc, err := ta.pyc.GoClient(ctx)
 	require.NoError(t, err)
 	require.NotEmpty(t, gc)
+
+	t.Log(gc)
 
 	dir, err := os.MkdirTemp("", "goclient")
 	require.NoError(t, err)
@@ -43,11 +48,15 @@ func TestTemplateTSClient(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
+	api.Register[mergeTestType](ta.api)
+
 	ctx := context.Background()
 
 	tc, err := ta.pyc.TSClient(ctx)
 	require.NoError(t, err)
 	require.NotEmpty(t, tc)
+
+	t.Log(tc)
 
 	dir, err := os.MkdirTemp("", "tsclient")
 	require.NoError(t, err)

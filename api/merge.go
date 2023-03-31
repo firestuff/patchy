@@ -2,7 +2,7 @@ package api
 
 import "reflect"
 
-func merge(to any, from any) {
+func Merge(to any, from any) {
 	t := maybeIndirect(to)
 	f := maybeIndirect(from)
 
