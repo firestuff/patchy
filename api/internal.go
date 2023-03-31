@@ -201,7 +201,7 @@ func (api *API) updateInt(ctx context.Context, cfg *config, id string, patch any
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "clone failed (%w)", err)
 	}
 
-	merge(obj, patch)
+	Merge(obj, patch)
 	metadata.GetMetadata(obj).Generation++
 
 	obj, err = cfg.checkWrite(ctx, obj, prev, api)
