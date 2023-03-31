@@ -5,6 +5,7 @@ import (
     "{{ $package }}"
     {{- end }}
 
+    "context"
     "crypto/tls"
     {{- if .URLPrefix }}
     "net/url"
@@ -74,8 +75,42 @@ func (c *Client) SetAuthToken(token string) *Client {
 
 // TODO: Add APIName-specific methods
 
+func CreateName[T any](ctx context.Context, c *Client, name string, obj *T) (*T, error) {
+	return patchyc.CreateName[T](ctx, c.patchyClient, name, obj)
+}
+
+func DeleteName[T any](ctx context.Context, c *Client, name, id string, opts *UpdateOpts) error {
+	return patchyc.DeleteName[T](ctx, c.patchyClient, name, id, opts)
+}
+
+func FindName[T any](ctx context.Context, c *Client, name, shortID string) (*T, error) {
+	return patchyc.FindName[T](ctx, c.patchyClient, shortID)
+}
+
+func GetName[T any](ctx context.Context, c *Client, name, id string, opts *GetOpts) (*T, error) {
+	return patchyc.GetName[T](ctx, c.patchyClient, name, id, opts)
+}
+
+func ListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts) ([]*T, error) {
+	return patchyc.ListName[T](ctx, c.patchyClient, name, opts)
+}
+
+func ReplaceName[T any](ctx context.Context, c *Client, name, id string, obj *T, opts *UpdateOpts) (*T, error) {
+	return patchyc.ReplaceName[T](ctx, c.patchyClient, name, id, obj, opts)
+}
+
+func UpdateName[T any](ctx context.Context, c *Client, name, id string, obj *T, opts *UpdateOpts) (*T, error) {
+	return patchyc.UpdateName[T](ctx, c.patchyClient, name, id, obj, opts)
+}
+
+func StreamGetName[T any](ctx context.Context, c *Client, name, id string, opts *GetOpts) (*patchyc.GetStream[T], error) {
+	return patchyc.StreamGetName[T](ctx, c.patchyClient, name, id, opts)
+}
+
+func StreamListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts) (*patchyc.ListStream[T], error) {
+	return patchyc.StreamListName[T](ctx, c.patchyClient, name, opts)
+}
+
 func P[T any](v T) *T {
     return patchyc.P(v)
 }
-
-// TODO: Add generic functions
