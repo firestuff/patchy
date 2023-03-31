@@ -1,10 +1,19 @@
 package {{if .Form.Has "packageName" -}} {{.Form.Get "packageName"}} {{- else -}} goclient {{- end}}
 
+{{- if .Packages }}
+
+import (
+    {{- range $package := .Packages}}
+    "{{$package}}"
+    {{- end}}
+)
+{{- end}}
+
 {{- range $type := .Types}}
 
 type {{$type.GoName}} struct {
-{{- range $field := .Fields}}
+    {{- range $field := .Fields}}
     {{padRight $field.GoName $type.GoNameMaxLen}} {{padRight $field.GoType $type.GoTypeMaxLen}} `json:"{{$field.APIName}}"`
-{{- end}}
+    {{- end}}
 }
 {{- end}}
