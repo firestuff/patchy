@@ -103,3 +103,33 @@ func (c *Client) OpenAPI(ctx context.Context) (*OpenAPI, error) {
 
 	return ret, nil
 }
+
+func (c *Client) GoClient(ctx context.Context) (string, error) {
+	resp, err := c.rst.R().
+		SetContext(ctx).
+		Get("_goclient")
+	if err != nil {
+		return "", err
+	}
+
+	if resp.IsError() {
+		return "", jsrest.ReadError(resp.Body())
+	}
+
+	return resp.String(), nil
+}
+
+func (c *Client) TSClient(ctx context.Context) (string, error) {
+	resp, err := c.rst.R().
+		SetContext(ctx).
+		Get("_tsclient")
+	if err != nil {
+		return "", err
+	}
+
+	if resp.IsError() {
+		return "", jsrest.ReadError(resp.Body())
+	}
+
+	return resp.String(), nil
+}

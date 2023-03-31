@@ -48,6 +48,11 @@ func newTestAPI(t *testing.T) *testAPI {
 	pyc := patchyc.NewClient(baseURL).
 		SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true}) //nolint:gosec
 
+	if os.Getenv("PATCHY_DEBUG") != "" {
+		rst.SetDebug(true)
+		pyc.SetDebug(true)
+	}
+
 	return &testAPI{
 		api: a,
 		rst: rst,
@@ -331,17 +336,12 @@ func TestDebug(t *testing.T) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	dbg := map[string]any{}
+	ctx := context.Background()
 
-	resp, err := ta.r().
-		SetResult(&dbg).
-		Get("_debug")
+	dbg, err := ta.pyc.DebugInfo(ctx)
 	require.NoError(t, err)
-	require.False(t, resp.IsError())
-	require.Contains(t, dbg, "server")
-	require.Contains(t, dbg, "ip")
-	require.Contains(t, dbg, "http")
-	require.Contains(t, dbg, "tls")
+	require.NotNil(t, dbg)
+	require.NotEmpty(t, dbg.Server.Hostname)
 }
 
 func TestRequestHookError(t *testing.T) {
