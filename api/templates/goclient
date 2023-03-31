@@ -82,7 +82,9 @@ func (c *Client) Create {{- $type.APINameCamel -}}(ctx context.Context, obj * {{
 	return CreateName[ {{- $type.GoName -}} ](ctx, c, " {{- $type.APIName -}} ", obj)
 }
 
-// TODO: Delete {{- $type.APINameCamel -}} ()
+func (c *Client) Delete {{- $type.APINameCamel -}}(ctx context.Context, id string, opts *UpdateOpts) error {
+	return DeleteName[ {{- $type.GoName -}} ](ctx, c, " {{- $type.APIName -}} ", id, opts)
+}
 
 func (c *Client) Find {{- $type.APINameCamel -}}(ctx context.Context, shortID string) (* {{- $type.GoName -}}, error) {
 	return FindName[ {{- $type.GoName -}} ](ctx, c, " {{- $type.APIName -}} ", shortID)
@@ -120,11 +122,9 @@ func CreateName[T any](ctx context.Context, c *Client, name string, obj *T) (*T,
 	return patchyc.CreateName[T](ctx, c.patchyClient, name, obj)
 }
 
-/*
 func DeleteName[T any](ctx context.Context, c *Client, name, id string, opts *UpdateOpts) error {
 	return patchyc.DeleteName[T](ctx, c.patchyClient, name, id, opts)
 }
-*/
 
 func FindName[T any](ctx context.Context, c *Client, name, shortID string) (*T, error) {
 	return patchyc.FindName[T](ctx, c.patchyClient, name, shortID)
