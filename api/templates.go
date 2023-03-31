@@ -41,6 +41,8 @@ type templateType struct {
 	Fields       []*templateField
 	GoNameMaxLen int
 	GoTypeMaxLen int
+
+	typeOf reflect.Type
 }
 
 type templateField struct {
@@ -68,20 +70,47 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 			Form: r.Form,
 		}
 
+		typeQueue := []*templateType{}
+		typesDone := map[reflect.Type]bool{}
+
 		for _, name := range api.names() {
 			cfg := api.registry[name]
 
-			tt := &templateType{
+			typeQueue = append(typeQueue, &templateType{
 				APIName: name,
-				GoName:  upperFirst(cfg.typeOf.Name()),
+				typeOf:  cfg.typeOf,
+			})
+		}
+
+		for len(typeQueue) > 0 {
+			tt := typeQueue[0]
+			typeQueue = typeQueue[1:]
+
+			if typesDone[tt.typeOf] {
+				continue
 			}
 
-			path.WalkType(cfg.typeOf, func(_ string, parts []string, field reflect.StructField) {
-				// TODO: Support nested structs
+			typesDone[tt.typeOf] = true
+
+			tt.GoName = upperFirst(tt.typeOf.Name())
+
+			path.WalkType(tt.typeOf, func(_ string, parts []string, field reflect.StructField) {
+				typeOf := path.MaybeIndirectType(field.Type)
+
+				if len(parts) > 1 {
+					return
+				}
+
 				tf := &templateField{
 					APIName: parts[0],
 					GoName:  upperFirst(field.Name),
-					GoType:  field.Type.String(),
+					GoType:  goType(field.Type),
+				}
+
+				if typeOf.Kind() == reflect.Struct && typeOf != reflect.TypeOf(time.Time{}) && typeOf != reflect.TypeOf(civil.Date{}) {
+					typeQueue = append(typeQueue, &templateType{
+						typeOf: typeOf,
+					})
 				}
 
 				if len(tf.GoName) > tt.GoNameMaxLen {
@@ -92,7 +121,7 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 					tt.GoTypeMaxLen = len(tf.GoType)
 				}
 
-				switch path.MaybeIndirectType(field.Type) {
+				switch typeOf {
 				case reflect.TypeOf(time.Time{}):
 					input.addPackage("time")
 
@@ -138,4 +167,18 @@ func padRight(in string, l int) string {
 
 func upperFirst(in string) string {
 	return strings.ToUpper(in[:1]) + in[1:]
+}
+
+func goType(t reflect.Type) string {
+	elemType := path.MaybeIndirectType(t)
+
+	if elemType.Kind() != reflect.Struct || elemType == path.TimeTimeType || elemType == path.CivilDateType {
+		return t.String()
+	}
+
+	if t.Kind() == reflect.Pointer {
+		return fmt.Sprintf("*%s", upperFirst(elemType.Name()))
+	}
+
+	return upperFirst(elemType.Name())
 }

@@ -16,6 +16,9 @@ import (
 type WalkCallback func(string, []string, reflect.StructField)
 
 var (
+	TimeTimeType  = reflect.TypeOf(time.Time{})
+	CivilDateType = reflect.TypeOf(civil.Date{})
+
 	ErrNotAStruct       = errors.New("not a struct")
 	ErrUnknownFieldName = errors.New("unknown field name")
 )
@@ -123,7 +126,12 @@ func List(obj any) []string {
 func ListType(t reflect.Type) []string {
 	list := []string{}
 
-	WalkType(t, func(path string, _ []string, _ reflect.StructField) {
+	WalkType(t, func(path string, _ []string, field reflect.StructField) {
+		t := MaybeIndirectType(field.Type)
+		if t.Kind() == reflect.Struct && t != TimeTimeType && t != CivilDateType {
+			return
+		}
+
 		list = append(list, path)
 	})
 
@@ -182,15 +190,17 @@ func walkRecursive(t reflect.Type, cb WalkCallback, prev []string) {
 		newPrev = append(newPrev, prev...)
 
 		if !sub.Anonymous {
-			newPrev = append(newPrev, fieldName(sub))
+			newPrev = append(newPrev, FieldName(sub))
 		}
 
 		t := MaybeIndirectType(sub.Type)
 
-		if t.Kind() == reflect.Struct && t != reflect.TypeOf(time.Time{}) && t != reflect.TypeOf(civil.Date{}) {
-			walkRecursive(t, cb, newPrev)
-		} else {
+		if len(newPrev) > 0 {
 			cb(strings.Join(newPrev, "."), newPrev, sub)
+		}
+
+		if t.Kind() == reflect.Struct && t != TimeTimeType && t != CivilDateType {
+			walkRecursive(t, cb, newPrev)
 		}
 	}
 }
@@ -204,7 +214,7 @@ func getStructField(t reflect.Type, name string) (reflect.StructField, bool) {
 			panic(iterName)
 		}
 
-		return strings.ToLower(fieldName(iterField)) == name
+		return strings.ToLower(FieldName(iterField)) == name
 	})
 }
 
@@ -216,7 +226,7 @@ func errorPath(prev []string, part string) string {
 	return fmt.Sprintf("%s.%s", strings.Join(prev, "."), part)
 }
 
-func fieldName(field reflect.StructField) string {
+func FieldName(field reflect.StructField) string {
 	tag := field.Tag.Get("json")
 	if tag != "" {
 		if tag == "-" {
