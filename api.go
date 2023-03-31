@@ -24,8 +24,6 @@ var (
 	NewFileStoreAPI = api.NewFileStoreAPI
 	NewSQLiteAPI    = api.NewSQLiteAPI
 	NewAPI          = api.NewAPI
-
-	DeleteName = api.DeleteName
 )
 
 const (
@@ -49,6 +47,10 @@ func CreateName[T any](ctx context.Context, a *API, name string, obj *T) (*T, er
 
 func Create[T any](ctx context.Context, a *API, obj *T) (*T, error) {
 	return api.Create[T](ctx, a, obj)
+}
+
+func DeleteName[T any](ctx context.Context, a *API, name, id string, opts *UpdateOpts) error {
+	return api.DeleteName[T](ctx, a, name, id, opts)
 }
 
 func Delete[T any](ctx context.Context, a *API, id string, opts *UpdateOpts) error {

@@ -191,7 +191,7 @@ func TestDirectDeleteInvalidType(t *testing.T) {
 	create, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	err = api.DeleteName(ctx, ta.api, "doesnotexist", create.ID, nil)
+	err = api.DeleteName[testType](ctx, ta.api, "doesnotexist", create.ID, nil)
 	require.Error(t, err)
 }
 
