@@ -41,6 +41,7 @@ type templateInput struct {
 
 type templateType struct {
 	APIName      string
+	APINameCamel string
 	GoName       string
 	Fields       []*templateField
 	GoNameMaxLen int
@@ -100,6 +101,18 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 			typesDone[tt.typeOf] = true
 
 			tt.GoName = upperFirst(tt.typeOf.Name())
+
+			if tt.APIName != "" {
+				tt.APINameCamel = tt.APIName
+
+				if strings.EqualFold(tt.APINameCamel, tt.GoName) {
+					// Pick up real camel case if we have it
+					tt.APINameCamel = tt.GoName
+				}
+
+				// Standardize on first upper
+				tt.APINameCamel = upperFirst(tt.APINameCamel)
+			}
 
 			path.WalkType(tt.typeOf, func(_ string, parts []string, field reflect.StructField) {
 				typeOf := path.MaybeIndirectType(field.Type)
