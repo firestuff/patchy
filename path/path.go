@@ -136,7 +136,7 @@ func GetFieldType(t reflect.Type, path string) reflect.Type {
 	parts := strings.Split(path, ".")
 
 	for _, part := range parts {
-		field, found := getStructField(indirect(t), part)
+		field, found := getStructField(MaybeIndirectType(t), part)
 		if !found {
 			return nil
 		}
@@ -171,7 +171,7 @@ func Walk(obj any, cb WalkCallback) {
 }
 
 func WalkType(t reflect.Type, cb WalkCallback) {
-	walkRecursive(indirect(t), cb, []string{})
+	walkRecursive(MaybeIndirectType(t), cb, []string{})
 }
 
 func walkRecursive(t reflect.Type, cb WalkCallback, prev []string) {
@@ -185,7 +185,7 @@ func walkRecursive(t reflect.Type, cb WalkCallback, prev []string) {
 			newPrev = append(newPrev, fieldName(sub))
 		}
 
-		t := indirect(sub.Type)
+		t := MaybeIndirectType(sub.Type)
 
 		if t.Kind() == reflect.Struct && t != reflect.TypeOf(time.Time{}) && t != reflect.TypeOf(civil.Date{}) {
 			walkRecursive(t, cb, newPrev)
@@ -231,7 +231,7 @@ func fieldName(field reflect.StructField) string {
 	return field.Name
 }
 
-func indirect(t reflect.Type) reflect.Type {
+func MaybeIndirectType(t reflect.Type) reflect.Type {
 	if t.Kind() == reflect.Pointer {
 		return t.Elem()
 	}
