@@ -34,6 +34,8 @@ type API struct {
 
 	openAPI openAPI
 
+	prefix string
+
 	stripPrefix RequestHook
 	authBasic   RequestHook
 	authBearer  RequestHook
@@ -133,6 +135,8 @@ func RegisterName[T any](api *API, typeName string) {
 }
 
 func (api *API) SetStripPrefix(prefix string) {
+	api.prefix = prefix
+
 	api.stripPrefix = func(r *http.Request, _ *API) (*http.Request, error) {
 		if !strings.HasPrefix(r.URL.Path, prefix) {
 			return nil, jsrest.Errorf(jsrest.ErrNotFound, "not found")

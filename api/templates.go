@@ -30,9 +30,12 @@ var templates = template.Must(
 		ParseFS(templateFS, "templates/*"))
 
 type templateInput struct {
-	Form     url.Values
-	Types    []*templateType
-	Packages []string
+	Form       url.Values
+	Types      []*templateType
+	Packages   []string
+	URLPrefix  string
+	AuthBasic  bool
+	AuthBearer bool
 }
 
 type templateType struct {
@@ -67,7 +70,10 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 		}
 
 		input := &templateInput{
-			Form: r.Form,
+			Form:       r.Form,
+			URLPrefix:  api.prefix,
+			AuthBasic:  api.authBasic != nil,
+			AuthBearer: api.authBearer != nil,
 		}
 
 		typeQueue := []*templateType{}

@@ -1,19 +1,81 @@
-package {{if .Form.Has "packageName" -}} {{.Form.Get "packageName"}} {{- else -}} goclient {{- end}}
-
-{{- if .Packages }}
+package {{ if .Form.Has "packageName" -}} {{ .Form.Get "packageName" }} {{- else -}} goclient {{- end }}
 
 import (
-    {{- range $package := .Packages}}
-    "{{$package}}"
-    {{- end}}
+    {{- range $package := .Packages }}
+    "{{ $package }}"
+    {{- end }}
+
+    "crypto/tls"
+    {{- if .URLPrefix }}
+    "net/url"
+    {{- end }}
+
+    "github.com/firestuff/patchy/patchyc"
 )
-{{- end}}
 
-{{- range $type := .Types}}
+type (
+    Filter     = patchyc.Filter
+    GetOpts    = patchyc.GetOpts
+    ListOpts   = patchyc.ListOpts
+    UpdateOpts = patchyc.UpdateOpts
+)
 
-type {{$type.GoName}} struct {
-    {{- range $field := .Fields}}
-    {{padRight $field.GoName $type.GoNameMaxLen}} {{padRight $field.GoType $type.GoTypeMaxLen}} `json:"{{$field.APIName}}"`
-    {{- end}}
+{{- range $type := .Types }}
+
+type {{ $type.GoName }} struct {
+    {{- range $field := .Fields }}
+    {{ padRight $field.GoName $type.GoNameMaxLen }} {{ padRight $field.GoType $type.GoTypeMaxLen }} `json:"{{ $field.APIName }}"`
+    {{- end }}
 }
-{{- end}}
+{{- end }}
+
+type Client struct {
+    patchyClient *patchyc.Client
+}
+
+func NewClient(baseURL string) *Client {
+    {{- if .URLPrefix }}
+    baseURL, err := url.JoinPath(baseURL, "{{ .URLPrefix }}")
+    if err != nil {
+        panic(err)
+    }
+    {{- end }}
+
+    return &Client{
+        patchyClient: patchyc.NewClient(baseURL),
+    }
+}
+
+func (c *Client) SetTLSClientConfig(cfg *tls.Config) *Client {
+    c.patchyClient.SetTLSClientConfig(cfg)
+    return c
+}
+
+func (c *Client) SetDebug(debug bool) *Client {
+    c.patchyClient.SetDebug(debug)
+    return c
+}
+
+{{- if .AuthBasic }}
+
+func (c *Client) SetBasicAuth(user, pass string) *Client {
+    c.patchyClient.SetBasicAuth(user, pass)
+    return c
+}
+{{- end }}
+
+{{- if .AuthBearer }}
+
+func (c *Client) SetAuthToken(token string) *Client {
+    c.patchyClient.SetAuthToken(token)
+    return c
+}
+{{- end }}
+
+// TODO: Add APIName-specific methods
+
+func P[T any](v T) *T {
+    return patchyc.P(v)
+}
+
+// TODO: Add generic functions
