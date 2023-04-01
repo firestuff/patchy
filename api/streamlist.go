@@ -23,10 +23,9 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Stream-Format", opts.Stream)
 
 	switch opts.Stream {
-	case "":
-		fallthrough
 	case "full":
 		err = api.streamListFull(ctx, cfg, w, opts)
 		if err != nil {

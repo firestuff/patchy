@@ -14,9 +14,10 @@ import (
 )
 
 var (
-	ErrNotFound           = fmt.Errorf("not found")
-	ErrMultipleFound      = fmt.Errorf("multiple found")
-	ErrInvalidStreamEvent = fmt.Errorf("invalid stream event")
+	ErrNotFound            = fmt.Errorf("not found")
+	ErrMultipleFound       = fmt.Errorf("multiple found")
+	ErrInvalidStreamEvent  = fmt.Errorf("invalid stream event")
+	ErrInvalidStreamFormat = fmt.Errorf("invalid stream format")
 )
 
 func CreateName[T any](ctx context.Context, c *Client, name string, obj *T) (*T, error) {
@@ -337,14 +338,16 @@ func StreamListName[T any](ctx context.Context, c *Client, name string, opts *Li
 		body: body,
 	}
 
-	switch opts.Stream {
-	case "":
-		fallthrough
+	switch resp.Header().Get("Stream-Format") {
 	case "full":
 		go streamListFull(scan, stream, opts)
 
 	case "diff":
 		go streamListDiff(scan, stream, opts)
+
+	default:
+		stream.Close()
+		return nil, fmt.Errorf("%s (%w)", resp.Header().Get("Stream-Format"), ErrInvalidStreamFormat)
 	}
 
 	return stream, nil
