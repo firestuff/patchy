@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
-	"sort"
 	"strings"
 	"text/template"
 	"time"
@@ -16,7 +15,6 @@ import (
 	"github.com/firestuff/patchy/jsrest"
 	"github.com/firestuff/patchy/path"
 	"github.com/julienschmidt/httprouter"
-	"golang.org/x/exp/slices"
 )
 
 //go:embed templates/*
@@ -33,7 +31,8 @@ var templates = template.Must(
 type templateInput struct {
 	Form       url.Values
 	Types      []*templateType
-	Packages   []string
+	UsesTime   bool
+	UsesCivil  bool
 	URLPrefix  string
 	AuthBasic  bool
 	AuthBearer bool
@@ -142,11 +141,11 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 				}
 
 				switch typeOf {
-				case reflect.TypeOf(time.Time{}):
-					input.addPackage("time")
+				case path.TimeTimeType:
+					input.UsesTime = true
 
-				case reflect.TypeOf(civil.Date{}):
-					input.addPackage("cloud.google.com/go/civil")
+				case path.CivilDateType:
+					input.UsesCivil = true
 				}
 
 				tt.Fields = append(tt.Fields, tf)
@@ -170,15 +169,6 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 
 		_, _ = buf.WriteTo(w)
 	}
-}
-
-func (ti *templateInput) addPackage(name string) {
-	if slices.Contains(ti.Packages, name) {
-		return
-	}
-
-	ti.Packages = append(ti.Packages, name)
-	sort.Strings(ti.Packages)
 }
 
 func padRight(in string, l int) string {
