@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/firestuff/patchy/api"
 	"github.com/firestuff/patchy/patchyc"
 	"github.com/stretchr/testify/require"
 )
@@ -502,4 +503,33 @@ func TestStreamListDiffPrev(t *testing.T) {
 	require.NotNil(t, ev, stream2.Error())
 	require.Len(t, ev.List, 1)
 	require.Equal(t, "foo", ev.List[0].Text)
+}
+
+func TestStreamListDefaultDiff(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ta.api.SetDefaultListOpts(&api.ListOpts{
+		Stream: "diff",
+	})
+
+	ctx := context.Background()
+
+	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	require.NoError(t, err)
+
+	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, nil)
+	require.NoError(t, err)
+
+	defer stream.Close()
+
+	ev := stream.Read()
+	require.NotNil(t, ev, stream.Error())
+	require.Len(t, ev.List, 2)
+	require.ElementsMatch(t, []string{"foo", "bar"}, []string{ev.List[0].Text, ev.List[1].Text})
 }
