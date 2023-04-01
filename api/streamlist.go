@@ -17,7 +17,7 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 		return jsrest.Errorf(jsrest.ErrBadRequest, "stream failed (%w)", ErrStreamingNotSupported)
 	}
 
-	opts, err := parseListOpts(r)
+	opts, err := api.parseListOpts(r)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrBadRequest, "parse list parameters failed (%w)", err)
 	}

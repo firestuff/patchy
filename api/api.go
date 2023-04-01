@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -40,6 +41,8 @@ type API struct {
 	authBasic   RequestHook
 	authBearer  RequestHook
 	requestHook RequestHook
+
+	listOpts *ListOpts
 }
 
 type (
@@ -84,6 +87,7 @@ func NewAPI(st store.Storer) (*API, error) {
 		srv: &http.Server{
 			ReadHeaderTimeout: 30 * time.Second,
 		},
+		listOpts: &ListOpts{},
 	}
 
 	api.srv.Handler = api
@@ -150,6 +154,10 @@ func (api *API) SetStripPrefix(prefix string) {
 
 func (api *API) SetRequestHook(hook RequestHook) {
 	api.requestHook = hook
+}
+
+func (api *API) SetDefaultListOpts(opts *ListOpts) {
+	api.listOpts = opts
 }
 
 func (api *API) IsSafe() error {
@@ -373,4 +381,20 @@ func (api *API) names() []string {
 
 func objName[T any](obj *T) string {
 	return strings.ToLower(reflect.TypeOf(*obj).Name())
+}
+
+func clone[T any](src *T) (*T, error) {
+	dst := new(T)
+
+	js, err := json.Marshal(src)
+	if err != nil {
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "JSON marshal (%w)", err)
+	}
+
+	err = json.Unmarshal(js, dst)
+	if err != nil {
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "JSON unmarhsal (%w)", err)
+	}
+
+	return dst, nil
 }

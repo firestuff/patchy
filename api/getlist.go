@@ -8,7 +8,7 @@ import (
 )
 
 func (api *API) getList(cfg *config, w http.ResponseWriter, r *http.Request) error {
-	opts, err := parseListOpts(r)
+	opts, err := api.parseListOpts(r)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrBadRequest, "parse list parameters failed (%w)", err)
 	}
