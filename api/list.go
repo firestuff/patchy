@@ -20,22 +20,22 @@ import (
 )
 
 type ListOpts struct {
-	Stream  string
-	Limit   int64
-	Offset  int64
-	After   string
-	Sorts   []string
-	Filters []*Filter
+	Stream  string    `json:"stream"`
+	Limit   int64     `json:"limit"`
+	Offset  int64     `json:"offset"`
+	After   string    `json:"after"`
+	Sorts   []string  `json:"sorts"`
+	Filters []*Filter `json:"filters"`
 
-	IfNoneMatch []httpheader.EntityTag
+	IfNoneMatch []httpheader.EntityTag `json:"-"`
 
-	Prev any
+	Prev any `json:"-"`
 }
 
 type Filter struct {
-	Path  string
-	Op    string
-	Value string
+	Path  string `json:"path"`
+	Op    string `json:"op"`
+	Value string `json:"value"`
 }
 
 var (
@@ -149,11 +149,14 @@ func HashList(list any) (string, error) {
 	return fmt.Sprintf("etag:%x", hash.Sum(nil)), nil
 }
 
-func parseListOpts(r *http.Request) (*ListOpts, error) {
-	ret := &ListOpts{
-		Sorts:       []string{},
-		Filters:     []*Filter{},
-		IfNoneMatch: httpheader.IfNoneMatch(r.Header),
+func (api *API) parseListOpts(r *http.Request) (*ListOpts, error) {
+	ret, err := clone(api.listOpts)
+	if err != nil {
+		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "clone default listOpts failed (%w)", err)
+	}
+
+	if r.Header.Get("If-None-Match") != "" {
+		ret.IfNoneMatch = httpheader.IfNoneMatch(r.Header)
 	}
 
 	params, err := url.ParseQuery(r.URL.RawQuery)
@@ -161,35 +164,39 @@ func parseListOpts(r *http.Request) (*ListOpts, error) {
 		return nil, jsrest.Errorf(jsrest.ErrBadRequest, "parse URL query failed (%w)", err)
 	}
 
-	if stream := params.Get("_stream"); stream != "" {
-		if _, valid := validStream[stream]; !valid {
-			return nil, jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", stream, ErrInvalidStreamFormat)
-		}
-
-		ret.Stream = stream
-
+	if params.Has("_stream") {
+		ret.Stream = params.Get("_stream")
 		params.Del("_stream")
 	}
 
-	if limit := params.Get("_limit"); limit != "" {
-		ret.Limit, err = strconv.ParseInt(limit, 10, 64)
+	if ret.Stream == "" {
+		ret.Stream = "full"
+	}
+
+	if _, valid := validStream[ret.Stream]; !valid {
+		return nil, jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", ret.Stream, ErrInvalidStreamFormat)
+	}
+
+	if params.Has("_limit") {
+		ret.Limit, err = strconv.ParseInt(params.Get("_limit"), 10, 64)
 		if err != nil {
-			return nil, jsrest.Errorf(jsrest.ErrBadRequest, "parse _limit value failed: %s (%w)", limit, err)
+			return nil, jsrest.Errorf(jsrest.ErrBadRequest, "parse _limit value failed: %s (%w)", params.Get("_limit"), err)
 		}
 
 		params.Del("_limit")
 	}
 
-	if offset := params.Get("_offset"); offset != "" {
-		ret.Offset, err = strconv.ParseInt(offset, 10, 64)
+	if params.Has("_offset") {
+		ret.Offset, err = strconv.ParseInt(params.Get("_offset"), 10, 64)
 		if err != nil {
-			return nil, jsrest.Errorf(jsrest.ErrBadRequest, "parse _offset value failed: %s (%w)", offset, err)
+			return nil, jsrest.Errorf(jsrest.ErrBadRequest, "parse _offset value failed: %s (%w)", params.Get("_offset"), err)
 		}
 
 		params.Del("_offset")
 	}
 
-	if ret.After = params.Get("_after"); ret.After != "" {
+	if params.Has("_after") {
+		ret.After = params.Get("_after")
 		params.Del("_after")
 	}
 
