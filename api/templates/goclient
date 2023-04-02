@@ -10,7 +10,7 @@ import (
 	"time"
 	{{- end }}
 
-	// External
+	//
 	{{- if .UsesCivil }}
 	"cloud.google.com/go/civil"
 	{{- end }}
