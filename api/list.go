@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"math"
 	"net/http"
-	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -159,14 +158,8 @@ func (api *API) parseListOpts(r *http.Request) (*ListOpts, error) {
 		ret.IfNoneMatch = httpheader.IfNoneMatch(r.Header)
 	}
 
-	params, err := url.ParseQuery(r.URL.RawQuery)
-	if err != nil {
-		return nil, jsrest.Errorf(jsrest.ErrBadRequest, "parse URL query failed (%w)", err)
-	}
-
-	if params.Has("_stream") {
-		ret.Stream = params.Get("_stream")
-		params.Del("_stream")
+	if r.Form.Has("_stream") {
+		ret.Stream = r.Form.Get("_stream")
 	}
 
 	if ret.Stream == "" {
@@ -177,30 +170,25 @@ func (api *API) parseListOpts(r *http.Request) (*ListOpts, error) {
 		return nil, jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", ret.Stream, ErrInvalidStreamFormat)
 	}
 
-	if params.Has("_limit") {
-		ret.Limit, err = strconv.ParseInt(params.Get("_limit"), 10, 64)
+	if r.Form.Has("_limit") {
+		ret.Limit, err = strconv.ParseInt(r.Form.Get("_limit"), 10, 64)
 		if err != nil {
-			return nil, jsrest.Errorf(jsrest.ErrBadRequest, "parse _limit value failed: %s (%w)", params.Get("_limit"), err)
+			return nil, jsrest.Errorf(jsrest.ErrBadRequest, "parse _limit value failed: %s (%w)", r.Form.Get("_limit"), err)
 		}
-
-		params.Del("_limit")
 	}
 
-	if params.Has("_offset") {
-		ret.Offset, err = strconv.ParseInt(params.Get("_offset"), 10, 64)
+	if r.Form.Has("_offset") {
+		ret.Offset, err = strconv.ParseInt(r.Form.Get("_offset"), 10, 64)
 		if err != nil {
-			return nil, jsrest.Errorf(jsrest.ErrBadRequest, "parse _offset value failed: %s (%w)", params.Get("_offset"), err)
+			return nil, jsrest.Errorf(jsrest.ErrBadRequest, "parse _offset value failed: %s (%w)", r.Form.Get("_offset"), err)
 		}
-
-		params.Del("_offset")
 	}
 
-	if params.Has("_after") {
-		ret.After = params.Get("_after")
-		params.Del("_after")
+	if r.Form.Has("_after") {
+		ret.After = r.Form.Get("_after")
 	}
 
-	sorts := params["_sort"]
+	sorts := r.Form["_sort"]
 	for i := len(sorts) - 1; i >= 0; i-- {
 		srt := sorts[i]
 		if len(srt) == 0 {
@@ -210,9 +198,11 @@ func (api *API) parseListOpts(r *http.Request) (*ListOpts, error) {
 		ret.Sorts = append(ret.Sorts, srt)
 	}
 
-	params.Del("_sort")
+	for path, vals := range r.Form {
+		if strings.HasPrefix(path, "_") {
+			continue
+		}
 
-	for path, vals := range params {
 		for _, val := range vals {
 			f := &Filter{
 				Path:  path,
