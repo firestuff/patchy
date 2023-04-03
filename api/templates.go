@@ -62,14 +62,6 @@ func (api *API) registerTemplates() {
 
 func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Request, httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		err := r.ParseForm()
-		if err != nil {
-			err = jsrest.Errorf(jsrest.ErrBadRequest, "parse params failed (%w)", err)
-			jsrest.WriteError(w, err)
-
-			return
-		}
-
 		input := &templateInput{
 			Form:       r.Form,
 			URLPrefix:  api.prefix,
@@ -157,7 +149,7 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 		// Buffer this so we can handle the error before sending any template output
 		buf := &bytes.Buffer{}
 
-		err = templates.ExecuteTemplate(buf, name, input)
+		err := templates.ExecuteTemplate(buf, name, input)
 		if err != nil {
 			err = jsrest.Errorf(jsrest.ErrInternalServerError, "execute template failed (%w)", err)
 			jsrest.WriteError(w, err)
