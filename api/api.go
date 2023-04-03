@@ -225,35 +225,36 @@ func (api *API) Shutdown(ctx context.Context) error {
 }
 
 func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var err error
+	err := api.serveHTTP(w, r)
+	if err != nil {
+		jsrest.WriteError(w, err)
+	}
+}
+
+func (api *API) serveHTTP(w http.ResponseWriter, r *http.Request) error {
+	err := r.ParseForm()
+	if err != nil {
+		return jsrest.Errorf(jsrest.ErrUnauthorized, "parse form failed (%w)", err)
+	}
 
 	if api.stripPrefix != nil {
 		r, err = api.stripPrefix(r, api)
 		if err != nil {
-			err = jsrest.Errorf(jsrest.ErrUnauthorized, "strip prefix failed (%w)", err)
-			jsrest.WriteError(w, err)
-
-			return
+			return jsrest.Errorf(jsrest.ErrUnauthorized, "strip prefix failed (%w)", err)
 		}
 	}
 
 	if api.authBasic != nil {
 		r, err = api.authBasic(r, api)
 		if err != nil {
-			err = jsrest.Errorf(jsrest.ErrUnauthorized, "basic authentication failed (%w)", err)
-			jsrest.WriteError(w, err)
-
-			return
+			return jsrest.Errorf(jsrest.ErrUnauthorized, "basic authentication failed (%w)", err)
 		}
 	}
 
 	if api.authBearer != nil {
 		r, err = api.authBearer(r, api)
 		if err != nil {
-			err = jsrest.Errorf(jsrest.ErrUnauthorized, "bearer authentication failed (%w)", err)
-			jsrest.WriteError(w, err)
-
-			return
+			return jsrest.Errorf(jsrest.ErrUnauthorized, "bearer authentication failed (%w)", err)
 		}
 	}
 
@@ -262,10 +263,7 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		r, err = api.requestHook(r, api)
 		if err != nil {
-			err = jsrest.Errorf(jsrest.ErrInternalServerError, "request hook failed (%w)", err)
-			jsrest.WriteError(w, err)
-
-			return
+			return jsrest.Errorf(jsrest.ErrInternalServerError, "request hook failed (%w)", err)
 		}
 	}
 
@@ -274,6 +272,8 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 
 	api.potency.ServeHTTP(w, r)
+
+	return nil
 }
 
 func (api *API) Close() {
