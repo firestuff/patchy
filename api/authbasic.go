@@ -12,7 +12,6 @@ import (
 )
 
 func authBasic[T any](r *http.Request, api *API, name, pathUser, pathPass string) (*http.Request, error) {
-	// TODO: Add authbasic_test.go
 	scheme, val := header.ParseAuthorization(r)
 
 	if strings.ToLower(scheme) != "basic" {
