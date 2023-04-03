@@ -11,7 +11,6 @@ import (
 )
 
 func authBearer[T any](r *http.Request, api *API, name, pathToken string) (*http.Request, error) {
-	// TODO: Add authbearer_test.go
 	scheme, val := header.ParseAuthorization(r)
 
 	if strings.ToLower(scheme) != "bearer" {
