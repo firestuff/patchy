@@ -104,7 +104,12 @@ func (api *API) listInt(ctx context.Context, cfg *config, opts *ListOpts) ([]any
 		opts = &ListOpts{}
 	}
 
-	// TODO: Add a hook for the type to mutate opts
+	if cfg.listHook != nil {
+		err := cfg.listHook(ctx, opts, api)
+		if err != nil {
+			return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "list hook failed (%w)", err)
+		}
+	}
 
 	list, err := api.sb.List(ctx, cfg.typeName, cfg.factory)
 	if err != nil {

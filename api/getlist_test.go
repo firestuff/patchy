@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/firestuff/patchy"
+	"github.com/firestuff/patchy/api"
 	"github.com/firestuff/patchy/patchyc"
 	"github.com/stretchr/testify/require"
 )
@@ -478,4 +479,37 @@ func TestListPrev(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, list2, 1)
 	require.Equal(t, "foo", list2[0].Text)
+}
+
+func TestListHook(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	api.SetListHook[testType](ta.api, func(_ context.Context, opts *api.ListOpts, _ *api.API) error {
+		opts.Filters = append(opts.Filters, &api.Filter{
+			Path:  "text",
+			Op:    "gt",
+			Value: "eek",
+		})
+
+		return nil
+	})
+
+	ctx := context.Background()
+
+	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	require.NoError(t, err)
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "zig"})
+	require.NoError(t, err)
+
+	list, err := patchyc.List[testType](ctx, ta.pyc, nil)
+	require.NoError(t, err)
+	require.Len(t, list, 2)
+	require.ElementsMatch(t, []string{"foo", "zig"}, []string{list[0].Text, list[1].Text})
 }

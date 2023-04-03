@@ -14,6 +14,8 @@ import (
 
 var ErrMissingAuthCheck = errors.New("missing auth check")
 
+type ListHook func(context.Context, *ListOpts, *API) error
+
 type config struct {
 	typeName string
 	typeOf   reflect.Type
@@ -22,6 +24,7 @@ type config struct {
 
 	mayRead  func(context.Context, any, *API) error
 	mayWrite func(context.Context, any, any, *API) error
+	listHook ListHook
 
 	// Per-key read/modify/write (update and replace) operation locking
 	// This ensures monotonic generation numbers
@@ -63,7 +66,7 @@ func newConfig[T any](typeName string) *config {
 		}
 	}
 
-	if _, found := typ.(mayWrite[T]); found {
+	if _, has := typ.(mayWrite[T]); has {
 		cfg.mayWrite = func(ctx context.Context, obj any, prev any, api *API) error {
 			obj = convert[T](obj)
 			return obj.(mayWrite[T]).MayWrite(ctx, convert[T](prev), api)
@@ -182,6 +185,19 @@ func (cfg *config) unlock(id string) {
 	cfg.mu.Unlock()
 
 	entry.mu.Unlock()
+}
+
+func SetListHookName[T any](api *API, name string, hook ListHook) {
+	cfg := api.registry[name]
+	if cfg == nil {
+		panic(name)
+	}
+
+	cfg.listHook = hook
+}
+
+func SetListHook[T any](api *API, hook ListHook) {
+	SetListHookName[T](api, objName(new(T)), hook)
 }
 
 func convert[T any](obj any) *T {
