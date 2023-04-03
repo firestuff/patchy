@@ -9,7 +9,7 @@ require (
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/mattn/go-sqlite3 v1.14.16
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.2
 	github.com/vfaronov/httpheader v0.1.0
 	go.uber.org/goleak v1.2.1
 	golang.org/x/crypto v0.7.0
