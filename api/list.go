@@ -149,9 +149,10 @@ func HashList(list any) (string, error) {
 }
 
 func (api *API) parseListOpts(r *http.Request) (*ListOpts, error) {
-	ret, err := clone(api.listOpts)
-	if err != nil {
-		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "clone default listOpts failed (%w)", err)
+	var err error
+
+	ret := &ListOpts{
+		Stream: "full",
 	}
 
 	if r.Header.Get("If-None-Match") != "" {
@@ -160,10 +161,6 @@ func (api *API) parseListOpts(r *http.Request) (*ListOpts, error) {
 
 	if r.Form.Has("_stream") {
 		ret.Stream = r.Form.Get("_stream")
-	}
-
-	if ret.Stream == "" {
-		ret.Stream = "full"
 	}
 
 	if _, valid := validStream[ret.Stream]; !valid {

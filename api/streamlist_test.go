@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
@@ -505,31 +506,25 @@ func TestStreamListDiffPrev(t *testing.T) {
 	require.Equal(t, "foo", ev.List[0].Text)
 }
 
-func TestStreamListDefaultDiff(t *testing.T) {
+func TestStreamListForceDiff(t *testing.T) {
 	t.Parallel()
 
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	ta.api.SetDefaultListOpts(&api.ListOpts{
-		Stream: "diff",
+	ta.api.SetRequestHook(func(r *http.Request, _ *api.API) (*http.Request, error) {
+		r.Form.Set("_stream", "diff")
+		return r, nil
 	})
 
-	ctx := context.Background()
-
-	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	resp, err := ta.r().
+		SetDoNotParseResponse(true).
+		SetHeader("Accept", "text/event-stream").
+		SetQueryParam("_stream", "full").
+		Get("testtype")
 	require.NoError(t, err)
-
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
-	require.NoError(t, err)
-
-	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, nil)
-	require.NoError(t, err)
-
-	defer stream.Close()
-
-	ev := stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 2)
-	require.ElementsMatch(t, []string{"foo", "bar"}, []string{ev.List[0].Text, ev.List[1].Text})
+	require.False(t, resp.IsError())
+	require.Equal(t, "text/event-stream", resp.Header().Get("Content-Type"))
+	require.Equal(t, "diff", resp.Header().Get("Stream-Format"))
+	resp.RawBody().Close()
 }
