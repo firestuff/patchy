@@ -66,7 +66,7 @@ func TestTemplateTSClient(t *testing.T) {
 	err = os.WriteFile(filepath.Join(dir, "client.ts"), []byte(tc), 0o600)
 	require.NoError(t, err)
 
-	runNoError(t, dir, "tsc", "--strict", "client.ts")
+	runNoError(t, dir, "tsc", "--strict", "--module", "esnext", "--target", "esnext", "client.ts")
 }
 
 func runNoError(t *testing.T, dir, name string, arg ...string) {

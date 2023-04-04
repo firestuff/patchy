@@ -29,6 +29,7 @@ type (
 )
 
 {{- range $type := .Types }}
+{{- if $type.SkipInGo }} {{- continue }} {{- end }}
 
 type {{ $type.GoName }} struct {
 	{{- range $field := .Fields }}

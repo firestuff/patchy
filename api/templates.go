@@ -47,6 +47,7 @@ type templateType struct {
 	Fields       []*templateField
 	GoNameMaxLen int
 	GoTypeMaxLen int
+	SkipInGo     bool
 
 	typeOf reflect.Type
 }
@@ -74,7 +75,16 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 			AuthBearer: api.authBearer != nil,
 		}
 
-		typeQueue := []*templateType{}
+		typeQueue := []*templateType{
+			{
+				typeOf:   reflect.TypeOf(DebugInfo{}),
+				SkipInGo: true,
+			},
+			{
+				typeOf:   reflect.TypeOf(jsrest.JSONError{}),
+				SkipInGo: true,
+			},
+		}
 		typesDone := map[reflect.Type]bool{}
 
 		for _, name := range api.names() {
@@ -113,7 +123,7 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 			path.WalkType(tt.typeOf, func(_ string, parts []string, field reflect.StructField) {
 				typeOf := path.MaybeIndirectType(field.Type)
 
-				if len(parts) > 1 {
+				if len(parts) > 1 || parts[0] == "" {
 					return
 				}
 
@@ -127,7 +137,8 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 
 				if typeOf.Kind() == reflect.Struct && typeOf != reflect.TypeOf(time.Time{}) && typeOf != reflect.TypeOf(civil.Date{}) {
 					typeQueue = append(typeQueue, &templateType{
-						typeOf: typeOf,
+						typeOf:   typeOf,
+						SkipInGo: tt.SkipInGo,
 					})
 				}
 
@@ -203,15 +214,21 @@ func tsType(t reflect.Type) string {
 		return "string"
 	}
 
+	// TODO: Handle http.Header (map[string][]string) for DebugInfo
+
 	switch elemType.Kind() { //nolint:exhaustive
-	case reflect.Array:
+	case reflect.Slice:
 		return fmt.Sprintf("%s[]", tsType(elemType.Elem()))
 
 	case reflect.Int:
 		fallthrough
+	case reflect.Int16:
+		fallthrough
 	case reflect.Int64:
 		fallthrough
 	case reflect.Uint:
+		fallthrough
+	case reflect.Uint16:
 		fallthrough
 	case reflect.Uint64:
 		fallthrough
