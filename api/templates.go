@@ -23,12 +23,14 @@ var templateFS embed.FS
 var templates = template.Must(
 	template.New("templates").
 		Funcs(template.FuncMap{
+			"add":        add,
 			"padRight":   padRight,
 			"upperFirst": upperFirst,
 		}).
 		ParseFS(templateFS, "templates/*"))
 
 type templateInput struct {
+	Info       *OpenAPIInfo
 	Form       url.Values
 	Types      []*templateType
 	UsesTime   bool
@@ -50,9 +52,11 @@ type templateType struct {
 }
 
 type templateField struct {
-	APIName string
-	GoName  string
-	GoType  string
+	APIName  string
+	GoName   string
+	GoType   string
+	TSType   string
+	Optional bool
 }
 
 func (api *API) registerTemplates() {
@@ -63,6 +67,7 @@ func (api *API) registerTemplates() {
 func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Request, httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		input := &templateInput{
+			Info:       api.openAPI.info,
 			Form:       r.Form,
 			URLPrefix:  api.prefix,
 			AuthBasic:  api.authBasic != nil,
@@ -113,9 +118,11 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 				}
 
 				tf := &templateField{
-					APIName: parts[0],
-					GoName:  upperFirst(field.Name),
-					GoType:  goType(field.Type),
+					APIName:  parts[0],
+					GoName:   upperFirst(field.Name),
+					GoType:   goType(field.Type),
+					TSType:   tsType(field.Type),
+					Optional: field.Type.Kind() == reflect.Pointer,
 				}
 
 				if typeOf.Kind() == reflect.Struct && typeOf != reflect.TypeOf(time.Time{}) && typeOf != reflect.TypeOf(civil.Date{}) {
@@ -157,10 +164,14 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 			return
 		}
 
-		w.Header().Set("Content-Type", "text/plain")
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 
 		_, _ = buf.WriteTo(w)
 	}
+}
+
+func add(a, b int) int {
+	return a + b
 }
 
 func padRight(in string, l int) string {
@@ -183,4 +194,39 @@ func goType(t reflect.Type) string {
 	}
 
 	return upperFirst(elemType.Name())
+}
+
+func tsType(t reflect.Type) string {
+	elemType := path.MaybeIndirectType(t)
+
+	if elemType == path.TimeTimeType || elemType == path.CivilDateType {
+		return "string"
+	}
+
+	switch elemType.Kind() { //nolint:exhaustive
+	case reflect.Array:
+		return fmt.Sprintf("%s[]", tsType(elemType.Elem()))
+
+	case reflect.Int:
+		fallthrough
+	case reflect.Int64:
+		fallthrough
+	case reflect.Uint:
+		fallthrough
+	case reflect.Uint64:
+		fallthrough
+	case reflect.Float32:
+		fallthrough
+	case reflect.Float64:
+		return "number"
+
+	case reflect.Bool:
+		return "boolean"
+
+	case reflect.Struct:
+		return goType(elemType)
+
+	default:
+		return "string"
+	}
 }
