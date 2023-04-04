@@ -1,1 +1,16 @@
-// TODO: TypeScript client
+{{- if and .Info .Info.Title -}}
+// {{ .Info.Title }} client
+{{- end }}
+
+{{- range $type := .Types }}
+
+export interface {{ $type.GoName }} {
+	{{- range $field := .Fields }}
+	{{- if $field.Optional }}
+	{{ padRight (printf "%s?:" $field.APIName) (add $type.GoNameMaxLen 2) }} {{ $field.TSType }} | null;
+	{{- else }}
+	{{ padRight (printf "%s:" $field.APIName) (add $type.GoNameMaxLen 2) }} {{ $field.TSType }};
+	{{- end }}
+	{{- end }}
+}
+{{- end }}

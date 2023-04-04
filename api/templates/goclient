@@ -1,3 +1,7 @@
+{{- if and .Info .Info.Title -}}
+// {{ .Info.Title }} client
+
+{{ end -}}
 package {{ if .Form.Has "packageName" -}} {{ .Form.Get "packageName" }} {{- else -}} goclient {{- end }}
 
 import (
