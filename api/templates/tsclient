@@ -23,13 +23,29 @@ export class Client {
 	}
 
 	async debugInfo(): Promise<DebugInfo> {
-		const url = new URL('_debug', this.baseURL);
+		return this.fetch('_debug');
+	}
+
+	private async fetch(path: string): Promise<any> {
+		const url = new URL(path, this.baseURL);
 
 		const resp = await fetch(url);
 		if (!resp.ok) {
-			throw await resp.json();
+			throw new Error(await resp.json());
 		}
 
 		return resp.json();
+	}
+}
+
+export class Error {
+	messages: string[];
+
+	constructor(json: JSONError) {
+		this.messages = json.messages;
+	}
+
+	toString(): string {
+		return this.messages[0];
 	}
 }
