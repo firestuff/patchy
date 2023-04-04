@@ -11,6 +11,7 @@ type (
 	DebugInfo   = api.DebugInfo
 	Filter      = api.Filter
 	GetOpts     = api.GetOpts
+	ListHook    = api.ListHook
 	ListOpts    = api.ListOpts
 	Metadata    = api.Metadata
 	OpenAPI     = api.OpenAPI
@@ -111,6 +112,14 @@ func SetAuthBearerName[T any](a *API, name, pathToken string) {
 
 func SetAuthBearer[T any](a *API, pathToken string) {
 	api.SetAuthBearer[T](a, pathToken)
+}
+
+func SetListHookName[T any](a *API, name string, hook ListHook) {
+	api.SetListHookName[T](a, name, hook)
+}
+
+func SetListHook[T any](a *API, hook ListHook) {
+	api.SetListHook[T](a, hook)
 }
 
 func IsCreate[T any](obj *T, prev *T) bool {
