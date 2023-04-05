@@ -128,11 +128,14 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 				}
 
 				tf := &templateField{
-					APIName:  parts[0],
-					GoName:   upperFirst(field.Name),
-					GoType:   goType(field.Type),
-					TSType:   tsType(field.Type),
-					Optional: field.Type.Kind() == reflect.Pointer,
+					APIName: parts[0],
+					GoName:  upperFirst(field.Name),
+					GoType:  goType(field.Type),
+					TSType:  tsType(field.Type),
+					Optional: (field.Type.Kind() == reflect.Pointer ||
+						parts[0] == "id" ||
+						parts[0] == "etag" ||
+						parts[0] == "generation"),
 				}
 
 				if typeOf.Kind() == reflect.Struct && typeOf != reflect.TypeOf(time.Time{}) && typeOf != reflect.TypeOf(civil.Date{}) {
