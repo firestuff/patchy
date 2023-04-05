@@ -82,46 +82,45 @@ func (c *Client) SetAuthToken(token string) *Client {
 {{- end }}
 
 {{- range $type := .Types }}
-{{- if $type.APIName }}
+{{- if not $type.APIName }} {{- continue }} {{- end }}
 
 //// {{ $type.APINameCamel }}
 
-func (c *Client) Create {{- $type.APINameCamel -}}(ctx context.Context, obj * {{- $type.GoName -}} ) (* {{- $type.GoName -}}, error) {
+func (c *Client) Create {{- $type.APINameCamel -}} (ctx context.Context, obj * {{- $type.GoName -}} ) (* {{- $type.GoName -}}, error) {
 	return CreateName[ {{- $type.GoName -}} ](ctx, c, " {{- $type.APIName -}} ", obj)
 }
 
-func (c *Client) Delete {{- $type.APINameCamel -}}(ctx context.Context, id string, opts *UpdateOpts) error {
+func (c *Client) Delete {{- $type.APINameCamel -}} (ctx context.Context, id string, opts *UpdateOpts) error {
 	return DeleteName[ {{- $type.GoName -}} ](ctx, c, " {{- $type.APIName -}} ", id, opts)
 }
 
-func (c *Client) Find {{- $type.APINameCamel -}}(ctx context.Context, shortID string) (* {{- $type.GoName -}}, error) {
+func (c *Client) Find {{- $type.APINameCamel -}} (ctx context.Context, shortID string) (* {{- $type.GoName -}}, error) {
 	return FindName[ {{- $type.GoName -}} ](ctx, c, " {{- $type.APIName -}} ", shortID)
 }
 
-func (c *Client) Get {{- $type.APINameCamel -}}(ctx context.Context, id string, opts *GetOpts) (* {{- $type.GoName -}}, error) {
+func (c *Client) Get {{- $type.APINameCamel -}} (ctx context.Context, id string, opts *GetOpts) (* {{- $type.GoName -}}, error) {
 	return GetName[ {{- $type.GoName -}} ](ctx, c, " {{- $type.APIName -}} ", id, opts)
 }
 
-func (c *Client) List {{- $type.APINameCamel -}}(ctx context.Context, opts *ListOpts) ([]* {{- $type.GoName -}}, error) {
+func (c *Client) List {{- $type.APINameCamel -}} (ctx context.Context, opts *ListOpts) ([]* {{- $type.GoName -}}, error) {
 	return ListName[ {{- $type.GoName -}} ](ctx, c, " {{- $type.APIName -}} ", opts)
 }
 
-func (c *Client) Replace {{- $type.APINameCamel -}}(ctx context.Context, id string, obj * {{- $type.GoName -}}, opts *UpdateOpts) (* {{- $type.GoName -}}, error) {
+func (c *Client) Replace {{- $type.APINameCamel -}} (ctx context.Context, id string, obj * {{- $type.GoName -}}, opts *UpdateOpts) (* {{- $type.GoName -}}, error) {
 	return ReplaceName[ {{- $type.GoName -}} ](ctx, c, " {{- $type.APIName -}} ", id, obj, opts)
 }
 
-func (c *Client) Update {{- $type.APINameCamel -}}(ctx context.Context, id string, obj * {{- $type.GoName -}}, opts *UpdateOpts) (* {{- $type.GoName -}}, error) {
+func (c *Client) Update {{- $type.APINameCamel -}} (ctx context.Context, id string, obj * {{- $type.GoName -}}, opts *UpdateOpts) (* {{- $type.GoName -}}, error) {
 	return UpdateName[ {{- $type.GoName -}} ](ctx, c, " {{- $type.APIName -}} ", id, obj, opts)
 }
 
-func (c *Client) StreamGet {{- $type.APINameCamel -}}(ctx context.Context, id string, opts *GetOpts) (*patchyc.GetStream[ {{- $type.GoName -}} ], error) {
+func (c *Client) StreamGet {{- $type.APINameCamel -}} (ctx context.Context, id string, opts *GetOpts) (*patchyc.GetStream[ {{- $type.GoName -}} ], error) {
 	return StreamGetName[ {{- $type.GoName -}} ](ctx, c, " {{- $type.APIName -}} ", id, opts)
 }
 
-func (c *Client) StreamList {{- $type.APINameCamel -}}(ctx context.Context, opts *ListOpts) (*patchyc.ListStream[ {{- $type.GoName -}} ], error) {
+func (c *Client) StreamList {{- $type.APINameCamel -}} (ctx context.Context, opts *ListOpts) (*patchyc.ListStream[ {{- $type.GoName -}} ], error) {
 	return StreamListName[ {{- $type.GoName -}} ](ctx, c, " {{- $type.APIName -}} ", opts)
 }
-{{- end }}
 {{- end }}
 
 //// Generic

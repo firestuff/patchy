@@ -23,25 +23,60 @@ export class Client {
 		this.baseURL = new URL(baseURL);
 	}
 
+	{{- if .AuthBasic }}
+
 	setBasicAuth(user: string, pass: string) {
 		const enc = btoa(`${user}:${pass}`);
 		this.headers.set('Authorization', `Basic ${enc}`);
 	}
+	{{- end }}
+
+	{{- if .AuthBearer }}
 
 	setAuthToken(token: string) {
 		this.headers.set('Authorization', `Bearer ${token}`);
 	}
+	{{- end }}
 
 	async debugInfo(): Promise<DebugInfo> {
-		return this.fetch('_debug');
+		return this.fetch('GET', '_debug');
 	}
 
-	private async fetch(path: string): Promise<any> {
+	{{- range $type := .Types }}
+	{{- if not $type.APIName }} {{- continue }} {{- end }}
+
+	//// {{ $type.APINameCamel }}
+
+	async create {{- $type.APINameCamel -}} (obj: {{ $type.GoName -}} ): Promise< {{- $type.GoName -}} > {
+		return this.createName(" {{- $type.APIName -}} ", obj);
+	}
+
+	{{- end }}
+
+	//// Generic
+
+	async createName<T>(name: string, obj: T): Promise<T> {
+		return this.fetch('POST', name, obj);
+	}
+
+	private async fetch(method: string, path: string, body?: any): Promise<any> {
 		const url = new URL(path, this.baseURL);
 
-		const req = new Request(url, {
-			headers: this.headers,
-		});
+		const opts: RequestInit = {
+			method: method,
+			headers: new Headers(this.headers),
+			mode: 'cors',
+			credentials: 'omit',
+			referrerPolicy: 'no-referrer',
+			keepalive: true,
+		}
+
+		if (body) {
+			opts.body = JSON.stringify(body);
+			(<Headers>opts.headers).set('Content-Type', 'application/json');
+		}
+
+		const req = new Request(url, opts);
 
 		const resp = await fetch(req);
 		if (!resp.ok) {
