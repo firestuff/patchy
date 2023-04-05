@@ -51,8 +51,16 @@ export class Client {
 		return this.createName(" {{- $type.APIName -}} ", obj);
 	}
 
+	// TODO: Add UpdateOpts
 	async delete {{- $type.APINameCamel -}} (id: string): Promise<void> {
 		return this.deleteName(" {{- $type.APIName -}} ", id);
+	}
+
+	// TODO: Add fetch*()
+
+	// TODO: Add GetOpts
+	async get {{- $type.APINameCamel -}} (id: string): Promise< {{- $type.GoName -}} > {
+		return this.getName(" {{- $type.APIName -}} ", id);
 	}
 
 	{{- end }}
@@ -66,6 +74,13 @@ export class Client {
 	// TODO: Add UpdateOpts
 	async deleteName(name: string, id: string): Promise<void> {
 		return this.fetch('DELETE', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`);
+	}
+
+	// TODO: Add findName()
+
+	// TODO: Add GetOpts
+	async getName<T>(name: string, id: string): Promise<T> {
+		return this.fetch('GET', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`);
 	}
 
 	private async fetch(method: string, path: string, body?: any): Promise<any> {
