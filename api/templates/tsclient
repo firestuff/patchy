@@ -63,6 +63,11 @@ export class Client {
 		return this.getName(" {{- $type.APIName -}} ", id);
 	}
 
+	// TODO: Add ListOpts
+	async list {{- $type.APINameCamel -}} (): Promise< {{- $type.GoName -}} []> {
+		return this.listName(" {{- $type.APIName -}} ");
+	}
+
 	{{- end }}
 
 	//// Generic
@@ -81,6 +86,11 @@ export class Client {
 	// TODO: Add GetOpts
 	async getName<T>(name: string, id: string): Promise<T> {
 		return this.fetch('GET', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`);
+	}
+
+	// TODO: Add ListOpts
+	async listName<T>(name: string): Promise<T[]> {
+		return this.fetch('GET', `${encodeURIComponent(name)}`);
 	}
 
 	private async fetch(method: string, path: string, body?: any): Promise<any> {
