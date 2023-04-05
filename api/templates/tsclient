@@ -51,12 +51,21 @@ export class Client {
 		return this.createName(" {{- $type.APIName -}} ", obj);
 	}
 
+	async delete {{- $type.APINameCamel -}} (id: string): Promise<void> {
+		return this.deleteName(" {{- $type.APIName -}} ", id);
+	}
+
 	{{- end }}
 
 	//// Generic
 
 	async createName<T>(name: string, obj: T): Promise<T> {
-		return this.fetch('POST', name, obj);
+		return this.fetch('POST', encodeURIComponent(name), obj);
+	}
+
+	// TODO: Add UpdateOpts
+	async deleteName(name: string, id: string): Promise<void> {
+		return this.fetch('DELETE', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`);
 	}
 
 	private async fetch(method: string, path: string, body?: any): Promise<any> {
@@ -83,7 +92,9 @@ export class Client {
 			throw new Error(await resp.json());
 		}
 
-		return resp.json();
+		if (resp.status == 200) {
+			return resp.json();
+		}
 	}
 }
 
