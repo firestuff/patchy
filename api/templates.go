@@ -49,7 +49,8 @@ type templateType struct {
 	GoTypeMaxLen int
 	SkipInGo     bool
 
-	typeOf reflect.Type
+	typeOf      reflect.Type
+	allOptional bool
 }
 
 type templateField struct {
@@ -61,8 +62,8 @@ type templateField struct {
 }
 
 func (api *API) registerTemplates() {
-	api.router.GET("/_goclient", api.writeTemplate("goclient"))
-	api.router.GET("/_tsclient", api.writeTemplate("tsclient"))
+	api.router.GET("/_client.go", api.writeTemplate("client.go.tmpl"))
+	api.router.GET("/_client.ts", api.writeTemplate("client.ts.tmpl"))
 }
 
 func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Request, httprouter.Params) {
@@ -83,6 +84,21 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 			{
 				typeOf:   reflect.TypeOf(jsrest.JSONError{}),
 				SkipInGo: true,
+			},
+			{
+				typeOf:      reflect.TypeOf(GetOpts{}),
+				SkipInGo:    true,
+				allOptional: true,
+			},
+			{
+				typeOf:      reflect.TypeOf(ListOpts{}),
+				SkipInGo:    true,
+				allOptional: true,
+			},
+			{
+				typeOf:      reflect.TypeOf(UpdateOpts{}),
+				SkipInGo:    true,
+				allOptional: true,
 			},
 		}
 		typesDone := map[reflect.Type]bool{}
@@ -123,6 +139,11 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 			path.WalkType(tt.typeOf, func(_ string, parts []string, field reflect.StructField) {
 				typeOf := path.MaybeIndirectType(field.Type)
 
+				elemType := typeOf
+				if elemType.Kind() == reflect.Slice {
+					elemType = path.MaybeIndirectType(elemType.Elem())
+				}
+
 				if len(parts) > 1 || parts[0] == "" {
 					return
 				}
@@ -132,15 +153,16 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 					GoName:  upperFirst(field.Name),
 					GoType:  goType(field.Type),
 					TSType:  tsType(field.Type),
-					Optional: (field.Type.Kind() == reflect.Pointer ||
+					Optional: (tt.allOptional ||
+						field.Type.Kind() == reflect.Pointer ||
 						parts[0] == "id" ||
 						parts[0] == "etag" ||
 						parts[0] == "generation"),
 				}
 
-				if typeOf.Kind() == reflect.Struct && typeOf != reflect.TypeOf(time.Time{}) && typeOf != reflect.TypeOf(civil.Date{}) {
+				if elemType.Kind() == reflect.Struct && elemType != reflect.TypeOf(time.Time{}) && elemType != reflect.TypeOf(civil.Date{}) {
 					typeQueue = append(typeQueue, &templateType{
-						typeOf:   typeOf,
+						typeOf:   elemType,
 						SkipInGo: tt.SkipInGo,
 					})
 				}
@@ -245,6 +267,9 @@ func tsType(t reflect.Type) string {
 
 	case reflect.Struct:
 		return goType(elemType)
+
+	case reflect.Interface:
+		return "any"
 
 	default:
 		return "string"

@@ -63,9 +63,8 @@ export class Client {
 		return this.getName(" {{- $type.APIName -}} ", id);
 	}
 
-	// TODO: Add ListOpts
-	async list {{- $type.APINameCamel -}} (): Promise< {{- $type.GoName -}} []> {
-		return this.listName(" {{- $type.APIName -}} ");
+	async list {{- $type.APINameCamel -}} (opts?: ListOpts | null): Promise< {{- $type.GoName -}} []> {
+		return this.listName(" {{- $type.APIName -}} ", opts);
 	}
 
 	// TODO: Add UpdateOpts
@@ -86,7 +85,7 @@ export class Client {
 	//// Generic
 
 	async createName<T>(name: string, obj: T): Promise<T> {
-		return this.fetch('POST', encodeURIComponent(name), obj);
+		return this.fetch('POST', encodeURIComponent(name), null, obj);
 	}
 
 	// TODO: Add UpdateOpts
@@ -102,25 +101,29 @@ export class Client {
 	}
 
 	// TODO: Add ListOpts
-	async listName<T>(name: string): Promise<T[]> {
-		return this.fetch('GET', `${encodeURIComponent(name)}`);
+	async listName<T>(name: string, opts?: ListOpts | null): Promise<T[]> {
+		return this.fetch('GET', `${encodeURIComponent(name)}`, this.buildListParams(opts));
 	}
 
 	// TODO: Add UpdateOpts
 	async replaceName<T>(name: string, id: string, obj: T): Promise<T> {
-		return this.fetch('PUT', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`, obj);
+		return this.fetch('PUT', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`, null, obj);
 	}
 
 	// TODO: Add UpdateOpts
 	async updateName<T>(name: string, id: string, obj: T): Promise<T> {
-		return this.fetch('PATCH', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`, obj);
+		return this.fetch('PATCH', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`, null, obj);
 	}
 
 	// TODO: Add streamGetName
 	// TODO: Add streamListName
 
-	private async fetch(method: string, path: string, body?: any): Promise<any> {
+	private async fetch(method: string, path: string, params?: URLSearchParams | null, body?: any): Promise<any> {
 		const url = new URL(path, this.baseURL);
+
+		if (params) {
+			url.search = `?${params.toString()}`;
+		}
 
 		const opts: RequestInit = {
 			method: method,
@@ -146,6 +149,39 @@ export class Client {
 		if (resp.status == 200) {
 			return resp.json();
 		}
+	}
+
+	private buildListParams(opts: ListOpts | null | undefined): URLSearchParams {
+		const params = new URLSearchParams();
+
+		if (!opts) {
+			return params;
+		}
+
+		if (opts.stream) {
+			params.set('_stream', opts.stream);
+		}
+
+		if (opts.limit) {
+			params.set('_limit', `${opts.limit}`);
+		}
+
+		if (opts.offset) {
+			params.set('_offset', `${opts.offset}`);
+		}
+
+		if (opts.after) {
+			params.set('_after', `${opts.after}`);
+		}
+
+		for (const sort of opts.sorts || []) {
+			params.append('_sort', sort);
+		}
+
+		// TODO: Other params
+		// TODO: Some way to pass prev
+
+		return params;
 	}
 }
 
