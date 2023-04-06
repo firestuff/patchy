@@ -174,11 +174,14 @@ export class Client {
 			params.set('_after', `${opts.after}`);
 		}
 
+		for (const filter of opts.filters || []) {
+			params.set(`${filter.path}[${filter.op}]`, filter.value);
+		}
+
 		for (const sort of opts.sorts || []) {
 			params.append('_sort', sort);
 		}
 
-		// TODO: Other params
 		// TODO: Some way to pass prev
 
 		return params;
