@@ -107,7 +107,7 @@ func (c *Client) OpenAPI(ctx context.Context) (*OpenAPI, error) {
 func (c *Client) GoClient(ctx context.Context) (string, error) {
 	resp, err := c.rst.R().
 		SetContext(ctx).
-		Get("_goclient")
+		Get("_client.go")
 	if err != nil {
 		return "", err
 	}
@@ -122,7 +122,7 @@ func (c *Client) GoClient(ctx context.Context) (string, error) {
 func (c *Client) TSClient(ctx context.Context) (string, error) {
 	resp, err := c.rst.R().
 		SetContext(ctx).
-		Get("_tsclient")
+		Get("_client.ts")
 	if err != nil {
 		return "", err
 	}

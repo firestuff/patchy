@@ -28,7 +28,7 @@ type ListOpts struct {
 
 	IfNoneMatch []httpheader.EntityTag `json:"-"`
 
-	Prev any `json:"-"`
+	Prev any `json:"prev"`
 }
 
 type Filter struct {

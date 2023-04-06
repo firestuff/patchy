@@ -10,9 +10,9 @@ import (
 )
 
 type UpdateOpts struct {
-	IfMatch []httpheader.EntityTag
+	IfMatch []httpheader.EntityTag `json:"-"`
 
-	Prev any
+	Prev any `json:"prev"`
 }
 
 func parseUpdateOpts(r *http.Request) *UpdateOpts {
