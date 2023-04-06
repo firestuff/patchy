@@ -15,12 +15,126 @@ export interface {{ $type.GoName }} {
 }
 {{- end }}
 
-export class Client {
-	private baseURL: URL;
-	private headers: Headers = new Headers();
+class ClientCore {
+	protected baseURL: URL;
+	protected headers: Headers = new Headers();
 
 	constructor(baseURL: string) {
 		this.baseURL = new URL(baseURL);
+	}
+
+	async debugInfo(): Promise<DebugInfo> {
+		return this.fetch('GET', '_debug');
+	}
+
+	//// Generic
+
+	async createName<T>(name: string, obj: T): Promise<T> {
+		return this.fetch('POST', encodeURIComponent(name), null, obj);
+	}
+
+	// TODO: Add UpdateOpts
+	async deleteName(name: string, id: string): Promise<void> {
+		return this.fetch('DELETE', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`);
+	}
+
+	// TODO: Add findName()
+
+	// TODO: Add GetOpts
+	async getName<T>(name: string, id: string): Promise<T> {
+		return this.fetch('GET', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`);
+	}
+
+	async listName<T>(name: string, opts?: ListOpts | null): Promise<T[]> {
+		return this.fetch('GET', `${encodeURIComponent(name)}`, this.buildListParams(opts));
+	}
+
+	// TODO: Add UpdateOpts
+	async replaceName<T>(name: string, id: string, obj: T): Promise<T> {
+		return this.fetch('PUT', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`, null, obj);
+	}
+
+	// TODO: Add UpdateOpts
+	async updateName<T>(name: string, id: string, obj: T): Promise<T> {
+		return this.fetch('PATCH', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`, null, obj);
+	}
+
+	// TODO: Add streamGetName
+	// TODO: Add streamListName
+
+	private buildListParams(opts: ListOpts | null | undefined): URLSearchParams {
+		const params = new URLSearchParams();
+
+		if (!opts) {
+			return params;
+		}
+
+		if (opts.stream) {
+			params.set('_stream', opts.stream);
+		}
+
+		if (opts.limit) {
+			params.set('_limit', `${opts.limit}`);
+		}
+
+		if (opts.offset) {
+			params.set('_offset', `${opts.offset}`);
+		}
+
+		if (opts.after) {
+			params.set('_after', `${opts.after}`);
+		}
+
+		for (const filter of opts.filters || []) {
+			params.set(`${filter.path}[${filter.op}]`, filter.value);
+		}
+
+		for (const sort of opts.sorts || []) {
+			params.append('_sort', sort);
+		}
+
+		// TODO: Some way to pass prev
+
+		return params;
+	}
+
+	protected async fetch(method: string, path: string, params?: URLSearchParams | null, body?: any): Promise<any> {
+		const url = new URL(path, this.baseURL);
+
+		if (params) {
+			url.search = `?${params.toString()}`;
+		}
+
+		const opts: RequestInit = {
+			method: method,
+			headers: new Headers(this.headers),
+			mode: 'cors',
+			credentials: 'omit',
+			referrerPolicy: 'no-referrer',
+			keepalive: true,
+		}
+
+		if (body) {
+			opts.body = JSON.stringify(body);
+			(<Headers>opts.headers).set('Content-Type', 'application/json');
+		}
+
+		const req = new Request(url, opts);
+
+		const resp = await fetch(req);
+		if (!resp.ok) {
+			throw new Error(await resp.json());
+		}
+
+		if (resp.status == 200) {
+			return resp.json();
+		}
+	}
+}
+
+export class Client extends ClientCore {
+	constructor(baseURL: string) {
+		super(baseURL);
 	}
 
 	{{- if .AuthBasic }}
@@ -37,10 +151,6 @@ export class Client {
 		this.headers.set('Authorization', `Bearer ${token}`);
 	}
 	{{- end }}
-
-	async debugInfo(): Promise<DebugInfo> {
-		return this.fetch('GET', '_debug');
-	}
 
 	{{- range $type := .Types }}
 	{{- if not $type.APIName }} {{- continue }} {{- end }}
@@ -81,111 +191,6 @@ export class Client {
 	// TODO: Add streamList
 
 	{{- end }}
-
-	//// Generic
-
-	async createName<T>(name: string, obj: T): Promise<T> {
-		return this.fetch('POST', encodeURIComponent(name), null, obj);
-	}
-
-	// TODO: Add UpdateOpts
-	async deleteName(name: string, id: string): Promise<void> {
-		return this.fetch('DELETE', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`);
-	}
-
-	// TODO: Add findName()
-
-	// TODO: Add GetOpts
-	async getName<T>(name: string, id: string): Promise<T> {
-		return this.fetch('GET', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`);
-	}
-
-	// TODO: Add ListOpts
-	async listName<T>(name: string, opts?: ListOpts | null): Promise<T[]> {
-		return this.fetch('GET', `${encodeURIComponent(name)}`, this.buildListParams(opts));
-	}
-
-	// TODO: Add UpdateOpts
-	async replaceName<T>(name: string, id: string, obj: T): Promise<T> {
-		return this.fetch('PUT', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`, null, obj);
-	}
-
-	// TODO: Add UpdateOpts
-	async updateName<T>(name: string, id: string, obj: T): Promise<T> {
-		return this.fetch('PATCH', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`, null, obj);
-	}
-
-	// TODO: Add streamGetName
-	// TODO: Add streamListName
-
-	private async fetch(method: string, path: string, params?: URLSearchParams | null, body?: any): Promise<any> {
-		const url = new URL(path, this.baseURL);
-
-		if (params) {
-			url.search = `?${params.toString()}`;
-		}
-
-		const opts: RequestInit = {
-			method: method,
-			headers: new Headers(this.headers),
-			mode: 'cors',
-			credentials: 'omit',
-			referrerPolicy: 'no-referrer',
-			keepalive: true,
-		}
-
-		if (body) {
-			opts.body = JSON.stringify(body);
-			(<Headers>opts.headers).set('Content-Type', 'application/json');
-		}
-
-		const req = new Request(url, opts);
-
-		const resp = await fetch(req);
-		if (!resp.ok) {
-			throw new Error(await resp.json());
-		}
-
-		if (resp.status == 200) {
-			return resp.json();
-		}
-	}
-
-	private buildListParams(opts: ListOpts | null | undefined): URLSearchParams {
-		const params = new URLSearchParams();
-
-		if (!opts) {
-			return params;
-		}
-
-		if (opts.stream) {
-			params.set('_stream', opts.stream);
-		}
-
-		if (opts.limit) {
-			params.set('_limit', `${opts.limit}`);
-		}
-
-		if (opts.offset) {
-			params.set('_offset', `${opts.offset}`);
-		}
-
-		if (opts.after) {
-			params.set('_after', `${opts.after}`);
-		}
-
-		for (const filter of opts.filters || []) {
-			params.set(`${filter.path}[${filter.op}]`, filter.value);
-		}
-
-		for (const sort of opts.sorts || []) {
-			params.append('_sort', sort);
-		}
-
-		// TODO: Some way to pass prev
-
-		return params;
-	}
 }
 
 export class Error {
