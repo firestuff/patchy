@@ -19,6 +19,8 @@ class ClientCore {
 	protected baseURL: URL;
 	protected headers: Headers = new Headers();
 
+	private static etag = Symbol('etag');
+
 	constructor(baseURL: string) {
 		this.baseURL = new URL(baseURL);
 	}
@@ -30,7 +32,7 @@ class ClientCore {
 	//// Generic
 
 	async createName<T>(name: string, obj: T): Promise<T> {
-		return this.fetch('POST', encodeURIComponent(name), null, obj);
+		return this.fetch('POST', encodeURIComponent(name), null, null, null, obj);
 	}
 
 	// TODO: Add UpdateOpts
@@ -46,17 +48,17 @@ class ClientCore {
 	}
 
 	async listName<T>(name: string, opts?: ListOpts | null): Promise<T[]> {
-		return this.fetch('GET', `${encodeURIComponent(name)}`, this.buildListParams(opts));
+		return this.fetch('GET', `${encodeURIComponent(name)}`, this.buildListParams(opts), this.buildListHeaders(opts), opts?.prev);
 	}
 
 	// TODO: Add UpdateOpts
 	async replaceName<T>(name: string, id: string, obj: T): Promise<T> {
-		return this.fetch('PUT', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`, null, obj);
+		return this.fetch('PUT', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`, null, null, null, obj);
 	}
 
 	// TODO: Add UpdateOpts
 	async updateName<T>(name: string, id: string, obj: T): Promise<T> {
-		return this.fetch('PATCH', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`, null, obj);
+		return this.fetch('PATCH', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`, null, null, null, obj);
 	}
 
 	// TODO: Add streamGetName
@@ -93,12 +95,25 @@ class ClientCore {
 			params.append('_sort', sort);
 		}
 
-		// TODO: Some way to pass prev
-
 		return params;
 	}
 
-	protected async fetch(method: string, path: string, params?: URLSearchParams | null, body?: any): Promise<any> {
+	private buildListHeaders(opts: ListOpts | null | undefined): Headers {
+		const headers = new Headers();
+
+		if (!opts) {
+			return headers;
+		}
+
+		if (opts.prev) {
+			const etag = Object.getOwnPropertyDescriptor(opts.prev, ClientCore.etag)!.value;
+			headers.set('If-None-Match', etag);
+		}
+
+		return headers;
+	}
+
+	protected async fetch(method: string, path: string, params?: URLSearchParams | null, headers?: Headers | null, prev?: any | null, body?: any): Promise<any> {
 		const url = new URL(path, this.baseURL);
 
 		if (params) {
@@ -114,6 +129,12 @@ class ClientCore {
 			keepalive: true,
 		}
 
+		if (headers) {
+			for (const [k, v] of headers) {
+				(<Headers>opts.headers).append(k, v);
+			}
+		}
+
 		if (body) {
 			opts.body = JSON.stringify(body);
 			(<Headers>opts.headers).set('Content-Type', 'application/json');
@@ -122,12 +143,25 @@ class ClientCore {
 		const req = new Request(url, opts);
 
 		const resp = await fetch(req);
+
+		if (prev && resp.status == 304) {
+			return prev;
+		}
+
 		if (!resp.ok) {
 			throw new Error(await resp.json());
 		}
 
 		if (resp.status == 200) {
-			return resp.json();
+			const js = await resp.json();
+
+			if (Array.isArray(js)) {
+				Object.defineProperty(js, ClientCore.etag, {
+					value: resp.headers.get('ETag'),
+				});
+			}
+
+			return js;
 		}
 	}
 }
