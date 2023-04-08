@@ -17,9 +17,10 @@ import (
 )
 
 type testAPI struct {
-	api *api.API
-	rst *resty.Client
-	pyc *patchyc.Client
+	baseURL string
+	api     *api.API
+	rst     *resty.Client
+	pyc     *patchyc.Client
 }
 
 func newTestAPI(t *testing.T) *testAPI {
@@ -54,9 +55,10 @@ func newTestAPI(t *testing.T) *testAPI {
 	}
 
 	return &testAPI{
-		api: a,
-		rst: rst,
-		pyc: pyc,
+		baseURL: baseURL,
+		api:     a,
+		rst:     rst,
+		pyc:     pyc,
 	}
 }
 

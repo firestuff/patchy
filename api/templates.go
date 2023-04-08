@@ -107,8 +107,9 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 			cfg := api.registry[name]
 
 			typeQueue = append(typeQueue, &templateType{
-				APIName: name,
-				typeOf:  cfg.typeOf,
+				APIName:     name,
+				typeOf:      cfg.typeOf,
+				allOptional: true,
 			})
 		}
 
