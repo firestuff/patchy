@@ -59,7 +59,29 @@ class ClientCore {
 		return this.fetch('DELETE', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`, null, this.buildUpdateHeaders(opts));
 	}
 
-	// TODO: Add findName()
+	async findName<T>(name: string, shortID: string): Promise<T> {
+		const opts: ListOpts = {
+			filters: [
+				{
+					path: "id",
+					op: "hp",
+					value: shortID,
+				},
+			],
+		};
+
+		const list = await this.listName<T>(name, opts);
+
+		if (list.length != 1) {
+			throw(new Error({
+				messages: [
+					"not found",
+				],
+			}));
+		}
+
+		return list[0]!;
+	}
 
 	async getName<T>(name: string, id: string, opts?: GetOpts | null): Promise<T> {
 		return this.fetch('GET', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`, null, this.buildGetHeaders(opts), opts?.prev);
@@ -243,7 +265,9 @@ export class Client extends ClientCore {
 		return this.deleteName(" {{- $type.APIName -}} ", id, opts);
 	}
 
-	// TODO: Add find*()
+	async find {{- $type.APINameCamel -}} (shortID: string): Promise< {{- $type.GoName -}} Response> {
+		return this.findName(" {{- $type.APIName -}} ", shortID);
+	}
 
 	async get {{- $type.APINameCamel -}} (id: string, opts?: GetOpts | null): Promise< {{- $type.GoName -}} Response> {
 		return this.getName(" {{- $type.APIName -}} ", id, opts);
