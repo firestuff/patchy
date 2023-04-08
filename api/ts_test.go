@@ -63,7 +63,7 @@ func testPath(t *testing.T, path string) {
 		"BASE_URL":         ta.baseURL,
 	}
 
-	runNoError(t, "ts_test", env, "node", "--enable-source-maps", filepath.Base(path))
+	runNoError(t, "ts_test", env, "node", "--test", "--enable-source-maps", filepath.Base(path))
 
 	require.NoError(t, os.Remove(path))
 }
