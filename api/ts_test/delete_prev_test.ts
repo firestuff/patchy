@@ -10,4 +10,6 @@ test('delete prev failure', async () => {
 	await tc.client.updateTestType(create.id, {text: "bar"});
 
 	assert.rejects(tc.client.deleteTestType(create.id, {prev: get}));
+
+	await tc.client.getTestType(create.id);
 });
