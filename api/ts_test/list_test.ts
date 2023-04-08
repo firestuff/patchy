@@ -11,8 +11,11 @@ test('list prev success', async () => {
 	const list1 = await tc.client.listTestType();
 	assert.deepStrictEqual(list1.map(x => x.text).sort(), ["bar", "foo"]);
 
-	// TODO: Mutate list1 to be sneaky
+	// This is test-only
+	// Don't mutate lists and pass them back in ListOpts.prev
+	list1[0]!.num = 5;
 
 	const list2 = await tc.client.listTestType({prev: list1});
 	assert.deepStrictEqual(list2.map(x => x.text).sort(), ["bar", "foo"]);
+	assert.equal(list2[0]!.num, 5);
 });
