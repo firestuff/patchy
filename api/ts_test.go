@@ -9,11 +9,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestTS(t *testing.T) { //nolint:tparallel
+func TestTS(t *testing.T) {
 	t.Parallel()
 
 	ta := newTestAPI(t)
-	defer ta.shutdown(t)
+	t.Cleanup(func() {
+		ta.shutdown(t)
+
+		paths, err := filepath.Glob("ts_test/*.js")
+		require.NoError(t, err)
+
+		for _, path := range paths {
+			os.Remove(path)
+		}
+
+		os.Remove("ts_test/client.ts")
+	})
 
 	ctx := context.Background()
 
