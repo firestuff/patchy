@@ -18,7 +18,7 @@ export interface {{ $type.GoName }} {
 
 export interface {{ $type.GoName -}} Response {
 	{{- range $field := .Fields }}
-	{{- if $field.Optional }}
+	{{- if and $field.Optional (not (eq $field.APIName "id" "etag" "generation")) }}
 	{{ padRight (printf "%s?:" $field.APIName) (add $type.GoNameMaxLen 2) }} {{ $field.TSType }} | null;
 	{{- else }}
 	{{ padRight (printf "%s:" $field.APIName) (add $type.GoNameMaxLen 2) }} {{ $field.TSType }};
