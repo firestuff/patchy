@@ -55,9 +55,8 @@ class ClientCore {
 		return this.fetch('POST', encodeURIComponent(name), null, null, null, obj);
 	}
 
-	// TODO: Add UpdateOpts
-	async deleteName(name: string, id: string): Promise<void> {
-		return this.fetch('DELETE', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`);
+	async deleteName(name: string, id: string, opts?: UpdateOpts | null): Promise<void> {
+		return this.fetch('DELETE', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`, null, this.buildUpdateHeaders(opts));
 	}
 
 	// TODO: Add findName()
@@ -146,6 +145,20 @@ class ClientCore {
 		return headers;
 	}
 
+	private buildUpdateHeaders(opts: UpdateOpts | null | undefined): Headers {
+		const headers = new Headers();
+
+		if (!opts) {
+			return headers;
+		}
+
+		if (opts.prev) {
+			headers.set('If-Match', `"${(<ObjectCore>opts.prev).etag}"`);
+		}
+
+		return headers;
+	}
+
 	protected async fetch(method: string, path: string, params?: URLSearchParams | null, headers?: Headers | null, prev?: any | null, body?: any): Promise<any> {
 		const url = new URL(path, this.baseURL);
 
@@ -228,9 +241,8 @@ export class Client extends ClientCore {
 		return this.createName(" {{- $type.APIName -}} ", obj);
 	}
 
-	// TODO: Add UpdateOpts
-	async delete {{- $type.APINameCamel -}} (id: string): Promise<void> {
-		return this.deleteName(" {{- $type.APIName -}} ", id);
+	async delete {{- $type.APINameCamel -}} (id: string, opts?: UpdateOpts | null): Promise<void> {
+		return this.deleteName(" {{- $type.APIName -}} ", id, opts);
 	}
 
 	// TODO: Add find*()
