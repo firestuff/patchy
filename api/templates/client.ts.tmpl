@@ -29,10 +29,17 @@ export interface {{ $type.GoName -}} Response {
 {{- end }}
 {{- end }}
 
-export interface ObjectCore {
+export interface Metadata {
 	id:           string;
 	etag:         string;
 	generation:   number;
+}
+
+interface FetchOptions {
+	params?: URLSearchParams | null;
+	headers?: Headers | null;
+	prev?: any | null;
+	body?: any | null;
 }
 
 class ClientCore {
@@ -52,11 +59,23 @@ class ClientCore {
 	//// Generic
 
 	async createName<T1, T2>(name: string, obj: T1): Promise<T2> {
-		return this.fetch('POST', encodeURIComponent(name), null, null, null, obj);
+		return this.fetch(
+			'POST',
+			encodeURIComponent(name),
+			{
+				body: obj,
+			},
+		);
 	}
 
 	async deleteName(name: string, id: string, opts?: UpdateOpts | null): Promise<void> {
-		return this.fetch('DELETE', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`, null, this.buildUpdateHeaders(opts));
+		return this.fetch(
+			'DELETE',
+			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
+			{
+				headers: this.buildUpdateHeaders(opts),
+			},
+		);
 	}
 
 	async findName<T>(name: string, shortID: string): Promise<T> {
@@ -84,19 +103,48 @@ class ClientCore {
 	}
 
 	async getName<T>(name: string, id: string, opts?: GetOpts | null): Promise<T> {
-		return this.fetch('GET', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`, null, this.buildGetHeaders(opts), opts?.prev);
+		return this.fetch(
+			'GET',
+			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
+			{
+				headers: this.buildGetHeaders(opts),
+				prev: opts?.prev,
+			},
+		);
 	}
 
 	async listName<T>(name: string, opts?: ListOpts | null): Promise<T[]> {
-		return this.fetch('GET', `${encodeURIComponent(name)}`, this.buildListParams(opts), this.buildListHeaders(opts), opts?.prev);
+		return this.fetch(
+			'GET',
+			`${encodeURIComponent(name)}`,
+			{
+				params: this.buildListParams(opts),
+				headers: this.buildListHeaders(opts),
+				prev: opts?.prev,
+			},
+		);
 	}
 
 	async replaceName<T1, T2>(name: string, id: string, obj: T1, opts?: UpdateOpts | null): Promise<T2> {
-		return this.fetch('PUT', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`, null, this.buildUpdateHeaders(opts), null, obj);
+		return this.fetch(
+			'PUT',
+			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
+			{
+				headers: this.buildUpdateHeaders(opts),
+				body: obj,
+			},
+		);
 	}
 
 	async updateName<T1, T2>(name: string, id: string, obj: T1, opts?: UpdateOpts | null): Promise<T2> {
-		return this.fetch('PATCH', `${encodeURIComponent(name)}/${encodeURIComponent(id)}`, null, this.buildUpdateHeaders(opts), null, obj);
+		return this.fetch(
+			'PATCH',
+			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
+			{
+				headers: this.buildUpdateHeaders(opts),
+				body: obj,
+			},
+		);
 	}
 
 	// TODO: Add streamGetName
@@ -159,7 +207,7 @@ class ClientCore {
 		}
 
 		if (opts.prev) {
-			headers.set('If-None-Match', `"${(<ObjectCore>opts.prev).etag}"`);
+			headers.set('If-None-Match', `"${(<Metadata>opts.prev).etag}"`);
 		}
 
 		return headers;
@@ -173,20 +221,20 @@ class ClientCore {
 		}
 
 		if (opts.prev) {
-			headers.set('If-Match', `"${(<ObjectCore>opts.prev).etag}"`);
+			headers.set('If-Match', `"${(<Metadata>opts.prev).etag}"`);
 		}
 
 		return headers;
 	}
 
-	protected async fetch(method: string, path: string, params?: URLSearchParams | null, headers?: Headers | null, prev?: any | null, body?: any): Promise<any> {
+	protected async fetch(method: string, path: string, opts?: FetchOptions): Promise<any> {
 		const url = new URL(path, this.baseURL);
 
-		if (params) {
-			url.search = `?${params.toString()}`;
+		if (opts?.params) {
+			url.search = `?${opts.params.toString()}`;
 		}
 
-		const opts: RequestInit = {
+		const reqOpts: RequestInit = {
 			method: method,
 			headers: new Headers(this.headers),
 			mode: 'cors',
@@ -195,23 +243,23 @@ class ClientCore {
 			keepalive: true,
 		}
 
-		if (headers) {
-			for (const [k, v] of headers) {
-				(<Headers>opts.headers).append(k, v);
+		if (opts?.headers) {
+			for (const [k, v] of opts.headers) {
+				(<Headers>reqOpts.headers).append(k, v);
 			}
 		}
 
-		if (body) {
-			opts.body = JSON.stringify(body);
-			(<Headers>opts.headers).set('Content-Type', 'application/json');
+		if (opts?.body) {
+			reqOpts.body = JSON.stringify(opts.body);
+			(<Headers>reqOpts.headers).set('Content-Type', 'application/json');
 		}
 
-		const req = new Request(url, opts);
+		const req = new Request(url, reqOpts);
 
 		const resp = await fetch(req);
 
-		if (prev && resp.status == 304) {
-			return prev;
+		if (opts?.prev && resp.status == 304) {
+			return opts.prev;
 		}
 
 		if (!resp.ok) {
