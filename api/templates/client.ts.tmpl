@@ -40,6 +40,7 @@ interface FetchOptions {
 	headers?: Headers | null;
 	prev?: any | null;
 	body?: any | null;
+	signal?: AbortSignal | null;
 }
 
 class ClientCore {
@@ -241,6 +242,7 @@ class ClientCore {
 			credentials: 'omit',
 			referrerPolicy: 'no-referrer',
 			keepalive: true,
+			signal: opts?.signal ?? null,
 		}
 
 		if (opts?.headers) {
