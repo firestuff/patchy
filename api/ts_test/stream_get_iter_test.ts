@@ -17,14 +17,11 @@ test('stream get success', async () => {
 		evs.push(ev);
 
 		if (evs.length == 2) {
-			break;
+			stream.abort();
 		}
 	}
 
 	assert.equal(evs.length, 2);
 	assert.equal(evs[0]!.obj.text, "foo");
 	assert.equal(evs[1]!.obj.text, "bar");
-
-	stream.abort();
-	assert.rejects(stream.read());
 });

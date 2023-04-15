@@ -41,12 +41,12 @@ export interface GetStreamEvent<T> {
 }
 
 interface FetchOptions {
-	params?: URLSearchParams | null;
+	params?:  URLSearchParams | null;
 	headers?: Headers | null;
-	prev?: any | null;
-	body?: any | null;
-	signal?: AbortSignal | null;
-	stream?: boolean | null;
+	prev?:    any | null;
+	body?:    any | null;
+	signal?:  AbortSignal | null;
+	stream?:  boolean | null;
 }
 
 interface StreamEvent {
@@ -110,7 +110,13 @@ class StreamCore {
 			const lineEnd = this.buf.indexOf('\n');
 
 			if (lineEnd == -1) {
-				const chunk = await this.reader.read();
+				let chunk: ReadableStreamReadResult<any>;
+
+				try {
+					chunk = await this.reader.read();
+				} catch {
+					return null;
+				}
 
 				if (chunk.done) {
 					return null;
@@ -176,6 +182,12 @@ export class GetStream<T> extends StreamCore {
 
 			}
 		}
+	}
+
+	async close() {
+		this.abort();
+
+		for await (const _ of this) {}
 	}
 
 	async *[Symbol.asyncIterator](): AsyncIterableIterator<GetStreamEvent<T>> {

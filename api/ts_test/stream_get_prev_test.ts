@@ -17,6 +17,5 @@ test('stream get success', async () => {
 	assert.equal(ev!.obj.text, "foo");
 	assert.equal(ev!.obj.num, 5);
 
-	await stream.abort();
-	assert.rejects(stream.read());
+	await stream.close();
 });

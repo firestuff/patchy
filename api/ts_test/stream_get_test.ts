@@ -17,6 +17,5 @@ test('stream get success', async () => {
 	const ev2 = await stream.read();
 	assert.equal(ev2!.obj.text, "bar");
 
-	await stream.abort();
-	assert.rejects(stream.read());
+	await stream.close();
 });
