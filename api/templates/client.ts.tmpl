@@ -55,6 +55,8 @@ interface StreamEvent {
 	data:      string;
 }
 
+const ETagKey = Symbol('etag');
+
 class StreamCore {
 	private reader: ReadableStreamDefaultReader;
 	private controller: AbortController;
@@ -181,8 +183,6 @@ export class GetStream<T> extends StreamCore {
 class ClientCore {
 	protected baseURL: URL;
 	protected headers: Headers = new Headers();
-
-	private static etag = Symbol('etag');
 
 	constructor(baseURL: string) {
 		this.baseURL = new URL(baseURL);
@@ -343,7 +343,7 @@ class ClientCore {
 		}
 
 		if (opts.prev) {
-			const etag = Object.getOwnPropertyDescriptor(opts.prev, ClientCore.etag)!.value;
+			const etag = Object.getOwnPropertyDescriptor(opts.prev, ETagKey)!.value;
 			headers.set('If-None-Match', etag);
 		}
 
@@ -430,7 +430,7 @@ class ClientCore {
 			const js = await resp.json();
 
 			if (Array.isArray(js)) {
-				Object.defineProperty(js, ClientCore.etag, {
+				Object.defineProperty(js, ETagKey, {
 					value: resp.headers.get('ETag'),
 				});
 			}
