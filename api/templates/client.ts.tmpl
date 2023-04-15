@@ -132,7 +132,6 @@ class StreamCore {
 	}
 }
 
-// TODO: Make this an asyncIterator / async read()
 export class GetStream<T> extends StreamCore {
 	private prev: T | null;
 
@@ -176,6 +175,18 @@ export class GetStream<T> extends StreamCore {
 				continue;
 
 			}
+		}
+	}
+
+	async *[Symbol.asyncIterator](): AsyncIterableIterator<GetStreamEvent<T>> {
+		while (true) {
+			const ev = await this.read();
+
+			if (ev == null) {
+				return;
+			}
+
+			yield ev;
 		}
 	}
 }
