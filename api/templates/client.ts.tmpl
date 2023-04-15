@@ -35,6 +35,11 @@ export interface Metadata {
 	generation:   number;
 }
 
+export interface GetStreamEvent<T> {
+	id:  string;
+	obj: T;
+}
+
 interface FetchOptions {
 	params?: URLSearchParams | null;
 	headers?: Headers | null;
@@ -44,33 +49,130 @@ interface FetchOptions {
 	stream?: boolean | null;
 }
 
-// TODO: Make this an asyncIterator / async read()
-export class GetStream {
+interface StreamEvent {
+	eventType: string;
+	id:        string;
+	data:      string;
+}
+
+class StreamCore {
 	private reader: ReadableStreamDefaultReader;
 	private controller: AbortController;
-	private prev: any | null;
 
-	constructor(resp: Response, controller: AbortController, prev: any | null | undefined) {
+	private buf: string = '';
+
+	constructor(resp: Response, controller: AbortController) {
 		this.reader = resp.body!.pipeThrough(new TextDecoderStream()).getReader();
 		this.controller = controller;
-		this.prev = prev ?? null;
-
-		console.log(this.prev);
-	}
-
-	async read() {
-		return this.reader.read();
 	}
 
 	async abort() {
 		this.controller.abort();
+	}
 
-		let done = false;
-		while (!done) {
-			try {
-				await this.read();
-			} catch {
-				done = true;
+	protected async readEvent(): Promise<StreamEvent | null> {
+		const data: string[] = [];
+		const ev: StreamEvent = {
+			eventType: '',
+			id: '',
+			data: '',
+		};
+
+		while (true) {
+			const line = await this.readLine();
+
+			if (line == null) {
+				return null;
+
+			} else if (line.startsWith(':')) {
+				continue;
+
+			} else if (line.startsWith('event: ')) {
+				ev.eventType = this.removePrefix(line, 'event: ');
+
+			} else if (line.startsWith('id: ')) {
+				ev.id = this.removePrefix(line, 'id: ');
+
+			} else if (line.startsWith('data: ')) {
+				data.push(this.removePrefix(line, 'data: '));
+
+			} else if (line == '') {
+				ev.data = data.join('\n');
+				return ev;
+			}
+		}
+	}
+
+	private async readLine(): Promise<string | null> {
+		while (true) {
+			const lineEnd = this.buf.indexOf('\n');
+
+			if (lineEnd == -1) {
+				const chunk = await this.reader.read();
+
+				if (chunk.done) {
+					return null;
+				}
+
+				this.buf += chunk.value;
+				continue;
+			}
+
+			const line = this.buf.substring(0, lineEnd);
+			this.buf = this.buf.substring(lineEnd + 1);
+
+			return line;
+		}
+	}
+
+	private removePrefix(s: string, prefix: string): string {
+		return s.substring(prefix.length);
+	}
+}
+
+// TODO: Make this an asyncIterator / async read()
+export class GetStream<T> extends StreamCore {
+	private prev: T | null;
+
+	constructor(resp: Response, controller: AbortController, prev: T | null | undefined) {
+		super(resp, controller);
+
+		this.prev = prev ?? null;
+	}
+
+	async read(): Promise<GetStreamEvent<T> | null> {
+		while (true) {
+			const ev = await this.readEvent();
+
+			if (ev == null) {
+				return null;
+
+			} else if (ev.eventType == 'initial' || ev.eventType == 'update') {
+				return {
+					id: ev.id,
+					obj: JSON.parse(ev.data),
+				}
+
+			} else if (ev.eventType == 'notModified') {
+				if (this.prev == null) {
+					throw(new Error({
+						messages: [
+							'notModified without previous',
+						],
+					}));
+				}
+
+				const prev = this.prev;
+				this.prev = null;
+
+				return {
+					id:  (<Metadata>(<unknown>prev)).etag,
+					obj: prev,
+				}
+
+			} else if (ev.eventType == 'heartbeat') {
+				continue;
+
 			}
 		}
 	}
@@ -116,8 +218,8 @@ class ClientCore {
 		const opts: ListOpts = {
 			filters: [
 				{
-					path: "id",
-					op: "hp",
+					path: 'id',
+					op: 'hp',
 					value: shortID,
 				},
 			],
@@ -128,7 +230,7 @@ class ClientCore {
 		if (list.length != 1) {
 			throw(new Error({
 				messages: [
-					"not found",
+					'not found',
 				],
 			}));
 		}
@@ -181,7 +283,7 @@ class ClientCore {
 		);
 	}
 
-	async streamGetName(name: string, id: string, opts?: GetOpts | null): Promise<GetStream> {
+	async streamGetName<T>(name: string, id: string, opts?: GetOpts | null): Promise<GetStream<T>> {
 		const controller = new AbortController();
 
 		const resp = await this.fetch(
@@ -194,7 +296,7 @@ class ClientCore {
 			},
 		);
 
-		return new GetStream(resp, controller, opts?.prev);
+		return new GetStream<T>(resp, controller, opts?.prev);
 	}
 
 	// TODO: Add streamListName
@@ -364,35 +466,35 @@ export class Client extends ClientCore {
 	//// {{ $type.APINameCamel }}
 
 	async create {{- $type.APINameCamel -}} (obj: {{ $type.GoName -}} ): Promise< {{- $type.GoName -}} Response> {
-		return this.createName(" {{- $type.APIName -}} ", obj);
+		return this.createName(' {{- $type.APIName -}} ', obj);
 	}
 
 	async delete {{- $type.APINameCamel -}} (id: string, opts?: UpdateOpts | null): Promise<void> {
-		return this.deleteName(" {{- $type.APIName -}} ", id, opts);
+		return this.deleteName(' {{- $type.APIName -}} ', id, opts);
 	}
 
 	async find {{- $type.APINameCamel -}} (shortID: string): Promise< {{- $type.GoName -}} Response> {
-		return this.findName(" {{- $type.APIName -}} ", shortID);
+		return this.findName(' {{- $type.APIName -}} ', shortID);
 	}
 
 	async get {{- $type.APINameCamel -}} (id: string, opts?: GetOpts | null): Promise< {{- $type.GoName -}} Response> {
-		return this.getName(" {{- $type.APIName -}} ", id, opts);
+		return this.getName(' {{- $type.APIName -}} ', id, opts);
 	}
 
 	async list {{- $type.APINameCamel -}} (opts?: ListOpts | null): Promise< {{- $type.GoName -}} Response[]> {
-		return this.listName(" {{- $type.APIName -}} ", opts);
+		return this.listName(' {{- $type.APIName -}} ', opts);
 	}
 
 	async replace {{- $type.APINameCamel -}} (id: string, obj: {{ $type.GoName -}}, opts?: UpdateOpts | null): Promise< {{- $type.GoName -}} Response> {
-		return this.replaceName(" {{- $type.APIName -}} ", id, obj, opts);
+		return this.replaceName(' {{- $type.APIName -}} ', id, obj, opts);
 	}
 
 	async update {{- $type.APINameCamel -}} (id: string, obj: {{ $type.GoName -}}, opts?: UpdateOpts | null): Promise< {{- $type.GoName -}} Response> {
-		return this.updateName(" {{- $type.APIName -}} ", id, obj, opts);
+		return this.updateName(' {{- $type.APIName -}} ', id, obj, opts);
 	}
 
-	async streamGet {{- $type.APINameCamel -}} (id: string, opts?: GetOpts | null): Promise<GetStream> {
-		return this.streamGetName(" {{- $type.APIName -}} ", id, opts);
+	async streamGet {{- $type.APINameCamel -}} (id: string, opts?: GetOpts | null): Promise<GetStream<{{ $type.GoName -}}>> {
+		return this.streamGetName(' {{- $type.APIName -}} ', id, opts);
 	}
 
 	// TODO: Add streamList

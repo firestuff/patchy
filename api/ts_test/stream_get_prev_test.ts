@@ -7,15 +7,15 @@ test('stream get success', async () => {
 
 	const create = await tc.client.createTestType({text: "foo"});
 
-	const stream = await tc.client.streamGetTestType(create.id);
+	// This is test-only
+	// Don't mutate objects and pass them back in GetOpts.prev
+	create.num = 5;
 
-	const ev1 = await stream.read();
-	assert.equal(ev1!.obj.text, "foo");
+	const stream = await tc.client.streamGetTestType(create.id, {prev: create});
 
-	await tc.client.updateTestType(create.id, {text: "bar"});
-
-	const ev2 = await stream.read();
-	assert.equal(ev2!.obj.text, "bar");
+	const ev = await stream.read();
+	assert.equal(ev!.obj.text, "foo");
+	assert.equal(ev!.obj.num, 5);
 
 	await stream.abort();
 	assert.rejects(stream.read());
