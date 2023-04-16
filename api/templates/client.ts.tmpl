@@ -29,11 +29,6 @@ export interface MetadataResponse {
 	generation:   number;
 }
 
-export interface GetStreamEvent<T extends MetadataResponse> {
-	id:  string;
-	obj: T;
-}
-
 export interface GetOpts<T extends MetadataResponse> {
 	prev?: T;
 }
@@ -199,7 +194,7 @@ export class GetStream<T extends MetadataResponse> extends StreamCore {
 		this.prev = prev ?? null;
 	}
 
-	async read(): Promise<GetStreamEvent<T> | null> {
+	async read(): Promise<T | null> {
 		while (true) {
 			const ev = await this.readEvent();
 
@@ -207,10 +202,7 @@ export class GetStream<T extends MetadataResponse> extends StreamCore {
 				return null;
 
 			} else if (ev.eventType == 'initial' || ev.eventType == 'update') {
-				return {
-					id: ev.id,
-					obj: JSON.parse(ev.data),
-				}
+				return JSON.parse(ev.data);
 
 			} else if (ev.eventType == 'notModified') {
 				if (this.prev == null) {
@@ -224,10 +216,7 @@ export class GetStream<T extends MetadataResponse> extends StreamCore {
 				const prev = this.prev;
 				this.prev = null;
 
-				return {
-					id:  prev.etag!,
-					obj: prev,
-				}
+				return prev;
 
 			} else if (ev.eventType == 'heartbeat') {
 				continue;
@@ -242,7 +231,7 @@ export class GetStream<T extends MetadataResponse> extends StreamCore {
 		for await (const _ of this) {}
 	}
 
-	async *[Symbol.asyncIterator](): AsyncIterableIterator<GetStreamEvent<T>> {
+	async *[Symbol.asyncIterator](): AsyncIterableIterator<T> {
 		while (true) {
 			const ev = await this.read();
 

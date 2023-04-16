@@ -10,12 +10,12 @@ test('stream get success', async () => {
 	const stream = await tc.client.streamGetTestType(create.id);
 
 	const ev1 = await stream.read();
-	assert.equal(ev1!.obj.text, "foo");
+	assert.equal(ev1!.text, "foo");
 
 	await tc.client.updateTestType(create.id, {text: "bar"});
 
 	const ev2 = await stream.read();
-	assert.equal(ev2!.obj.text, "bar");
+	assert.equal(ev2!.text, "bar");
 
 	await stream.close();
 });

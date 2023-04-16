@@ -22,6 +22,6 @@ test('stream get success', async () => {
 	}
 
 	assert.equal(evs.length, 2);
-	assert.equal(evs[0]!.obj.text, "foo");
-	assert.equal(evs[1]!.obj.text, "bar");
+	assert.equal(evs[0]!.text, "foo");
+	assert.equal(evs[1]!.text, "bar");
 });

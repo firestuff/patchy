@@ -14,8 +14,8 @@ test('stream get success', async () => {
 	const stream = await tc.client.streamGetTestType(create.id, {prev: create});
 
 	const ev = await stream.read();
-	assert.equal(ev!.obj.text, "foo");
-	assert.equal(ev!.obj.num, 5);
+	assert.equal(ev!.text, "foo");
+	assert.equal(ev!.num, 5);
 
 	await stream.close();
 });
