@@ -334,7 +334,7 @@ func StreamListName[T any](ctx context.Context, c *Client, name string, opts *Li
 	scan := bufio.NewScanner(body)
 
 	stream := &ListStream[T]{
-		ch:   make(chan *ListStreamEvent[T], 100),
+		ch:   make(chan []*T, 100),
 		body: body,
 	}
 
@@ -371,11 +371,11 @@ func streamListFull[T any](scan *bufio.Scanner, stream *ListStream[T], opts *Lis
 				return
 			}
 
-			stream.writeEvent(event.id, list)
+			stream.writeEvent(list)
 
 		case "notModified":
 			if opts != nil && opts.Prev != nil {
-				stream.writeEvent(event.id, opts.Prev.([]*T))
+				stream.writeEvent(opts.Prev.([]*T))
 			} else {
 				stream.writeError(fmt.Errorf("notModified without If-None-Match (%w)", ErrInvalidStreamEvent))
 				return
@@ -437,11 +437,11 @@ func streamListDiff[T any](scan *bufio.Scanner, stream *ListStream[T], opts *Lis
 				return
 			}
 
-			stream.writeEvent(event.id, list)
+			stream.writeEvent(list)
 
 		case "notModified":
 			if opts != nil && opts.Prev != nil {
-				stream.writeEvent(event.id, opts.Prev.([]*T))
+				stream.writeEvent(opts.Prev.([]*T))
 			} else {
 				stream.writeError(fmt.Errorf("notModified without If-None-Match (%w)", ErrInvalidStreamEvent))
 				return

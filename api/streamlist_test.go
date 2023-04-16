@@ -24,9 +24,9 @@ func TestStreamListHeartbeat(t *testing.T) {
 
 	defer stream.Close()
 
-	ev := stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 0)
+	s1 := stream.Read()
+	require.NotNil(t, s1, stream.Error())
+	require.Len(t, s1, 0)
 
 	time.Sleep(6 * time.Second)
 
@@ -63,10 +63,10 @@ func TestStreamListInitial(t *testing.T) {
 
 	defer stream.Close()
 
-	ev := stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 2)
-	require.ElementsMatch(t, []string{"foo", "bar"}, []string{ev.List[0].Text, ev.List[1].Text})
+	s1 := stream.Read()
+	require.NotNil(t, s1, stream.Error())
+	require.Len(t, s1, 2)
+	require.ElementsMatch(t, []string{"foo", "bar"}, []string{s1[0].Text, s1[1].Text})
 }
 
 func TestStreamListAdd(t *testing.T) {
@@ -82,17 +82,17 @@ func TestStreamListAdd(t *testing.T) {
 
 	defer stream.Close()
 
-	ev := stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 0)
+	s1 := stream.Read()
+	require.NotNil(t, s1, stream.Error())
+	require.Len(t, s1, 0)
 
 	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	ev = stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 1)
-	require.Equal(t, "foo", ev.List[0].Text)
+	s2 := stream.Read()
+	require.NotNil(t, s2, stream.Error())
+	require.Len(t, s2, 1)
+	require.Equal(t, "foo", s2[0].Text)
 }
 
 func TestStreamListUpdate(t *testing.T) {
@@ -111,18 +111,18 @@ func TestStreamListUpdate(t *testing.T) {
 
 	defer stream.Close()
 
-	ev := stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 1)
-	require.Equal(t, "foo", ev.List[0].Text)
+	s1 := stream.Read()
+	require.NotNil(t, s1, stream.Error())
+	require.Len(t, s1, 1)
+	require.Equal(t, "foo", s1[0].Text)
 
 	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
 	require.NoError(t, err)
 
-	ev = stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 1)
-	require.Equal(t, "bar", ev.List[0].Text)
+	s2 := stream.Read()
+	require.NotNil(t, s2, stream.Error())
+	require.Len(t, s2, 1)
+	require.Equal(t, "bar", s2[0].Text)
 }
 
 func TestStreamListDelete(t *testing.T) {
@@ -141,17 +141,17 @@ func TestStreamListDelete(t *testing.T) {
 
 	defer stream.Close()
 
-	ev := stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 1)
-	require.Equal(t, "foo", ev.List[0].Text)
+	s1 := stream.Read()
+	require.NotNil(t, s1, stream.Error())
+	require.Len(t, s1, 1)
+	require.Equal(t, "foo", s1[0].Text)
 
 	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 
-	ev = stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 0)
+	s2 := stream.Read()
+	require.NotNil(t, s2, stream.Error())
+	require.Len(t, s2, 0)
 }
 
 func TestStreamListOpts(t *testing.T) {
@@ -173,10 +173,10 @@ func TestStreamListOpts(t *testing.T) {
 
 	defer stream.Close()
 
-	ev := stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 1)
-	require.Contains(t, []string{"foo", "bar"}, ev.List[0].Text)
+	s1 := stream.Read()
+	require.NotNil(t, s1, stream.Error())
+	require.Len(t, s1, 1)
+	require.Contains(t, []string{"foo", "bar"}, s1[0].Text)
 }
 
 func TestStreamListIgnoreIrrelevant(t *testing.T) {
@@ -198,10 +198,10 @@ func TestStreamListIgnoreIrrelevant(t *testing.T) {
 
 	defer stream.Close()
 
-	ev := stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 1)
-	require.Equal(t, "bar", ev.List[0].Text)
+	s1 := stream.Read()
+	require.NotNil(t, s1, stream.Error())
+	require.Len(t, s1, 1)
+	require.Equal(t, "bar", s1[0].Text)
 
 	_, err = patchyc.Update(ctx, ta.pyc, created1.ID, &testType{Text: "zig"}, nil)
 	require.NoError(t, err)
@@ -209,18 +209,18 @@ func TestStreamListIgnoreIrrelevant(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	select {
-	case ev := <-stream.Chan():
-		require.Fail(t, "unexpected update", ev)
+	case s2 := <-stream.Chan():
+		require.Fail(t, "unexpected update", s2)
 	default:
 	}
 
 	_, err = patchyc.Update(ctx, ta.pyc, created1.ID, &testType{Text: "aaa"}, nil)
 	require.NoError(t, err)
 
-	ev = stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 1)
-	require.Equal(t, "aaa", ev.List[0].Text)
+	s3 := stream.Read()
+	require.NotNil(t, s3, stream.Error())
+	require.Len(t, s3, 1)
+	require.Equal(t, "aaa", s3[0].Text)
 }
 
 func TestStreamListPrev(t *testing.T) {
@@ -239,20 +239,23 @@ func TestStreamListPrev(t *testing.T) {
 
 	defer stream1.Close()
 
-	ev := stream1.Read()
-	require.NotNil(t, ev, stream1.Error())
-	require.Len(t, ev.List, 1)
-	require.Equal(t, "foo", ev.List[0].Text)
+	s1 := stream1.Read()
+	require.NotNil(t, s1, stream1.Error())
+	require.Len(t, s1, 1)
+	require.Equal(t, "foo", s1[0].Text)
 
-	stream2, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Prev: ev.List})
+	s1[0].Num = 5
+
+	stream2, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Prev: s1})
 	require.NoError(t, err)
 
 	defer stream2.Close()
 
-	ev = stream2.Read()
-	require.NotNil(t, ev, stream2.Error())
-	require.Len(t, ev.List, 1)
-	require.Equal(t, "foo", ev.List[0].Text)
+	s2 := stream2.Read()
+	require.NotNil(t, s2, stream2.Error())
+	require.Len(t, s2, 1)
+	require.Equal(t, "foo", s2[0].Text)
+	require.EqualValues(t, 5, s2[0].Num)
 }
 
 func TestStreamListDiffInitial(t *testing.T) {
@@ -271,10 +274,10 @@ func TestStreamListDiffInitial(t *testing.T) {
 
 	defer stream.Close()
 
-	ev := stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 1)
-	require.Equal(t, "foo", ev.List[0].Text)
+	s1 := stream.Read()
+	require.NotNil(t, s1, stream.Error())
+	require.Len(t, s1, 1)
+	require.Equal(t, "foo", s1[0].Text)
 }
 
 func TestStreamListDiffCreate(t *testing.T) {
@@ -290,17 +293,17 @@ func TestStreamListDiffCreate(t *testing.T) {
 
 	defer stream.Close()
 
-	ev := stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 0)
+	s1 := stream.Read()
+	require.NotNil(t, s1, stream.Error())
+	require.Len(t, s1, 0)
 
 	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	ev = stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 1)
-	require.Equal(t, "foo", ev.List[0].Text)
+	s2 := stream.Read()
+	require.NotNil(t, s2, stream.Error())
+	require.Len(t, s2, 1)
+	require.Equal(t, "foo", s2[0].Text)
 }
 
 func TestStreamListDiffUpdate(t *testing.T) {
@@ -319,20 +322,20 @@ func TestStreamListDiffUpdate(t *testing.T) {
 
 	defer stream.Close()
 
-	ev := stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 1)
-	require.Equal(t, "foo", ev.List[0].Text)
-	require.EqualValues(t, 1, ev.List[0].Num)
+	s1 := stream.Read()
+	require.NotNil(t, s1, stream.Error())
+	require.Len(t, s1, 1)
+	require.Equal(t, "foo", s1[0].Text)
+	require.EqualValues(t, 1, s1[0].Num)
 
 	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
 	require.NoError(t, err)
 
-	ev = stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 1)
-	require.Equal(t, "bar", ev.List[0].Text)
-	require.EqualValues(t, 1, ev.List[0].Num)
+	s2 := stream.Read()
+	require.NotNil(t, s2, stream.Error())
+	require.Len(t, s2, 1)
+	require.Equal(t, "bar", s2[0].Text)
+	require.EqualValues(t, 1, s2[0].Num)
 }
 
 func TestStreamListDiffReplace(t *testing.T) {
@@ -351,20 +354,20 @@ func TestStreamListDiffReplace(t *testing.T) {
 
 	defer stream.Close()
 
-	ev := stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 1)
-	require.Equal(t, "foo", ev.List[0].Text)
-	require.EqualValues(t, 1, ev.List[0].Num)
+	s1 := stream.Read()
+	require.NotNil(t, s1, stream.Error())
+	require.Len(t, s1, 1)
+	require.Equal(t, "foo", s1[0].Text)
+	require.EqualValues(t, 1, s1[0].Num)
 
 	_, err = patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
 	require.NoError(t, err)
 
-	ev = stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 1)
-	require.Equal(t, "bar", ev.List[0].Text)
-	require.EqualValues(t, 0, ev.List[0].Num)
+	s2 := stream.Read()
+	require.NotNil(t, s2, stream.Error())
+	require.Len(t, s2, 1)
+	require.Equal(t, "bar", s2[0].Text)
+	require.EqualValues(t, 0, s2[0].Num)
 }
 
 func TestStreamListDiffDelete(t *testing.T) {
@@ -383,17 +386,17 @@ func TestStreamListDiffDelete(t *testing.T) {
 
 	defer stream.Close()
 
-	ev := stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 1)
-	require.Equal(t, "foo", ev.List[0].Text)
+	s1 := stream.Read()
+	require.NotNil(t, s1, stream.Error())
+	require.Len(t, s1, 1)
+	require.Equal(t, "foo", s1[0].Text)
 
 	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID, nil)
 	require.NoError(t, err)
 
-	ev = stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 0)
+	s2 := stream.Read()
+	require.NotNil(t, s2, stream.Error())
+	require.Len(t, s2, 0)
 }
 
 func TestStreamListDiffSort(t *testing.T) {
@@ -416,18 +419,18 @@ func TestStreamListDiffSort(t *testing.T) {
 
 	defer stream.Close()
 
-	ev := stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 1)
-	require.Equal(t, "foo", ev.List[0].Text)
+	s1 := stream.Read()
+	require.NotNil(t, s1, stream.Error())
+	require.Len(t, s1, 1)
+	require.Equal(t, "foo", s1[0].Text)
 
 	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
-	ev = stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 1)
-	require.Equal(t, "bar", ev.List[0].Text)
+	s2 := stream.Read()
+	require.NotNil(t, s2, stream.Error())
+	require.Len(t, s2, 1)
+	require.Equal(t, "bar", s2[0].Text)
 }
 
 func TestStreamListDiffIgnoreIrrelevant(t *testing.T) {
@@ -449,10 +452,10 @@ func TestStreamListDiffIgnoreIrrelevant(t *testing.T) {
 
 	defer stream.Close()
 
-	ev := stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 1)
-	require.Equal(t, "bar", ev.List[0].Text)
+	s1 := stream.Read()
+	require.NotNil(t, s1, stream.Error())
+	require.Len(t, s1, 1)
+	require.Equal(t, "bar", s1[0].Text)
 
 	_, err = patchyc.Update(ctx, ta.pyc, created1.ID, &testType{Text: "zig"}, nil)
 	require.NoError(t, err)
@@ -460,18 +463,18 @@ func TestStreamListDiffIgnoreIrrelevant(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	select {
-	case ev := <-stream.Chan():
-		require.Fail(t, "unexpected update", ev)
+	case s2 := <-stream.Chan():
+		require.Fail(t, "unexpected update", s2)
 	default:
 	}
 
 	_, err = patchyc.Update(ctx, ta.pyc, created1.ID, &testType{Text: "aaa"}, nil)
 	require.NoError(t, err)
 
-	ev = stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 1)
-	require.Equal(t, "aaa", ev.List[0].Text)
+	s3 := stream.Read()
+	require.NotNil(t, s3, stream.Error())
+	require.Len(t, s3, 1)
+	require.Equal(t, "aaa", s3[0].Text)
 }
 
 func TestStreamListDiffPrev(t *testing.T) {
@@ -490,20 +493,23 @@ func TestStreamListDiffPrev(t *testing.T) {
 
 	defer stream1.Close()
 
-	ev := stream1.Read()
-	require.NotNil(t, ev, stream1.Error())
-	require.Len(t, ev.List, 1)
-	require.Equal(t, "foo", ev.List[0].Text)
+	s1 := stream1.Read()
+	require.NotNil(t, s1, stream1.Error())
+	require.Len(t, s1, 1)
+	require.Equal(t, "foo", s1[0].Text)
 
-	stream2, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Stream: "diff", Prev: ev.List})
+	s1[0].Num = 5
+
+	stream2, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Stream: "diff", Prev: s1})
 	require.NoError(t, err)
 
 	defer stream2.Close()
 
-	ev = stream2.Read()
-	require.NotNil(t, ev, stream2.Error())
-	require.Len(t, ev.List, 1)
-	require.Equal(t, "foo", ev.List[0].Text)
+	s3 := stream2.Read()
+	require.NotNil(t, s3, stream2.Error())
+	require.Len(t, s3, 1)
+	require.Equal(t, "foo", s3[0].Text)
+	require.EqualValues(t, 5, s3[0].Num)
 }
 
 func TestStreamListForceDiff(t *testing.T) {

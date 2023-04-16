@@ -45,38 +45,24 @@ func (gs *GetStream[T]) writeError(err error) {
 }
 
 type ListStream[T any] struct {
-	ch  chan *ListStreamEvent[T]
+	ch  chan []*T
 	lsi *listStreamInt
-
-	lastID string
 
 	err error
 
 	mu sync.RWMutex
 }
 
-type ListStreamEvent[T any] struct {
-	ID   string
-	List []*T
-}
-
 func (ls *ListStream[T]) Close() {
 	ls.lsi.Close()
 }
 
-func (ls *ListStream[T]) Chan() <-chan *ListStreamEvent[T] {
+func (ls *ListStream[T]) Chan() <-chan []*T {
 	return ls.ch
 }
 
-func (ls *ListStream[T]) Read() *ListStreamEvent[T] {
+func (ls *ListStream[T]) Read() []*T {
 	return <-ls.Chan()
-}
-
-func (ls *ListStream[T]) LastID() string {
-	ls.mu.RLock()
-	defer ls.mu.RUnlock()
-
-	return ls.lastID
 }
 
 func (ls *ListStream[T]) Error() error {
@@ -86,15 +72,8 @@ func (ls *ListStream[T]) Error() error {
 	return ls.err
 }
 
-func (ls *ListStream[T]) writeEvent(id string, list []*T) {
-	ls.mu.Lock()
-	ls.lastID = id
-	ls.mu.Unlock()
-
-	ls.ch <- &ListStreamEvent[T]{
-		ID:   id,
-		List: list,
-	}
+func (ls *ListStream[T]) writeEvent(list []*T) {
+	ls.ch <- list
 }
 
 func (ls *ListStream[T]) writeError(err error) {

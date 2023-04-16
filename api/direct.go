@@ -194,25 +194,19 @@ func StreamListName[T any](ctx context.Context, api *API, name string, opts *Lis
 	}
 
 	stream := &ListStream[T]{
-		ch:  make(chan *ListStreamEvent[T], 100),
+		ch:  make(chan []*T, 100),
 		lsi: lsi,
 	}
 
 	go func() {
 		for list := range lsi.Chan() {
-			etag, err := HashList(list)
-			if err != nil {
-				stream.writeError(err)
-				return
-			}
-
 			typeList := []*T{}
 
 			for _, obj := range list {
 				typeList = append(typeList, convert[T](obj))
 			}
 
-			stream.writeEvent(etag, typeList)
+			stream.writeEvent(typeList)
 		}
 
 		stream.writeError(io.EOF)

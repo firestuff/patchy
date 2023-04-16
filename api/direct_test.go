@@ -407,10 +407,10 @@ func TestDirectStreamListInitial(t *testing.T) {
 
 	defer stream.Close()
 
-	ev := stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 2)
-	require.ElementsMatch(t, []string{"foo", "bar"}, []string{ev.List[0].Text, ev.List[1].Text})
+	s1 := stream.Read()
+	require.NotNil(t, s1, stream.Error())
+	require.Len(t, s1, 2)
+	require.ElementsMatch(t, []string{"foo", "bar"}, []string{s1[0].Text, s1[1].Text})
 }
 
 func TestDirectStreamListUpdate(t *testing.T) {
@@ -426,17 +426,17 @@ func TestDirectStreamListUpdate(t *testing.T) {
 
 	defer stream.Close()
 
-	ev := stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 0)
+	s1 := stream.Read()
+	require.NotNil(t, s1, stream.Error())
+	require.Len(t, s1, 0)
 
 	_, err = api.Create(ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	ev = stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 1)
-	require.Equal(t, "foo", ev.List[0].Text)
+	s2 := stream.Read()
+	require.NotNil(t, s2, stream.Error())
+	require.Len(t, s2, 1)
+	require.Equal(t, "foo", s2[0].Text)
 }
 
 func TestDirectStreamListDelete(t *testing.T) {
@@ -455,17 +455,17 @@ func TestDirectStreamListDelete(t *testing.T) {
 
 	defer stream.Close()
 
-	ev := stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 1)
-	require.Equal(t, "foo", ev.List[0].Text)
+	s1 := stream.Read()
+	require.NotNil(t, s1, stream.Error())
+	require.Len(t, s1, 1)
+	require.Equal(t, "foo", s1[0].Text)
 
 	err = api.Delete[testType](ctx, ta.api, created.ID, nil)
 	require.NoError(t, err)
 
-	ev = stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 0)
+	s2 := stream.Read()
+	require.NotNil(t, s2, stream.Error())
+	require.Len(t, s2, 0)
 }
 
 func TestDirectStreamListOpts(t *testing.T) {
@@ -487,8 +487,8 @@ func TestDirectStreamListOpts(t *testing.T) {
 
 	defer stream.Close()
 
-	ev := stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Len(t, ev.List, 1)
-	require.Contains(t, []string{"foo", "bar"}, ev.List[0].Text)
+	s1 := stream.Read()
+	require.NotNil(t, s1, stream.Error())
+	require.Len(t, s1, 1)
+	require.Contains(t, []string{"foo", "bar"}, s1[0].Text)
 }
