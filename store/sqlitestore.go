@@ -21,6 +21,9 @@ func NewSQLiteStore(conn string) (*SQLiteStore, error) {
 		return nil, err
 	}
 
+	// TODO: Keep a set of prepared statements with PrepareContext()
+	// TODO: Consider tuning per https://phiresky.github.io/blog/2020/sqlite-performance-tuning/
+
 	return &SQLiteStore{
 		db: db,
 	}, nil
