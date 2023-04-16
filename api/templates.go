@@ -55,6 +55,7 @@ type templateType struct {
 type templateField struct {
 	NameLower      string // "streetname"
 	NameUpperCamel string // "StreetName"
+	NameLowerCamel string // "streetName"
 	GoType         string // "bool"
 	TSType         string // "boolean"
 }
@@ -121,12 +122,14 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 				tf := &templateField{
 					NameLower:      parts[0],
 					NameUpperCamel: upperFirst(parts[0]),
+					NameLowerCamel: lowerFirst(parts[0]),
 					GoType:         goType(field.Type),
 					TSType:         tsType(field.Type),
 				}
 
 				if strings.EqualFold(tf.NameUpperCamel, field.Name) {
 					tf.NameUpperCamel = field.Name
+					tf.NameLowerCamel = lowerFirst(field.Name)
 				}
 
 				if elemType.Kind() == reflect.Struct && elemType != reflect.TypeOf(time.Time{}) && elemType != reflect.TypeOf(civil.Date{}) {
@@ -180,6 +183,10 @@ func add(a, b int) int {
 
 func padRight(in string, l int) string {
 	return fmt.Sprintf(fmt.Sprintf("%%-%ds", l), in)
+}
+
+func lowerFirst(in string) string {
+	return strings.ToLower(in[:1]) + in[1:]
 }
 
 func upperFirst(in string) string {
