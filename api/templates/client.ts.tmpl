@@ -402,14 +402,7 @@ class ClientCore {
 	private buildListHeaders<T extends MetadataResponse>(opts: ListOpts<T> | null | undefined): Headers {
 		const headers = new Headers();
 
-		if (!opts) {
-			return headers;
-		}
-
-		if (opts.prev) {
-			const etag = Object.getOwnPropertyDescriptor(opts.prev, ETagKey)!.value;
-			headers.set('If-None-Match', etag);
-		}
+		this.addETagHeader(headers, 'If-None-Match', opts?.prev);
 
 		return headers;
 	}
@@ -417,13 +410,7 @@ class ClientCore {
 	private buildGetHeaders<T extends MetadataResponse>(opts: GetOpts<T> | null | undefined): Headers {
 		const headers = new Headers();
 
-		if (!opts) {
-			return headers;
-		}
-
-		if (opts.prev) {
-			headers.set('If-None-Match', `"${opts.prev.etag}"`);
-		}
+		this.addETagHeader(headers, 'If-None-Match', opts?.prev);
 
 		return headers;
 	}
@@ -431,15 +418,27 @@ class ClientCore {
 	private buildUpdateHeaders<T extends MetadataResponse>(opts: UpdateOpts<T> | null | undefined): Headers {
 		const headers = new Headers();
 
-		if (!opts) {
-			return headers;
-		}
-
-		if (opts.prev) {
-			headers.set('If-Match', `"${opts.prev.etag}"`);
-		}
+		this.addETagHeader(headers, 'If-Match', opts?.prev);
 
 		return headers;
+	}
+
+	private addETagHeader(headers: Headers, name: string, obj: any | undefined) {
+		if (!obj) {
+			return;
+		}
+
+		const etag = Object.getOwnPropertyDescriptor(obj, ETagKey)?.value;
+
+		if (!etag) {
+			throw(new Error({
+				messages: [
+					`missing ETagKey in ${obj}`,
+				],
+			}));
+		}
+
+		headers.set(name, etag);
 	}
 
 	protected async fetch(method: string, path: string, opts?: FetchOptions): Promise<any> {
@@ -497,7 +496,7 @@ class ClientCore {
 
 			const js = await resp.json();
 
-			if (Array.isArray(js)) {
+			if (resp.headers.has('ETag')) {
 				Object.defineProperty(js, ETagKey, {
 					value: resp.headers.get('ETag'),
 				});
