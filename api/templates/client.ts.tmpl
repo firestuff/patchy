@@ -15,11 +15,8 @@ export interface {{ $type.TypeUpperCamel }} {
 
 export interface {{ $type.TypeUpperCamel }}Response extends MetadataResponse {
 	{{- range $field := .Fields }}
-	{{- if eq $field.NameLower "id" "etag" "generation" }}
-	{{ padRight (printf "%s:" $field.NameLower) (add $type.FieldNameMaxLen 2) }} {{ $field.TSType }};
-	{{- else }}
+	{{- if eq $field.NameLower "id" "etag" "generation" }} {{- continue }} {{- end }}
 	{{ padRight (printf "%s?:" $field.NameLowerCamel) (add $type.FieldNameMaxLen 2) }} {{ $field.TSType }};
-	{{- end }}
 	{{- end }}
 }
 
