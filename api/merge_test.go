@@ -83,6 +83,7 @@ func TestMergeNestedPointer(t *testing.T) {
 		B: 42,
 		E: &nestedType{
 			F: []int{42, 43},
+			G: "bar",
 		},
 	}
 
@@ -94,4 +95,5 @@ func TestMergeNestedPointer(t *testing.T) {
 
 	require.Equal(t, 42, to.B)
 	require.Equal(t, []int{49, 50}, to.E.F)
+	require.Equal(t, "bar", to.E.G)
 }

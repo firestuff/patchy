@@ -2,25 +2,32 @@ package api
 
 import "reflect"
 
-func Merge(to any, from any) {
-	t := maybeIndirect(to)
-	f := maybeIndirect(from)
+func Merge(to, from any) {
+	MergeValue(reflect.ValueOf(to), reflect.ValueOf(from))
+}
 
-	for i := 0; i < t.NumField(); i++ {
-		tf := t.Field(i)
-		ff := f.Field(i)
+func MergeValue(to, from reflect.Value) {
+	to = maybeIndirect(to)
+	from = maybeIndirect(from)
 
-		if ff.IsZero() {
+	for i := 0; i < to.NumField(); i++ {
+		toField := to.Field(i)
+		fromField := from.Field(i)
+
+		if fromField.IsZero() {
 			continue
 		}
 
-		tf.Set(ff)
+		if maybeIndirect(fromField).Kind() == reflect.Struct {
+			MergeValue(toField, fromField)
+			continue
+		}
+
+		toField.Set(fromField)
 	}
 }
 
-func maybeIndirect(obj any) reflect.Value {
-	v := reflect.ValueOf(obj)
-
+func maybeIndirect(v reflect.Value) reflect.Value {
 	if v.Kind() == reflect.Ptr {
 		v = reflect.Indirect(v)
 	}
