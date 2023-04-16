@@ -5,7 +5,6 @@ import (
 	"io"
 
 	"github.com/firestuff/patchy/jsrest"
-	"github.com/firestuff/patchy/metadata"
 )
 
 func CreateName[T any](ctx context.Context, api *API, name string, obj *T) (*T, error) {
@@ -164,14 +163,13 @@ func StreamGetName[T any](ctx context.Context, api *API, name, id string) (*GetS
 	}
 
 	stream := &GetStream[T]{
-		ch:  make(chan *GetStreamEvent[T], 100),
+		ch:  make(chan *T, 100),
 		gsi: gsi,
 	}
 
 	go func() {
 		for obj := range gsi.Chan() {
-			md := metadata.GetMetadata(obj)
-			stream.writeEvent(md.ETag, convert[T](obj))
+			stream.writeEvent(convert[T](obj))
 		}
 
 		stream.writeError(io.EOF)

@@ -717,9 +717,9 @@ func TestMayReadMutateStreamGet(t *testing.T) {
 
 	defer stream.Close()
 
-	ev := stream.Read()
-	require.NotNil(t, ev)
-	require.Equal(t, "5678", ev.Obj.Text1)
+	s1 := stream.Read()
+	require.NotNil(t, s1)
+	require.Equal(t, "5678", s1.Text1)
 }
 
 func TestMayReadMutateList(t *testing.T) {

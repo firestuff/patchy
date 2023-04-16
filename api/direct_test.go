@@ -341,9 +341,9 @@ func TestDirectStreamGetInitial(t *testing.T) {
 
 	defer stream.Close()
 
-	ev := stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Equal(t, "foo", ev.Obj.Text)
+	s1 := stream.Read()
+	require.NotNil(t, s1, stream.Error())
+	require.Equal(t, "foo", s1.Text)
 }
 
 func TestDirectStreamGetUpdate(t *testing.T) {
@@ -363,16 +363,16 @@ func TestDirectStreamGetUpdate(t *testing.T) {
 
 	defer stream.Close()
 
-	ev := stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Equal(t, "foo", ev.Obj.Text)
+	s1 := stream.Read()
+	require.NotNil(t, s1, stream.Error())
+	require.Equal(t, "foo", s1.Text)
 
 	_, err = api.Update(ctx, ta.api, create.ID, &testType{Text: "bar"}, nil)
 	require.NoError(t, err)
 
-	ev = stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Equal(t, "bar", ev.Obj.Text)
+	s2 := stream.Read()
+	require.NotNil(t, s2, stream.Error())
+	require.Equal(t, "bar", s2.Text)
 }
 
 func TestDirectStreamListInvalidType(t *testing.T) {

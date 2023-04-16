@@ -5,38 +5,24 @@ import (
 )
 
 type GetStream[T any] struct {
-	ch  chan *GetStreamEvent[T]
+	ch  chan *T
 	gsi *getStreamInt
-
-	lastID string
 
 	err error
 
 	mu sync.RWMutex
 }
 
-type GetStreamEvent[T any] struct {
-	ID  string
-	Obj *T
-}
-
 func (gs *GetStream[T]) Close() {
 	gs.gsi.Close()
 }
 
-func (gs *GetStream[T]) Chan() <-chan *GetStreamEvent[T] {
+func (gs *GetStream[T]) Chan() <-chan *T {
 	return gs.ch
 }
 
-func (gs *GetStream[T]) Read() *GetStreamEvent[T] {
+func (gs *GetStream[T]) Read() *T {
 	return <-gs.Chan()
-}
-
-func (gs *GetStream[T]) LastID() string {
-	gs.mu.RLock()
-	defer gs.mu.RUnlock()
-
-	return gs.lastID
 }
 
 func (gs *GetStream[T]) Error() error {
@@ -46,15 +32,8 @@ func (gs *GetStream[T]) Error() error {
 	return gs.err
 }
 
-func (gs *GetStream[T]) writeEvent(id string, obj *T) {
-	gs.mu.Lock()
-	gs.lastID = id
-	gs.mu.Unlock()
-
-	gs.ch <- &GetStreamEvent[T]{
-		ID:  id,
-		Obj: obj,
-	}
+func (gs *GetStream[T]) writeEvent(obj *T) {
+	gs.ch <- obj
 }
 
 func (gs *GetStream[T]) writeError(err error) {

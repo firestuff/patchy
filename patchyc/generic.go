@@ -257,7 +257,7 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string, opts 
 	scan := bufio.NewScanner(body)
 
 	stream := &GetStream[T]{
-		ch:   make(chan *GetStreamEvent[T], 100),
+		ch:   make(chan *T, 100),
 		body: body,
 	}
 
@@ -281,11 +281,11 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string, opts 
 					return
 				}
 
-				stream.writeEvent(event.id, obj)
+				stream.writeEvent(obj)
 
 			case "notModified":
 				if opts != nil && opts.Prev != nil {
-					stream.writeEvent(event.id, opts.Prev.(*T))
+					stream.writeEvent(opts.Prev.(*T))
 				} else {
 					stream.writeError(fmt.Errorf("notModified without If-None-Match (%w)", ErrInvalidStreamEvent))
 					return

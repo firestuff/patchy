@@ -25,16 +25,16 @@ func TestStreamGetHeartbeat(t *testing.T) {
 
 	defer stream.Close()
 
-	ev := stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Equal(t, "foo", ev.Obj.Text)
+	s1 := stream.Read()
+	require.NotNil(t, s1, stream.Error())
+	require.Equal(t, "foo", s1.Text)
 
 	time.Sleep(6 * time.Second)
 
 	select {
 	case _, ok := <-stream.Chan():
 		if ok {
-			require.Fail(t, "unexpected list")
+			require.Fail(t, "unexpected stream")
 		} else {
 			require.Fail(t, "unexpected closure")
 		}
@@ -61,9 +61,9 @@ func TestStreamGet(t *testing.T) {
 
 	defer stream.Close()
 
-	ev := stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Equal(t, "foo", ev.Obj.Text)
+	s1 := stream.Read()
+	require.NotNil(t, s1, stream.Error())
+	require.Equal(t, "foo", s1.Text)
 }
 
 func TestStreamGetUpdate(t *testing.T) {
@@ -82,16 +82,16 @@ func TestStreamGetUpdate(t *testing.T) {
 
 	defer stream.Close()
 
-	ev := stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Equal(t, "foo", ev.Obj.Text)
+	s1 := stream.Read()
+	require.NotNil(t, s1, stream.Error())
+	require.Equal(t, "foo", s1.Text)
 
 	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
 	require.NoError(t, err)
 
-	ev = stream.Read()
-	require.NotNil(t, ev, stream.Error())
-	require.Equal(t, "bar", ev.Obj.Text)
+	s2 := stream.Read()
+	require.NotNil(t, s2, stream.Error())
+	require.Equal(t, "bar", s2.Text)
 }
 
 func TestStreamGetPrev(t *testing.T) {
@@ -110,21 +110,21 @@ func TestStreamGetPrev(t *testing.T) {
 
 	defer stream1.Close()
 
-	ev := stream1.Read()
-	require.NotNil(t, ev, stream1.Error())
-	require.Equal(t, "foo", ev.Obj.Text)
-	require.EqualValues(t, 0, ev.Obj.Num)
+	s1 := stream1.Read()
+	require.NotNil(t, s1, stream1.Error())
+	require.Equal(t, "foo", s1.Text)
+	require.EqualValues(t, 0, s1.Num)
 
 	// Validate that previous version passing only compares the ETag
-	ev.Obj.Num = 1
+	s1.Num = 1
 
-	stream2, err := patchyc.StreamGet[testType](ctx, ta.pyc, created.ID, &patchyc.GetOpts{Prev: ev.Obj})
+	stream2, err := patchyc.StreamGet[testType](ctx, ta.pyc, created.ID, &patchyc.GetOpts{Prev: s1})
 	require.NoError(t, err)
 
 	defer stream2.Close()
 
-	ev2 := stream2.Read()
-	require.NotNil(t, ev2, stream2.Error())
-	require.Equal(t, "foo", ev2.Obj.Text)
-	require.EqualValues(t, 1, ev2.Obj.Num)
+	s2 := stream2.Read()
+	require.NotNil(t, s2, stream2.Error())
+	require.Equal(t, "foo", s2.Text)
+	require.EqualValues(t, 1, s2.Num)
 }
