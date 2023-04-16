@@ -4,7 +4,7 @@
 
 {{- range $type := .Types }}
 
-export interface {{ $type.GoName }} {
+export interface {{ $type.GoName }} extends Metadata {
 	{{- range $field := .Fields }}
 	{{- if or $field.Optional (eq $field.APIName "id" "etag" "generation") }}
 	{{ padRight (printf "%s?:" $field.APIName) (add $type.GoNameMaxLen 2) }} {{ $field.TSType }} | null;
@@ -16,7 +16,7 @@ export interface {{ $type.GoName }} {
 
 {{- if $type.APIName }}
 
-export interface {{ $type.GoName -}} Response {
+export interface {{ $type.GoName -}} Response extends MetadataResponse {
 	{{- range $field := .Fields }}
 	{{- if and $field.Optional (not (eq $field.APIName "id" "etag" "generation")) }}
 	{{ padRight (printf "%s?:" $field.APIName) (add $type.GoNameMaxLen 2) }} {{ $field.TSType }} | null;
@@ -33,6 +33,12 @@ export interface Metadata {
 	id?:           string | null;
 	etag?:         string | null;
 	generation?:   number | null;
+}
+
+export interface MetadataResponse {
+	id:           string;
+	etag:         string;
+	generation:   number;
 }
 
 export interface GetStreamEvent<T> {
@@ -488,36 +494,36 @@ export class Client extends ClientCore {
 
 	//// {{ $type.APINameCamel }}
 
-	async create {{- $type.APINameCamel -}} (obj: {{ $type.GoName -}} ): Promise< {{- $type.GoName -}} Response> {
-		return this.createName(' {{- $type.APIName -}} ', obj);
+	async create{{ $type.APINameCamel }}(obj: {{ $type.GoName -}} ): Promise<{{ $type.GoName }}Response> {
+		return this.createName<{{ $type.GoName }}, {{ $type.GoName }}Response>(' {{- $type.APIName -}} ', obj);
 	}
 
-	async delete {{- $type.APINameCamel -}} (id: string, opts?: UpdateOpts | null): Promise<void> {
+	async delete{{ $type.APINameCamel }}(id: string, opts?: UpdateOpts | null): Promise<void> {
 		return this.deleteName(' {{- $type.APIName -}} ', id, opts);
 	}
 
-	async find {{- $type.APINameCamel -}} (shortID: string): Promise< {{- $type.GoName -}} Response> {
-		return this.findName(' {{- $type.APIName -}} ', shortID);
+	async find{{ $type.APINameCamel }}(shortID: string): Promise<{{ $type.GoName }}Response> {
+		return this.findName<{{ $type.GoName }}Response>(' {{- $type.APIName -}} ', shortID);
 	}
 
-	async get {{- $type.APINameCamel -}} (id: string, opts?: GetOpts | null): Promise< {{- $type.GoName -}} Response> {
-		return this.getName(' {{- $type.APIName -}} ', id, opts);
+	async get{{ $type.APINameCamel }}(id: string, opts?: GetOpts | null): Promise<{{ $type.GoName }}Response> {
+		return this.getName<{{ $type.GoName }}Response>(' {{- $type.APIName -}} ', id, opts);
 	}
 
-	async list {{- $type.APINameCamel -}} (opts?: ListOpts | null): Promise< {{- $type.GoName -}} Response[]> {
-		return this.listName(' {{- $type.APIName -}} ', opts);
+	async list{{ $type.APINameCamel }}(opts?: ListOpts | null): Promise<{{ $type.GoName }}Response[]> {
+		return this.listName<{{ $type.GoName }}Response>(' {{- $type.APIName -}} ', opts);
 	}
 
-	async replace {{- $type.APINameCamel -}} (id: string, obj: {{ $type.GoName -}}, opts?: UpdateOpts | null): Promise< {{- $type.GoName -}} Response> {
-		return this.replaceName(' {{- $type.APIName -}} ', id, obj, opts);
+	async replace{{ $type.APINameCamel }}(id: string, obj: {{ $type.GoName -}}, opts?: UpdateOpts | null): Promise<{{ $type.GoName }}Response> {
+		return this.replaceName<{{ $type.GoName }}, {{ $type.GoName }}Response>(' {{- $type.APIName -}} ', id, obj, opts);
 	}
 
-	async update {{- $type.APINameCamel -}} (id: string, obj: {{ $type.GoName -}}, opts?: UpdateOpts | null): Promise< {{- $type.GoName -}} Response> {
-		return this.updateName(' {{- $type.APIName -}} ', id, obj, opts);
+	async update{{ $type.APINameCamel }}(id: string, obj: {{ $type.GoName -}}, opts?: UpdateOpts | null): Promise<{{ $type.GoName }}Response> {
+		return this.updateName<{{ $type.GoName }}, {{ $type.GoName }}Response>(' {{- $type.APIName -}} ', id, obj, opts);
 	}
 
-	async streamGet {{- $type.APINameCamel -}} (id: string, opts?: GetOpts | null): Promise<GetStream<{{ $type.GoName -}}>> {
-		return this.streamGetName(' {{- $type.APIName -}} ', id, opts);
+	async streamGet{{ $type.APINameCamel }}(id: string, opts?: GetOpts | null): Promise<GetStream<{{ $type.GoName }}>> {
+		return this.streamGetName<{{ $type.GoName }}Response>(' {{- $type.APIName -}} ', id, opts);
 	}
 
 	// TODO: Add streamList
