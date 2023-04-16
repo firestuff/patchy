@@ -11,6 +11,7 @@ import (
 type GetOpts struct {
 	IfNoneMatch []httpheader.EntityTag `json:"-"`
 
+	// This is "any" because making GetOpts generic complicates too many things
 	Prev any `json:"prev"`
 }
 

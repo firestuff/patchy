@@ -28,6 +28,7 @@ type ListOpts struct {
 
 	IfNoneMatch []httpheader.EntityTag `json:"-"`
 
+	// This is "any" because making ListOpts generic complicates too many things
 	Prev any `json:"prev"`
 }
 

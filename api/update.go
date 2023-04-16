@@ -12,6 +12,7 @@ import (
 type UpdateOpts struct {
 	IfMatch []httpheader.EntityTag `json:"-"`
 
+	// This is "any" because making UpdateOpts generic complicates too many things
 	Prev any `json:"prev"`
 }
 

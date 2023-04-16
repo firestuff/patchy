@@ -47,18 +47,15 @@ type templateType struct {
 	Fields       []*templateField
 	GoNameMaxLen int
 	GoTypeMaxLen int
-	SkipInGo     bool
 
-	typeOf      reflect.Type
-	allOptional bool
+	typeOf reflect.Type
 }
 
 type templateField struct {
-	APIName  string
-	GoName   string
-	GoType   string
-	TSType   string
-	Optional bool
+	APIName string
+	GoName  string
+	GoType  string
+	TSType  string
 }
 
 func (api *API) registerTemplates() {
@@ -76,40 +73,15 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 			AuthBearer: api.authBearer != nil,
 		}
 
-		typeQueue := []*templateType{
-			{
-				typeOf:   reflect.TypeOf(DebugInfo{}),
-				SkipInGo: true,
-			},
-			{
-				typeOf:   reflect.TypeOf(jsrest.JSONError{}),
-				SkipInGo: true,
-			},
-			{
-				typeOf:      reflect.TypeOf(GetOpts{}),
-				SkipInGo:    true,
-				allOptional: true,
-			},
-			{
-				typeOf:      reflect.TypeOf(ListOpts{}),
-				SkipInGo:    true,
-				allOptional: true,
-			},
-			{
-				typeOf:      reflect.TypeOf(UpdateOpts{}),
-				SkipInGo:    true,
-				allOptional: true,
-			},
-		}
+		typeQueue := []*templateType{}
 		typesDone := map[reflect.Type]bool{}
 
 		for _, name := range api.names() {
 			cfg := api.registry[name]
 
 			typeQueue = append(typeQueue, &templateType{
-				APIName:     name,
-				typeOf:      cfg.typeOf,
-				allOptional: true,
+				APIName: name,
+				typeOf:  cfg.typeOf,
 			})
 		}
 
@@ -150,17 +122,15 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 				}
 
 				tf := &templateField{
-					APIName:  parts[0],
-					GoName:   upperFirst(field.Name),
-					GoType:   goType(field.Type),
-					TSType:   tsType(field.Type),
-					Optional: tt.allOptional || field.Type.Kind() == reflect.Pointer,
+					APIName: parts[0],
+					GoName:  upperFirst(field.Name),
+					GoType:  goType(field.Type),
+					TSType:  tsType(field.Type),
 				}
 
 				if elemType.Kind() == reflect.Struct && elemType != reflect.TypeOf(time.Time{}) && elemType != reflect.TypeOf(civil.Date{}) {
 					typeQueue = append(typeQueue, &templateType{
-						typeOf:   elemType,
-						SkipInGo: tt.SkipInGo,
+						typeOf: elemType,
 					})
 				}
 
