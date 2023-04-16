@@ -3,11 +3,11 @@ package api
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
 	"net/http"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -140,10 +140,18 @@ func ApplyWindow[T any](list []T, opts *ListOpts) ([]T, error) {
 
 func HashList(list any) (string, error) {
 	hash := sha256.New()
-	enc := json.NewEncoder(hash)
 
-	if err := enc.Encode(list); err != nil {
-		return "", jsrest.Errorf(jsrest.ErrInternalServerError, "JSON encode failed (%w)", err)
+	v := reflect.ValueOf(list)
+
+	for i := 0; i < v.Len(); i++ {
+		iter := v.Index(i)
+
+		md := metadata.GetMetadata(iter.Interface())
+
+		_, err := hash.Write([]byte(md.ETag + "\n"))
+		if err != nil {
+			return "", jsrest.Errorf(jsrest.ErrInternalServerError, "hash write failed (%w)", err)
+		}
 	}
 
 	return fmt.Sprintf("etag:%x", hash.Sum(nil)), nil
