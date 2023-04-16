@@ -41,21 +41,22 @@ type templateInput struct {
 }
 
 type templateType struct {
-	APIName      string
-	APINameCamel string
-	GoName       string
-	Fields       []*templateField
-	GoNameMaxLen int
-	GoTypeMaxLen int
+	NameLower      string // "homeaddress"
+	NameUpperCamel string // "HomeAddress"
+	TypeUpperCamel string // "AddressType"
+
+	Fields            []*templateField
+	FieldNameMaxLen   int
+	FieldGoTypeMaxLen int
 
 	typeOf reflect.Type
 }
 
 type templateField struct {
-	APIName string
-	GoName  string
-	GoType  string
-	TSType  string
+	NameLower      string // "streetname"
+	NameUpperCamel string // "StreetName"
+	GoType         string // "bool"
+	TSType         string // "boolean"
 }
 
 func (api *API) registerTemplates() {
@@ -80,8 +81,8 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 			cfg := api.registry[name]
 
 			typeQueue = append(typeQueue, &templateType{
-				APIName: name,
-				typeOf:  cfg.typeOf,
+				NameLower: name,
+				typeOf:    cfg.typeOf,
 			})
 		}
 
@@ -95,18 +96,14 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 
 			typesDone[tt.typeOf] = true
 
-			tt.GoName = upperFirst(tt.typeOf.Name())
+			tt.TypeUpperCamel = upperFirst(tt.typeOf.Name())
 
-			if tt.APIName != "" {
-				tt.APINameCamel = tt.APIName
+			if tt.NameLower != "" {
+				tt.NameUpperCamel = upperFirst(tt.NameLower)
 
-				if strings.EqualFold(tt.APINameCamel, tt.GoName) {
-					// Pick up real camel case if we have it
-					tt.APINameCamel = tt.GoName
+				if strings.EqualFold(tt.NameUpperCamel, tt.TypeUpperCamel) {
+					tt.NameUpperCamel = tt.TypeUpperCamel
 				}
-
-				// Standardize on first upper
-				tt.APINameCamel = upperFirst(tt.APINameCamel)
 			}
 
 			path.WalkType(tt.typeOf, func(_ string, parts []string, field reflect.StructField) {
@@ -122,10 +119,14 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 				}
 
 				tf := &templateField{
-					APIName: parts[0],
-					GoName:  upperFirst(field.Name),
-					GoType:  goType(field.Type),
-					TSType:  tsType(field.Type),
+					NameLower:      parts[0],
+					NameUpperCamel: upperFirst(parts[0]),
+					GoType:         goType(field.Type),
+					TSType:         tsType(field.Type),
+				}
+
+				if strings.EqualFold(tf.NameUpperCamel, field.Name) {
+					tf.NameUpperCamel = field.Name
 				}
 
 				if elemType.Kind() == reflect.Struct && elemType != reflect.TypeOf(time.Time{}) && elemType != reflect.TypeOf(civil.Date{}) {
@@ -134,12 +135,12 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 					})
 				}
 
-				if len(tf.GoName) > tt.GoNameMaxLen {
-					tt.GoNameMaxLen = len(tf.GoName)
+				if len(tf.NameLower) > tt.FieldNameMaxLen {
+					tt.FieldNameMaxLen = len(tf.NameLower)
 				}
 
-				if len(tf.GoType) > tt.GoTypeMaxLen {
-					tt.GoTypeMaxLen = len(tf.GoType)
+				if len(tf.GoType) > tt.FieldGoTypeMaxLen {
+					tt.FieldGoTypeMaxLen = len(tf.GoType)
 				}
 
 				switch typeOf {
