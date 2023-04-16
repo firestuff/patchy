@@ -30,9 +30,9 @@ export interface {{ $type.GoName -}} Response {
 {{- end }}
 
 export interface Metadata {
-	id:           string;
-	etag:         string;
-	generation:   number;
+	id?:           string | null;
+	etag?:         string | null;
+	generation?:   number | null;
 }
 
 export interface GetStreamEvent<T> {
@@ -138,7 +138,7 @@ class StreamCore {
 	}
 }
 
-export class GetStream<T> extends StreamCore {
+export class GetStream<T extends Metadata> extends StreamCore {
 	private prev: T | null;
 
 	constructor(resp: Response, controller: AbortController, prev: T | null | undefined) {
@@ -173,7 +173,7 @@ export class GetStream<T> extends StreamCore {
 				this.prev = null;
 
 				return {
-					id:  (<Metadata>(<unknown>prev)).etag,
+					id:  prev.etag!,
 					obj: prev,
 				}
 
@@ -217,7 +217,7 @@ class ClientCore {
 
 	//// Generic
 
-	async createName<T1, T2>(name: string, obj: T1): Promise<T2> {
+	async createName<TIn extends Metadata, TOut extends Metadata>(name: string, obj: TIn): Promise<TOut> {
 		return this.fetch(
 			'POST',
 			encodeURIComponent(name),
@@ -237,7 +237,7 @@ class ClientCore {
 		);
 	}
 
-	async findName<T>(name: string, shortID: string): Promise<T> {
+	async findName<TOut extends Metadata>(name: string, shortID: string): Promise<TOut> {
 		const opts: ListOpts = {
 			filters: [
 				{
@@ -248,7 +248,7 @@ class ClientCore {
 			],
 		};
 
-		const list = await this.listName<T>(name, opts);
+		const list = await this.listName<TOut>(name, opts);
 
 		if (list.length != 1) {
 			throw(new Error({
@@ -261,7 +261,7 @@ class ClientCore {
 		return list[0]!;
 	}
 
-	async getName<T>(name: string, id: string, opts?: GetOpts | null): Promise<T> {
+	async getName<TOut extends Metadata>(name: string, id: string, opts?: GetOpts | null): Promise<TOut> {
 		return this.fetch(
 			'GET',
 			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
@@ -272,7 +272,7 @@ class ClientCore {
 		);
 	}
 
-	async listName<T>(name: string, opts?: ListOpts | null): Promise<T[]> {
+	async listName<TOut extends Metadata>(name: string, opts?: ListOpts | null): Promise<TOut[]> {
 		return this.fetch(
 			'GET',
 			`${encodeURIComponent(name)}`,
@@ -284,7 +284,7 @@ class ClientCore {
 		);
 	}
 
-	async replaceName<T1, T2>(name: string, id: string, obj: T1, opts?: UpdateOpts | null): Promise<T2> {
+	async replaceName<TIn extends Metadata, TOut extends Metadata>(name: string, id: string, obj: TIn, opts?: UpdateOpts | null): Promise<TOut> {
 		return this.fetch(
 			'PUT',
 			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
@@ -295,7 +295,7 @@ class ClientCore {
 		);
 	}
 
-	async updateName<T1, T2>(name: string, id: string, obj: T1, opts?: UpdateOpts | null): Promise<T2> {
+	async updateName<TIn extends Metadata, TOut extends Metadata>(name: string, id: string, obj: TIn, opts?: UpdateOpts | null): Promise<TOut> {
 		return this.fetch(
 			'PATCH',
 			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
@@ -306,7 +306,7 @@ class ClientCore {
 		);
 	}
 
-	async streamGetName<T>(name: string, id: string, opts?: GetOpts | null): Promise<GetStream<T>> {
+	async streamGetName<TOut extends Metadata>(name: string, id: string, opts?: GetOpts | null): Promise<GetStream<TOut>> {
 		const controller = new AbortController();
 
 		const resp = await this.fetch(
@@ -319,7 +319,7 @@ class ClientCore {
 			},
 		);
 
-		return new GetStream<T>(resp, controller, opts?.prev);
+		return new GetStream<TOut>(resp, controller, opts?.prev);
 	}
 
 	// TODO: Add streamListName
