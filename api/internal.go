@@ -206,6 +206,7 @@ func (api *API) updateInt(ctx context.Context, cfg *config, id string, patch any
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "clone failed (%w)", err)
 	}
 
+	// TODO: Take a map[string]any as the merge source to make non-pointer fields optional
 	Merge(obj, patch)
 	metadata.GetMetadata(obj).Generation++
 

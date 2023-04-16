@@ -449,6 +449,10 @@ class ClientCore {
 			url.search = `?${opts.params.toString()}`;
 		}
 
+		// TODO: Add timeout
+		// TODO: Add retry strategy
+		// TODO: Add Idempotency-Key support
+
 		const reqOpts: RequestInit = {
 			method: method,
 			headers: new Headers(this.headers),

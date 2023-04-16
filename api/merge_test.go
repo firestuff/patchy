@@ -19,6 +19,7 @@ type mergeTestType struct {
 
 type nestedType struct {
 	F []int
+	G string
 }
 
 func TestMergeString(t *testing.T) {
@@ -60,6 +61,7 @@ func TestMergeNested(t *testing.T) {
 		B: 42,
 		D: nestedType{
 			F: []int{42, 43},
+			G: "bar",
 		},
 	}
 
@@ -71,6 +73,7 @@ func TestMergeNested(t *testing.T) {
 
 	require.Equal(t, 42, to.B)
 	require.Equal(t, []int{44, 45}, to.D.F)
+	require.Equal(t, "bar", to.D.G)
 }
 
 func TestMergeNestedPointer(t *testing.T) {

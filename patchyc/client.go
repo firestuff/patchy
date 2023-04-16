@@ -9,9 +9,6 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-// TODO: Add retries
-// TODO: Add Idempotency-Key support
-
 type (
 	DebugInfo = api.DebugInfo
 	OpenAPI   = api.OpenAPI
@@ -26,6 +23,10 @@ func NewClient(baseURL string) *Client {
 		SetBaseURL(baseURL).
 		SetHeader("Accept", "application/json").
 		SetJSONEscapeHTML(false)
+
+	// TODO: SetTimeout()
+	// TODO: SetRetry*() or roll our own
+	// TODO: Add Idempotency-Key support
 
 	return &Client{
 		rst: rst,
