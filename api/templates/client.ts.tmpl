@@ -98,7 +98,7 @@ interface FetchOptions {
 
 interface StreamEvent {
 	eventType: string;
-	id:        string;
+	params:    Map<string, string>;
 	data:      string;
 }
 
@@ -123,7 +123,7 @@ class StreamCore {
 		const data: string[] = [];
 		const ev: StreamEvent = {
 			eventType: '',
-			id: '',
+			params: new Map(),
 			data: '',
 		};
 
@@ -139,11 +139,12 @@ class StreamCore {
 			} else if (line.startsWith('event: ')) {
 				ev.eventType = this.removePrefix(line, 'event: ');
 
-			} else if (line.startsWith('id: ')) {
-				ev.id = this.removePrefix(line, 'id: ');
-
 			} else if (line.startsWith('data: ')) {
 				data.push(this.removePrefix(line, 'data: '));
+
+			} else if (line.includes(': ')) {
+				const [k, v] = line.split(': ', 2);
+				ev.params.set(k!, v!);
 
 			} else if (line == '') {
 				ev.data = data.join('\n');
@@ -311,15 +312,11 @@ export class ListStreamFull<T extends MetadataResponse> extends ListStream<T> {
 }
 
 export class ListStreamDiff<T extends MetadataResponse> extends ListStream<T> {
-	private prev: T[] | null;
-	private sorts: string[];
+	private objs: T[];
 
-	private objs: Map<string, T> = new Map();
-
-	constructor(resp: Response, controller: AbortController, opts: ListOpts<T> | null | undefined) {
+	constructor(resp: Response, controller: AbortController, prev: T[] | null | undefined) {
 		super(resp, controller);
-		this.prev = opts?.prev ?? null;
-		this.sorts = opts?.sorts ?? [];
+		this.objs = prev ?? [];
 	}
 
 	async read(): Promise<T[] | null> {
@@ -329,80 +326,28 @@ export class ListStreamDiff<T extends MetadataResponse> extends ListStream<T> {
 			if (ev == null) {
 				return null;
 
-			} else if (ev.eventType == 'add' || ev.eventType == 'update') {
+			} else if (ev.eventType == 'add') {
 				const obj = JSON.parse(ev.data) as T;
-				this.objs.set(obj.id, obj);
+				this.objs.splice(parseInt(ev.params.get('new-position')!, 10), 0, obj);
+
+			} else if (ev.eventType == 'update') {
+				this.objs.splice(parseInt(ev.params.get('old-position')!, 10), 1);
+
+				const obj = JSON.parse(ev.data) as T;
+				this.objs.splice(parseInt(ev.params.get('new-position')!, 10), 0, obj);
 
 			} else if (ev.eventType == 'remove') {
-				const obj = JSON.parse(ev.data) as T;
-				this.objs.delete(obj.id);
+				this.objs.splice(parseInt(ev.params.get('old-position')!, 10), 1);
 
 			} else if (ev.eventType == 'sync') {
-				const list = Array.from(this.objs.values());
-				this.applySorts(list);
-				return list;
+				return this.objs;
 
 			} else if (ev.eventType == 'notModified') {
-				if (this.prev == null) {
-					throw new Error({
-						messages: [
-							'notModified without previous',
-						],
-					});
-				}
-
-				const prev = this.prev;
-				this.prev = null;
-
-				return prev;
+				return this.objs;
 
 			} else if (ev.eventType == 'heartbeat') {
 				continue;
 
-			}
-		}
-	}
-
-	private applySorts(list: T[]) {
-		for (const sort of this.sorts) {
-			this.applySort(sort, list);
-		}
-	}
-
-	private applySort(sort: string, list: T[]) {
-		let dir: string = '+';
-
-		if (sort.startsWith('+') || sort.startsWith('-')) {
-			dir = sort[0]!;
-			sort = sort.substring(1);
-		}
-
-		list.sort((a, b) => this.compare(this.getField(sort, a), this.getField(sort, b), dir));
-	}
-
-	private getField(path: string, obj: T): any {
-		const parts = path.split('.');
-
-		let iter: any = obj;
-		for (const part of parts) {
-			iter = iter[part];
-		}
-
-		return iter;
-	}
-
-	private compare(a: any, b: any, dir: string): number {
-		if (typeof a == 'number') {
-			if (dir == '+') {
-				return b - a;
-			} else {
-				return a - b;
-			}
-		} else {
-			if (dir == '+') {
-				return a.localeCompare(b);
-			} else {
-				return b.localeCompare(a);
 			}
 		}
 	}
@@ -547,7 +492,7 @@ class ClientCore {
 				return new ListStreamFull<TOut>(resp, controller, opts?.prev);
 
 			case 'diff':
-				return new ListStreamDiff<TOut>(resp, controller, opts);
+				return new ListStreamDiff<TOut>(resp, controller, opts?.prev);
 
 			default:
 				throw new Error({

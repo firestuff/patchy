@@ -35,7 +35,7 @@ func TestTS(t *testing.T) {
 	err = os.WriteFile("ts_test/client.ts", []byte(tc), 0o600)
 	require.NoError(t, err)
 
-	runNoError(t, "ts_test", nil, "tsc")
+	runNoError(t, "ts_test", nil, "tsc", "--pretty")
 
 	paths, err := filepath.Glob("ts_test/*_test.js")
 	require.NoError(t, err)
