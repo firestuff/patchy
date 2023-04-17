@@ -310,6 +310,59 @@ export class ListStreamFull<T extends MetadataResponse> extends ListStream<T> {
 	}
 }
 
+export class ListStreamDiff<T extends MetadataResponse> extends ListStream<T> {
+	private prev: T[] | null;
+	private objs: Map<string, T> = new Map();
+
+	constructor(resp: Response, controller: AbortController, prev: T[] | null | undefined) {
+		super(resp, controller);
+		this.prev = prev ?? null;
+	}
+
+	async read(): Promise<T[] | null> {
+		while (true) {
+			const ev = await this.readEvent();
+
+			if (ev == null) {
+				return null;
+
+			} else if (ev.eventType == 'add' || ev.eventType == 'update') {
+				const obj = JSON.parse(ev.data) as T;
+				this.objs.set(obj.id, obj);
+
+			} else if (ev.eventType == 'remove') {
+				const obj = JSON.parse(ev.data) as T;
+				this.objs.delete(obj.id);
+
+			} else if (ev.eventType == 'sync') {
+				const list = Array.from(this.objs.values());
+
+				// TODO: sort
+
+				return list;
+
+			} else if (ev.eventType == 'notModified') {
+				if (this.prev == null) {
+					throw new Error({
+						messages: [
+							'notModified without previous',
+						],
+					});
+				}
+
+				const prev = this.prev;
+				this.prev = null;
+
+				return prev;
+
+			} else if (ev.eventType == 'heartbeat') {
+				continue;
+
+			}
+		}
+	}
+}
+
 class ClientCore {
 	protected baseURL: URL;
 	protected headers: Headers = new Headers();
@@ -447,6 +500,9 @@ class ClientCore {
 			switch (resp.headers.get('Stream-Format')) {
 			case 'full':
 				return new ListStreamFull<TOut>(resp, controller, opts?.prev);
+
+			case 'diff':
+				return new ListStreamDiff<TOut>(resp, controller, opts?.prev);
 
 			default:
 				throw new Error({
@@ -678,3 +734,5 @@ export class Error {
 		return this.messages[0] ?? 'error';
 	}
 }
+
+// vim: set filetype=typescript:
