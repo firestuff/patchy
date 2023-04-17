@@ -312,11 +312,12 @@ export class ListStreamFull<T extends MetadataResponse> extends ListStream<T> {
 }
 
 export class ListStreamDiff<T extends MetadataResponse> extends ListStream<T> {
-	private objs: T[];
+	private prev: T[] | null;
+	private objs: T[] = [];
 
 	constructor(resp: Response, controller: AbortController, prev: T[] | null | undefined) {
 		super(resp, controller);
-		this.objs = prev ?? [];
+		this.prev = prev ?? null;
 	}
 
 	async read(): Promise<T[] | null> {
@@ -343,6 +344,15 @@ export class ListStreamDiff<T extends MetadataResponse> extends ListStream<T> {
 				return this.objs;
 
 			} else if (ev.eventType == 'notModified') {
+				if (!this.prev) {
+					throw new Error({
+						messages: [
+							"notModified without prev",
+						],
+					});
+				}
+
+				this.objs = this.prev;
 				return this.objs;
 
 			} else if (ev.eventType == 'heartbeat') {

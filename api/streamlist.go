@@ -136,23 +136,11 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 			return nil
 
 		case list := <-lsi.Chan():
+			// Don't do anything if the list hasn't changed (can't trigger first time)
 			etag, err := HashList(list)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "hash list failed (%w)", err)
 			}
-
-			if ifNoneMatch != nil && httpheader.MatchWeak(ifNoneMatch, httpheader.EntityTag{Opaque: etag}) {
-				ifNoneMatch = nil
-
-				err = writeEvent(w, "notModified", map[string]string{"id": etag}, nil, true)
-				if err != nil {
-					return jsrest.Errorf(jsrest.ErrInternalServerError, "write list failed (%w)", err)
-				}
-
-				continue
-			}
-
-			ifNoneMatch = nil
 
 			if previousETag == etag {
 				continue
@@ -160,6 +148,7 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 
 			previousETag = etag
 
+			// Build a map of the current list
 			cur := map[string]*listEntry{}
 
 			for pos, obj := range list {
@@ -170,6 +159,23 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 					obj: obj,
 				}
 			}
+
+			// Short-circuit with notModified, if appropriate
+			tmpIfNoneMatch := ifNoneMatch
+			ifNoneMatch = nil
+
+			if tmpIfNoneMatch != nil && httpheader.MatchWeak(tmpIfNoneMatch, httpheader.EntityTag{Opaque: etag}) {
+				last = cur
+
+				err = writeEvent(w, "notModified", map[string]string{"id": etag}, nil, true)
+				if err != nil {
+					return jsrest.Errorf(jsrest.ErrInternalServerError, "write list failed (%w)", err)
+				}
+
+				continue
+			}
+
+			// If we reach here, the list has actually changed from the client's view
 
 			// remove events have to go out before add/update events, for ordering
 			for id, lastEntry := range last {

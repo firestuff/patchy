@@ -390,10 +390,6 @@ func streamListFull[T any](scan *bufio.Scanner, stream *ListStream[T], opts *Lis
 func streamListDiff[T any](scan *bufio.Scanner, stream *ListStream[T], opts *ListOpts) {
 	list := []*T{}
 
-	if opts != nil && opts.Prev != nil {
-		list = opts.Prev.([]*T)
-	}
-
 	add := func(event *streamEvent) error {
 		obj := new(T)
 
@@ -462,6 +458,7 @@ func streamListDiff[T any](scan *bufio.Scanner, stream *ListStream[T], opts *Lis
 			stream.writeEvent(list)
 
 		case "notModified":
+			list = opts.Prev.([]*T)
 			stream.writeEvent(list)
 
 		case "heartbeat":

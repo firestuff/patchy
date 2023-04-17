@@ -510,6 +510,49 @@ func TestStreamListDiffPrev(t *testing.T) {
 	require.Len(t, s3, 1)
 	require.Equal(t, "foo", s3[0].Text)
 	require.EqualValues(t, 5, s3[0].Num)
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	require.NoError(t, err)
+
+	s4 := stream2.Read()
+	require.NotNil(t, s4, stream2.Error())
+	require.Len(t, s4, 2)
+}
+
+func TestStreamListDiffPrevMiss(t *testing.T) {
+	t.Parallel()
+
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
+
+	ctx := context.Background()
+
+	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	require.NoError(t, err)
+
+	stream1, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Stream: "diff"})
+	require.NoError(t, err)
+
+	defer stream1.Close()
+
+	s1 := stream1.Read()
+	require.NotNil(t, s1, stream1.Error())
+	require.Len(t, s1, 1)
+	require.Equal(t, "foo", s1[0].Text)
+
+	s1[0].Num = 5
+
+	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	require.NoError(t, err)
+
+	stream2, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Stream: "diff", Prev: s1})
+	require.NoError(t, err)
+
+	defer stream2.Close()
+
+	s4 := stream2.Read()
+	require.NotNil(t, s4, stream2.Error())
+	require.Len(t, s4, 2)
 }
 
 func TestStreamListForceDiff(t *testing.T) {
