@@ -57,7 +57,7 @@ func (api *API) streamListFull(ctx context.Context, cfg *config, w http.Response
 	defer lsi.Close()
 
 	ticker := time.NewTicker(5 * time.Second)
-	first := true
+	ifNoneMatch := opts.IfNoneMatch
 	previousETag := ""
 
 	for {
@@ -77,18 +77,18 @@ func (api *API) streamListFull(ctx context.Context, cfg *config, w http.Response
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "hash list failed (%w)", err)
 			}
 
-			if first {
-				first = false
+			if ifNoneMatch != nil && httpheader.MatchWeak(opts.IfNoneMatch, httpheader.EntityTag{Opaque: etag}) {
+				ifNoneMatch = nil
 
-				if httpheader.MatchWeak(opts.IfNoneMatch, httpheader.EntityTag{Opaque: etag}) {
-					err = writeEvent(w, "notModified", map[string]string{"id": etag}, nil, true)
-					if err != nil {
-						return jsrest.Errorf(jsrest.ErrInternalServerError, "write list failed (%w)", err)
-					}
-
-					continue
+				err = writeEvent(w, "notModified", map[string]string{"id": etag}, nil, true)
+				if err != nil {
+					return jsrest.Errorf(jsrest.ErrInternalServerError, "write list failed (%w)", err)
 				}
+
+				continue
 			}
+
+			ifNoneMatch = nil
 
 			if previousETag == etag {
 				continue
@@ -119,8 +119,7 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 	last := map[string]*listEntry{}
 
 	ticker := time.NewTicker(5 * time.Second)
-
-	first := true
+	ifNoneMatch := opts.IfNoneMatch
 	previousETag := ""
 
 	for {
@@ -142,7 +141,9 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "hash list failed (%w)", err)
 			}
 
-			if first && httpheader.MatchWeak(opts.IfNoneMatch, httpheader.EntityTag{Opaque: etag}) {
+			if ifNoneMatch != nil && httpheader.MatchWeak(ifNoneMatch, httpheader.EntityTag{Opaque: etag}) {
+				ifNoneMatch = nil
+
 				err = writeEvent(w, "notModified", map[string]string{"id": etag}, nil, true)
 				if err != nil {
 					return jsrest.Errorf(jsrest.ErrInternalServerError, "write list failed (%w)", err)
@@ -151,12 +152,13 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 				continue
 			}
 
+			ifNoneMatch = nil
+
 			if previousETag == etag {
 				continue
 			}
 
 			previousETag = etag
-			first = false
 
 			cur := map[string]*listEntry{}
 
@@ -169,6 +171,7 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 				}
 			}
 
+			// remove events have to go out before add/update events, for ordering
 			for id, lastEntry := range last {
 				if cur[id] != nil {
 					continue
@@ -180,6 +183,7 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 				}
 			}
 
+			// Use the list instead of the map because order matters
 			for pos, obj := range list {
 				objMD := metadata.GetMetadata(obj)
 
