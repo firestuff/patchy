@@ -174,7 +174,7 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 					continue
 				}
 
-				err = writeEvent(w, "remove", map[string]string{"old-position": strconv.Itoa(lastEntry.pos)}, lastEntry.obj, false)
+				err = writeEvent(w, "remove", map[string]string{"old-position": strconv.Itoa(lastEntry.pos)}, nil, false)
 				if err != nil {
 					return jsrest.Errorf(jsrest.ErrInternalServerError, "write remove failed (%w)", err)
 				}

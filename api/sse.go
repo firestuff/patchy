@@ -22,18 +22,20 @@ func writeEvent(w http.ResponseWriter, event string, params map[string]string, o
 		fmt.Fprintf(buf, "%s: %s\n", k, v)
 	}
 
-	buf.WriteString("data: ")
+	if obj != nil {
+		buf.WriteString("data: ")
 
-	enc := json.NewEncoder(buf)
+		enc := json.NewEncoder(buf)
 
-	err := enc.Encode(obj)
-	if err != nil {
-		return jsrest.Errorf(jsrest.ErrInternalServerError, "encode JSON failed (%w)", err)
+		err := enc.Encode(obj)
+		if err != nil {
+			return jsrest.Errorf(jsrest.ErrInternalServerError, "encode JSON failed (%w)", err)
+		}
 	}
 
 	buf.WriteString("\n")
 
-	_, err = buf.WriteTo(w)
+	_, err := buf.WriteTo(w)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "write event failed (%w)", err)
 	}
