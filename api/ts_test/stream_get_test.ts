@@ -9,13 +9,15 @@ test('stream get success', async () => {
 
 	const stream = await tc.client.streamGetTestType(create.id);
 
-	const ev1 = await stream.read();
-	assert.equal(ev1!.text, "foo");
+	try {
+		const s1 = await stream.read();
+		assert.equal(s1!.text, "foo");
 
-	await tc.client.updateTestType(create.id, {text: "bar"});
+		await tc.client.updateTestType(create.id, {text: "bar"});
 
-	const ev2 = await stream.read();
-	assert.equal(ev2!.text, "bar");
-
-	await stream.close();
+		const s2 = await stream.read();
+		assert.equal(s2!.text, "bar");
+	} finally {
+		await stream.close();
+	}
 });

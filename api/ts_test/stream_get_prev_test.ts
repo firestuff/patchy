@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { TestClient } from './util.js';
 
-test('stream get success', async () => {
+test('stream get prev success', async () => {
 	const tc = new TestClient();
 
 	const create = await tc.client.createTestType({text: "foo"});
@@ -13,9 +13,11 @@ test('stream get success', async () => {
 
 	const stream = await tc.client.streamGetTestType(create.id, {prev: create});
 
-	const ev = await stream.read();
-	assert.equal(ev!.text, "foo");
-	assert.equal(ev!.num, 5);
-
-	await stream.close();
+	try {
+		const s1 = await stream.read();
+		assert.equal(s1!.text, "foo");
+		assert.equal(s1!.num, 5);
+	} finally {
+		await stream.close();
+	}
 });

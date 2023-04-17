@@ -233,13 +233,74 @@ export class GetStream<T extends MetadataResponse> extends StreamCore {
 
 	async *[Symbol.asyncIterator](): AsyncIterableIterator<T> {
 		while (true) {
-			const ev = await this.read();
+			const obj = await this.read();
 
-			if (ev == null) {
+			if (obj == null) {
 				return;
 			}
 
-			yield ev;
+			yield obj;
+		}
+	}
+}
+
+export class ListStream<T extends MetadataResponse> extends StreamCore {
+	private prev: T[] | null;
+
+	constructor(resp: Response, controller: AbortController, prev: T[] | null | undefined) {
+		super(resp, controller);
+
+		// TODO: Support full and diff stream types
+
+		this.prev = prev ?? null;
+	}
+
+	async read(): Promise<T[] | null> {
+		while (true) {
+			const ev = await this.readEvent();
+
+			if (ev == null) {
+				return null;
+
+			} else if (ev.eventType == 'list') {
+				return JSON.parse(ev.data);
+
+			} else if (ev.eventType == 'notModified') {
+				if (this.prev == null) {
+					throw(new Error({
+						messages: [
+							'notModified without previous',
+						],
+					}));
+				}
+
+				const prev = this.prev;
+				this.prev = null;
+
+				return prev;
+
+			} else if (ev.eventType == 'heartbeat') {
+				continue;
+
+			}
+		}
+	}
+
+	async close() {
+		this.abort();
+
+		for await (const _ of this) {}
+	}
+
+	async *[Symbol.asyncIterator](): AsyncIterableIterator<T[]> {
+		while (true) {
+			const list = await this.read();
+
+			if (list == null) {
+				return;
+			}
+
+			yield list;
 		}
 	}
 }
@@ -363,7 +424,22 @@ class ClientCore {
 		return new GetStream<TOut>(resp, controller, opts?.prev);
 	}
 
-	// TODO: Add streamListName
+	async streamListName<TOut extends MetadataResponse>(name: string, opts?: ListOpts<TOut> | null): Promise<ListStream<TOut>> {
+		const controller = new AbortController();
+
+		const resp = await this.fetch(
+			'GET',
+			`${encodeURIComponent(name)}`,
+			{
+				params: this.buildListParams(opts),
+				headers: this.buildListHeaders(opts),
+				stream: true,
+				signal: controller.signal,
+			},
+		);
+
+		return new ListStream<TOut>(resp, controller, opts?.prev);
+	}
 
 	private buildListParams<T extends MetadataResponse>(opts: ListOpts<T> | null | undefined): URLSearchParams {
 		const params = new URLSearchParams();
@@ -564,7 +640,9 @@ export class Client extends ClientCore {
 		return this.streamGetName<{{ $type.TypeUpperCamel }}Response>('{{ $type.NameLower }}', id, opts);
 	}
 
-	// TODO: Add streamList
+	async streamList{{ $type.NameUpperCamel }}(opts?: ListOpts<{{ $type.TypeUpperCamel }}Response> | null): Promise<ListStream<{{ $type.TypeUpperCamel }}Response>> {
+		return this.streamListName<{{ $type.TypeUpperCamel }}Response>('{{ $type.NameLower }}', opts);
+	}
 
 	{{- end }}
 }
