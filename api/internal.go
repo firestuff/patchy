@@ -6,6 +6,7 @@ import (
 	"github.com/dchest/uniuri"
 	"github.com/firestuff/patchy/jsrest"
 	"github.com/firestuff/patchy/metadata"
+	"github.com/firestuff/patchy/path"
 )
 
 type getStreamInt struct {
@@ -207,7 +208,7 @@ func (api *API) updateInt(ctx context.Context, cfg *config, id string, patch any
 	}
 
 	// TODO: Take a map[string]any as the merge source to make non-pointer fields optional
-	Merge(obj, patch)
+	path.Merge(obj, patch)
 	metadata.GetMetadata(obj).Generation++
 
 	obj, err = cfg.checkWrite(ctx, obj, prev, api)

@@ -13,13 +13,27 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type complexTestType struct {
+	api.Metadata
+	A string
+	B int
+	C []string
+	D nestedType
+	E *nestedType
+}
+
+type nestedType struct {
+	F []int
+	G string
+}
+
 func TestTemplateGoClient(t *testing.T) {
 	t.Parallel()
 
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
-	api.Register[mergeTestType](ta.api)
+	api.Register[complexTestType](ta.api)
 
 	ctx := context.Background()
 

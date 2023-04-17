@@ -1,4 +1,4 @@
-package api
+package path
 
 import "reflect"
 
@@ -7,8 +7,8 @@ func Merge(to, from any) {
 }
 
 func MergeValue(to, from reflect.Value) {
-	to = maybeIndirect(to)
-	from = maybeIndirect(from)
+	to = reflect.Indirect(to)
+	from = reflect.Indirect(from)
 
 	for i := 0; i < to.NumField(); i++ {
 		toField := to.Field(i)
@@ -18,19 +18,11 @@ func MergeValue(to, from reflect.Value) {
 			continue
 		}
 
-		if maybeIndirect(fromField).Kind() == reflect.Struct {
+		if reflect.Indirect(fromField).Kind() == reflect.Struct {
 			MergeValue(toField, fromField)
 			continue
 		}
 
 		toField.Set(fromField)
 	}
-}
-
-func maybeIndirect(v reflect.Value) reflect.Value {
-	if v.Kind() == reflect.Ptr {
-		v = reflect.Indirect(v)
-	}
-
-	return v
 }
