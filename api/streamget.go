@@ -33,7 +33,7 @@ func (api *API) streamGet(cfg *config, id string, w http.ResponseWriter, r *http
 
 	err = api.streamGetWrite(ctx, w, gsi.ch, opts)
 	if err != nil {
-		_ = writeEvent(w, "error", "", jsrest.ToJSONError(err), true)
+		_ = writeEvent(w, "error", nil, jsrest.ToJSONError(err), true)
 		return nil
 	}
 
@@ -51,7 +51,7 @@ func (api *API) streamGetWrite(ctx context.Context, w http.ResponseWriter, ch <-
 
 		case obj, ok := <-ch:
 			if !ok {
-				err := writeEvent(w, "delete", "", emptyEvent, true)
+				err := writeEvent(w, "delete", nil, emptyEvent, true)
 				if err != nil {
 					return jsrest.Errorf(jsrest.ErrInternalServerError, "write delete failed (%w)", err)
 				}
@@ -70,7 +70,7 @@ func (api *API) streamGetWrite(ctx context.Context, w http.ResponseWriter, ch <-
 
 				if httpheader.MatchWeak(opts.IfNoneMatch, httpheader.EntityTag{Opaque: md.ETag}) ||
 					httpheader.MatchWeak(opts.IfNoneMatch, httpheader.EntityTag{Opaque: gen}) {
-					err := writeEvent(w, "notModified", md.ETag, emptyEvent, true)
+					err := writeEvent(w, "notModified", map[string]string{"id": md.ETag}, emptyEvent, true)
 					if err != nil {
 						return jsrest.Errorf(jsrest.ErrInternalServerError, "write update failed (%w)", err)
 					}
@@ -81,13 +81,13 @@ func (api *API) streamGetWrite(ctx context.Context, w http.ResponseWriter, ch <-
 				}
 			}
 
-			err := writeEvent(w, eventType, md.ETag, obj, true)
+			err := writeEvent(w, eventType, map[string]string{"id": md.ETag}, obj, true)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "write update failed (%w)", err)
 			}
 
 		case <-ticker.C:
-			err := writeEvent(w, "heartbeat", "", emptyEvent, true)
+			err := writeEvent(w, "heartbeat", nil, emptyEvent, true)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "write heartbeat failed (%w)", err)
 			}

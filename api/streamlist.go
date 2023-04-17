@@ -29,7 +29,7 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 	case "full":
 		err = api.streamListFull(ctx, cfg, w, opts)
 		if err != nil {
-			_ = writeEvent(w, "error", "", jsrest.ToJSONError(err), true)
+			_ = writeEvent(w, "error", nil, jsrest.ToJSONError(err), true)
 		}
 
 		return nil
@@ -37,7 +37,7 @@ func (api *API) streamList(cfg *config, w http.ResponseWriter, r *http.Request) 
 	case "diff":
 		err = api.streamListDiff(ctx, cfg, w, opts)
 		if err != nil {
-			_ = writeEvent(w, "error", "", jsrest.ToJSONError(err), true)
+			_ = writeEvent(w, "error", nil, jsrest.ToJSONError(err), true)
 		}
 
 		return nil
@@ -65,7 +65,7 @@ func (api *API) streamListFull(ctx context.Context, cfg *config, w http.Response
 			return nil
 
 		case <-ticker.C:
-			err = writeEvent(w, "heartbeat", "", emptyEvent, true)
+			err = writeEvent(w, "heartbeat", nil, emptyEvent, true)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "write heartbeat failed (%w)", err)
 			}
@@ -80,7 +80,7 @@ func (api *API) streamListFull(ctx context.Context, cfg *config, w http.Response
 				first = false
 
 				if httpheader.MatchWeak(opts.IfNoneMatch, httpheader.EntityTag{Opaque: etag}) {
-					err = writeEvent(w, "notModified", etag, emptyEvent, true)
+					err = writeEvent(w, "notModified", map[string]string{"id": etag}, emptyEvent, true)
 					if err != nil {
 						return jsrest.Errorf(jsrest.ErrInternalServerError, "write list failed (%w)", err)
 					}
@@ -95,12 +95,17 @@ func (api *API) streamListFull(ctx context.Context, cfg *config, w http.Response
 
 			previousETag = etag
 
-			err = writeEvent(w, "list", etag, list, true)
+			err = writeEvent(w, "list", map[string]string{"id": etag}, list, true)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "write list failed (%w)", err)
 			}
 		}
 	}
+}
+
+type listEntry struct {
+	pos int
+	obj any
 }
 
 func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.ResponseWriter, opts *ListOpts) error {
@@ -110,19 +115,17 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 	}
 	defer lsi.Close()
 
-	last := map[string]any{}
+	last := map[string]*listEntry{}
 
 	ticker := time.NewTicker(5 * time.Second)
 
 	first := true
 	previousETag := ""
 
-	// TODO: Communicate sort order to client
-
 	for {
 		select {
 		case <-ticker.C:
-			err = writeEvent(w, "heartbeat", "", emptyEvent, true)
+			err = writeEvent(w, "heartbeat", nil, emptyEvent, true)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "write heartbeat failed (%w)", err)
 			}
@@ -139,7 +142,7 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 			}
 
 			if first && httpheader.MatchWeak(opts.IfNoneMatch, httpheader.EntityTag{Opaque: etag}) {
-				err = writeEvent(w, "notModified", etag, emptyEvent, true)
+				err = writeEvent(w, "notModified", map[string]string{"id": etag}, emptyEvent, true)
 				if err != nil {
 					return jsrest.Errorf(jsrest.ErrInternalServerError, "write list failed (%w)", err)
 				}
@@ -152,46 +155,43 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 			}
 
 			previousETag = etag
+			first = false
 
-			cur := map[string]any{}
-			changed := false
+			cur := map[string]*listEntry{}
 
-			for _, obj := range list {
+			for pos, obj := range list {
 				objMD := metadata.GetMetadata(obj)
 
-				lastObj, found := last[objMD.ID]
-				if found {
-					lastMD := metadata.GetMetadata(lastObj)
+				lastEntry := last[objMD.ID]
+				if lastEntry == nil {
+					err = writeEvent(w, "add", nil, obj, false)
+					if err != nil {
+						return jsrest.Errorf(jsrest.ErrInternalServerError, "write add failed (%w)", err)
+					}
+				} else {
+					lastMD := metadata.GetMetadata(lastEntry.obj)
 					if objMD.ETag != lastMD.ETag {
-						changed = true
-
-						err = writeEvent(w, "update", "", obj, false)
+						err = writeEvent(w, "update", nil, obj, false)
 						if err != nil {
 							return jsrest.Errorf(jsrest.ErrInternalServerError, "write update failed (%w)", err)
 						}
 					}
-				} else {
-					changed = true
-
-					err = writeEvent(w, "add", "", obj, false)
-					if err != nil {
-						return jsrest.Errorf(jsrest.ErrInternalServerError, "write add failed (%w)", err)
-					}
 				}
 
-				cur[objMD.ID] = obj
-				last[objMD.ID] = obj
+				cur[objMD.ID] = &listEntry{
+					pos: pos,
+					obj: obj,
+				}
+
+				last[objMD.ID] = cur[objMD.ID]
 			}
 
 			for id, old := range last {
-				_, found := cur[id]
-				if found {
+				if cur[id] != nil {
 					continue
 				}
 
-				changed = true
-
-				err = writeEvent(w, "remove", "", old, false)
+				err = writeEvent(w, "remove", nil, old.obj, false)
 				if err != nil {
 					return jsrest.Errorf(jsrest.ErrInternalServerError, "write remove failed (%w)", err)
 				}
@@ -199,13 +199,9 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 				delete(last, id)
 			}
 
-			if first || changed {
-				first = false
-
-				err = writeEvent(w, "sync", etag, emptyEvent, true)
-				if err != nil {
-					return jsrest.Errorf(jsrest.ErrInternalServerError, "write sync failed (%w)", err)
-				}
+			err = writeEvent(w, "sync", map[string]string{"id": etag}, emptyEvent, true)
+			if err != nil {
+				return jsrest.Errorf(jsrest.ErrInternalServerError, "write sync failed (%w)", err)
 			}
 		}
 	}

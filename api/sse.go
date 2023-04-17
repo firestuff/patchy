@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -12,16 +13,29 @@ type EmptyEventType map[string]any
 
 var emptyEvent = EmptyEventType{}
 
-func writeEvent(w http.ResponseWriter, event, id string, obj any, flush bool) error {
-	data, err := json.Marshal(obj)
+func writeEvent(w http.ResponseWriter, event string, params map[string]string, obj any, flush bool) error {
+	buf := &bytes.Buffer{}
+
+	fmt.Fprintf(buf, "event: %s\n", event)
+
+	for k, v := range params {
+		fmt.Fprintf(buf, "%s: %s\n", k, v)
+	}
+
+	buf.WriteString("data: ")
+
+	enc := json.NewEncoder(buf)
+
+	err := enc.Encode(obj)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "encode JSON failed (%w)", err)
 	}
 
-	if id == "" {
-		fmt.Fprintf(w, "event: %s\ndata: %s\n\n", event, data)
-	} else {
-		fmt.Fprintf(w, "event: %s\nid: %s\ndata: %s\n\n", event, id, data)
+	buf.WriteString("\n")
+
+	_, err = buf.WriteTo(w)
+	if err != nil {
+		return jsrest.Errorf(jsrest.ErrInternalServerError, "write event failed (%w)", err)
 	}
 
 	if flush {
