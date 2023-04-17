@@ -30,7 +30,7 @@ func (mt *mayType) MayRead(ctx context.Context, a *api.API) error {
 	nt1 := ctx.Value(newText1)
 	if nt1 != nil {
 		// Use a separate context so we don't recursively create objects
-		_, err := api.Create(context.Background(), a, &mayType{Text1: nt1.(string)}) //nolint:contextcheck
+		_, err := api.Create[mayType](context.Background(), a, &mayType{Text1: nt1.(string)}) //nolint:contextcheck
 		if err != nil {
 			return err
 		}
@@ -102,7 +102,7 @@ func TestMayWriteCreateSuccess(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	_, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	_, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
 }
 
@@ -119,7 +119,7 @@ func TestMayWriteCreateRefuse(t *testing.T) {
 
 	ta.pyc.SetHeader("X-Refuse-Write", "x")
 
-	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	created, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{})
 	require.Error(t, err)
 	require.Nil(t, created)
 }
@@ -135,7 +135,7 @@ func TestMayWriteReplaceSuccess(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	created, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
 
 	_, err = patchyc.Replace(ctx, ta.pyc, created.ID, &mayType{}, nil)
@@ -153,7 +153,7 @@ func TestMayWriteReplaceRefuse(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	created, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
 
 	ta.pyc.SetHeader("X-Refuse-Write", "x")
@@ -173,7 +173,7 @@ func TestMayWriteUpdateSuccess(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	created, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
 
 	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &mayType{}, nil)
@@ -191,7 +191,7 @@ func TestMayWriteUpdateRefuse(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	created, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
 
 	ta.pyc.SetHeader("X-Refuse-Write", "x")
@@ -211,7 +211,7 @@ func TestMayWriteDeleteSuccess(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	created, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
 
 	err = patchyc.Delete[mayType](ctx, ta.pyc, created.ID, nil)
@@ -229,7 +229,7 @@ func TestMayWriteDeleteRefuse(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	created, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
 
 	ta.pyc.SetHeader("X-Refuse-Write", "x")
@@ -249,7 +249,7 @@ func TestMayReadGetSuccess(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	created, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
 
 	get, err := patchyc.Get[mayType](ctx, ta.pyc, created.ID, nil)
@@ -268,7 +268,7 @@ func TestMayReadGetRefuse(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	created, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
 
 	ta.pyc.SetHeader("X-Refuse-Read", "x")
@@ -289,7 +289,7 @@ func TestMayReadStreamGetSuccess(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	created, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
 
 	stream, err := patchyc.StreamGet[mayType](ctx, ta.pyc, created.ID, nil)
@@ -313,7 +313,7 @@ func TestMayReadStreamGetRefuse(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	created, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
 
 	ta.pyc.SetHeader("X-Refuse-Read", "x")
@@ -339,7 +339,7 @@ func TestMayReadListSuccess(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	_, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	_, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
 
 	list, err := patchyc.List[mayType](ctx, ta.pyc, nil)
@@ -358,7 +358,7 @@ func TestMayReadListRefuse(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	_, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	_, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
 
 	ta.pyc.SetHeader("X-Refuse-Read", "x")
@@ -379,7 +379,7 @@ func TestMayReadStreamListSuccess(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	_, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	_, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
 
 	stream, err := patchyc.StreamList[mayType](ctx, ta.pyc, nil)
@@ -404,7 +404,7 @@ func TestMayReadStreamListRefuse(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	_, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	_, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
 
 	ta.pyc.SetHeader("X-Refuse-Read", "x")
@@ -431,7 +431,7 @@ func TestMayReadCreateSuccess(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	_, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	_, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
 }
 
@@ -448,7 +448,7 @@ func TestMayReadCreateRefuse(t *testing.T) {
 
 	ta.pyc.SetHeader("X-Refuse-Read", "x")
 
-	_, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	_, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{})
 	require.Error(t, err)
 }
 
@@ -463,7 +463,7 @@ func TestMayReadReplaceSuccess(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	created, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
 
 	_, err = patchyc.Replace(ctx, ta.pyc, created.ID, &mayType{}, nil)
@@ -481,7 +481,7 @@ func TestMayReadReplaceRefuse(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	created, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
 
 	ta.pyc.SetHeader("X-Refuse-Read", "x")
@@ -501,7 +501,7 @@ func TestMayReadUpdateSuccess(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	created, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
 
 	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &mayType{}, nil)
@@ -519,7 +519,7 @@ func TestMayReadUpdateRefuse(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	created, err := patchyc.Create(ctx, ta.pyc, &mayType{})
+	created, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
 
 	ta.pyc.SetHeader("X-Refuse-Read", "x")
@@ -541,7 +541,7 @@ func TestMayWriteMutateCreate(t *testing.T) {
 
 	ta.pyc.SetHeader("X-Text1-Write", "1234")
 
-	created, err := patchyc.Create(ctx, ta.pyc, &mayType{Text1: "foo"})
+	created, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{Text1: "foo"})
 	require.NoError(t, err)
 
 	get, err := patchyc.Get[mayType](ctx, ta.pyc, created.ID, nil)
@@ -560,7 +560,7 @@ func TestMayWriteMutateReplace(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	created, err := patchyc.Create(ctx, ta.pyc, &mayType{Text1: "foo"})
+	created, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{Text1: "foo"})
 	require.NoError(t, err)
 
 	ta.pyc.SetHeader("X-Text1-Write", "2345")
@@ -584,7 +584,7 @@ func TestMayWriteMutateUpdate(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	created, err := patchyc.Create(ctx, ta.pyc, &mayType{Text1: "foo"})
+	created, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{Text1: "foo"})
 	require.NoError(t, err)
 
 	ta.pyc.SetHeader("X-Text1-Write", "3456")
@@ -608,7 +608,7 @@ func TestMayReadMutateGet(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	created, err := patchyc.Create(ctx, ta.pyc, &mayType{Text1: "foo"})
+	created, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{Text1: "foo"})
 	require.NoError(t, err)
 
 	ta.pyc.SetHeader("X-Text1-Read", "1234")
@@ -631,7 +631,7 @@ func TestMayReadMutateCreate(t *testing.T) {
 
 	ta.pyc.SetHeader("X-Text1-Read", "2345")
 
-	created, err := patchyc.Create(ctx, ta.pyc, &mayType{Text1: "foo"})
+	created, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{Text1: "foo"})
 	require.NoError(t, err)
 	require.Equal(t, "2345", created.Text1)
 
@@ -653,7 +653,7 @@ func TestMayReadMutateReplace(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	created, err := patchyc.Create(ctx, ta.pyc, &mayType{Text1: "foo"})
+	created, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{Text1: "foo"})
 	require.NoError(t, err)
 
 	ta.pyc.SetHeader("X-Text1-Read", "3456")
@@ -680,7 +680,7 @@ func TestMayReadMutateUpdate(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	created, err := patchyc.Create(ctx, ta.pyc, &mayType{Text1: "foo"})
+	created, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{Text1: "foo"})
 	require.NoError(t, err)
 
 	ta.pyc.SetHeader("X-Text1-Read", "4567")
@@ -707,7 +707,7 @@ func TestMayReadMutateStreamGet(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	created, err := patchyc.Create(ctx, ta.pyc, &mayType{Text1: "foo"})
+	created, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{Text1: "foo"})
 	require.NoError(t, err)
 
 	ta.pyc.SetHeader("X-Text1-Read", "5678")
@@ -733,7 +733,7 @@ func TestMayReadMutateList(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	_, err := patchyc.Create(ctx, ta.pyc, &mayType{Text1: "foo"})
+	_, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{Text1: "foo"})
 	require.NoError(t, err)
 
 	ta.pyc.SetHeader("X-Text1-Read", "6789")
@@ -755,7 +755,7 @@ func TestMayReadMutateStreamList(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	_, err := patchyc.Create(ctx, ta.pyc, &mayType{Text1: "foo"})
+	_, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{Text1: "foo"})
 	require.NoError(t, err)
 
 	ta.pyc.SetHeader("X-Text1-Read", "789a")
@@ -781,7 +781,7 @@ func TestMayReadSideEffect(t *testing.T) {
 	ta.api.SetRequestHook(requestHook)
 	api.Register[mayType](ta.api)
 
-	created, err := patchyc.Create(ctx, ta.pyc, &mayType{Text1: "foo"})
+	created, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{Text1: "foo"})
 	require.NoError(t, err)
 
 	ta.pyc.SetHeader("X-NewText1", "abcd")

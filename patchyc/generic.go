@@ -20,8 +20,8 @@ var (
 	ErrInvalidStreamFormat = fmt.Errorf("invalid stream format")
 )
 
-func CreateName[T any](ctx context.Context, c *Client, name string, obj *T) (*T, error) {
-	created := new(T)
+func CreateName[TOut, TIn any](ctx context.Context, c *Client, name string, obj *TIn) (*TOut, error) {
+	created := new(TOut)
 
 	resp, err := c.rst.R().
 		SetContext(ctx).
@@ -40,8 +40,8 @@ func CreateName[T any](ctx context.Context, c *Client, name string, obj *T) (*T,
 	return created, nil
 }
 
-func Create[T any](ctx context.Context, c *Client, obj *T) (*T, error) {
-	return CreateName[T](ctx, c, objName(obj), obj)
+func Create[TOut, TIn any](ctx context.Context, c *Client, obj *TIn) (*TOut, error) {
+	return CreateName[TOut, TIn](ctx, c, objName(obj), obj)
 }
 
 func DeleteName[T any](ctx context.Context, c *Client, name, id string, opts *UpdateOpts) error {

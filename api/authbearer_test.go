@@ -27,7 +27,7 @@ func TestBearerAuthSuccess(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create(ctx, ta.pyc, &authBearerType{
+	_, err := patchyc.Create[authBearerType](ctx, ta.pyc, &authBearerType{
 		Name:  "foo",
 		Token: "abcd",
 	})
@@ -64,7 +64,7 @@ func TestBearerAuthInvalidToken(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create(ctx, ta.pyc, &authBearerType{Token: "abcd"})
+	_, err := patchyc.Create[authBearerType](ctx, ta.pyc, &authBearerType{Token: "abcd"})
 	require.NoError(t, err)
 
 	ta.api.SetRequestHook(func(r *http.Request, api *patchy.API) (*http.Request, error) {

@@ -31,7 +31,7 @@ func TestBasicAuthSuccess(t *testing.T) {
 	hash, err := bcrypt.GenerateFromPassword([]byte("abcd"), bcrypt.DefaultCost)
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &authBasicType{
+	_, err = patchyc.Create[authBasicType](ctx, ta.pyc, &authBasicType{
 		User: "foo",
 		Pass: string(hash),
 	})
@@ -71,7 +71,7 @@ func TestBasicAuthInvalidUser(t *testing.T) {
 	hash, err := bcrypt.GenerateFromPassword([]byte("abcd"), bcrypt.DefaultCost)
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &authBasicType{
+	_, err = patchyc.Create[authBasicType](ctx, ta.pyc, &authBasicType{
 		User: "foo",
 		Pass: string(hash),
 	})
@@ -102,7 +102,7 @@ func TestBasicAuthInvalidPassword(t *testing.T) {
 	hash, err := bcrypt.GenerateFromPassword([]byte("abcd"), bcrypt.DefaultCost)
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &authBasicType{
+	_, err = patchyc.Create[authBasicType](ctx, ta.pyc, &authBasicType{
 		User: "foo",
 		Pass: string(hash),
 	})

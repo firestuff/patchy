@@ -16,7 +16,7 @@ func TestGetPrev(t *testing.T) {
 
 	ctx := context.Background()
 
-	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID, nil)

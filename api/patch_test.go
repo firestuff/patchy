@@ -17,7 +17,7 @@ func TestUpdate(t *testing.T) {
 
 	ctx := context.Background()
 
-	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo", Num: 1})
+	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo", Num: 1})
 	require.NoError(t, err)
 
 	updated, err := patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
@@ -55,7 +55,7 @@ func TestUpdateIfMatchETagSuccess(t *testing.T) {
 
 	ctx := context.Background()
 
-	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	updated, err := patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, &patchyc.UpdateOpts{Prev: created})
@@ -75,7 +75,7 @@ func TestUpdateIfMatchETagMismatch(t *testing.T) {
 
 	ctx := context.Background()
 
-	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	created.ETag = "etag:doesnotmatch"
@@ -97,7 +97,7 @@ func TestUpdateIfMatchInvalid(t *testing.T) {
 
 	ctx := context.Background()
 
-	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	ta.pyc.SetHeader("If-Match", `"foobar"`)

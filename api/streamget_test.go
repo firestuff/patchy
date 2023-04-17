@@ -17,7 +17,7 @@ func TestStreamGetHeartbeat(t *testing.T) {
 
 	ctx := context.Background()
 
-	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream, err := patchyc.StreamGet[testType](ctx, ta.pyc, created.ID, nil)
@@ -53,7 +53,7 @@ func TestStreamGet(t *testing.T) {
 
 	ctx := context.Background()
 
-	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream, err := patchyc.StreamGet[testType](ctx, ta.pyc, created.ID, nil)
@@ -74,7 +74,7 @@ func TestStreamGetUpdate(t *testing.T) {
 
 	ctx := context.Background()
 
-	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream, err := patchyc.StreamGet[testType](ctx, ta.pyc, created.ID, nil)
@@ -102,7 +102,7 @@ func TestStreamGetPrev(t *testing.T) {
 
 	ctx := context.Background()
 
-	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream1, err := patchyc.StreamGet[testType](ctx, ta.pyc, created.ID, nil)

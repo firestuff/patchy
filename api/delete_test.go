@@ -16,7 +16,7 @@ func TestDeleteSuccess(t *testing.T) {
 
 	ctx := context.Background()
 
-	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	get, err := patchyc.Get[testType](ctx, ta.pyc, created.ID, nil)
@@ -52,7 +52,7 @@ func TestDeleteTwice(t *testing.T) {
 
 	ctx := context.Background()
 
-	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID, nil)
@@ -70,7 +70,7 @@ func TestDeleteStream(t *testing.T) {
 
 	ctx := context.Background()
 
-	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream, err := patchyc.StreamGet[testType](ctx, ta.pyc, created.ID, nil)
@@ -99,7 +99,7 @@ func TestDeleteIfMatchETagSuccess(t *testing.T) {
 
 	ctx := context.Background()
 
-	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID, &patchyc.UpdateOpts{Prev: created})
@@ -118,7 +118,7 @@ func TestDeleteIfMatchETagMismatch(t *testing.T) {
 
 	ctx := context.Background()
 
-	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)

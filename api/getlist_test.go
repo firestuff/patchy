@@ -18,13 +18,13 @@ func TestList(t *testing.T) {
 
 	ctx := context.Background()
 
-	created1, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	created1, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	created2, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	created2, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
-	created3, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "zig"})
+	created3, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
 	require.NoError(t, err)
 
 	list, err := patchyc.List[testType](ctx, ta.pyc, nil)
@@ -46,10 +46,10 @@ func TestListEquals(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
 	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
@@ -74,7 +74,7 @@ func TestListInvalidOp(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
@@ -98,10 +98,10 @@ func TestListGreaterThan(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
 	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
@@ -126,13 +126,13 @@ func TestListGreaterThanOrEqual(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "zig"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
 	require.NoError(t, err)
 
 	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
@@ -157,10 +157,10 @@ func TestListHasPrefix(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
 	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
@@ -185,10 +185,10 @@ func TestListIn(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
 	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
@@ -213,10 +213,10 @@ func TestListLessThan(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
 	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
@@ -241,13 +241,13 @@ func TestListLessThanOrEqual(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "zig"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
 	require.NoError(t, err)
 
 	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
@@ -272,10 +272,10 @@ func TestListLimit(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
 	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{Limit: 1})
@@ -292,13 +292,13 @@ func TestListOffset(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "zig"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
 	require.NoError(t, err)
 
 	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{Offset: 1})
@@ -317,13 +317,13 @@ func TestListAfter(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "zig"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
 	require.NoError(t, err)
 
 	list1, err := patchyc.List[testType](ctx, ta.pyc, nil)
@@ -345,13 +345,13 @@ func TestListSort(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "zig"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
 	require.NoError(t, err)
 
 	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{Sorts: []string{"text"}})
@@ -368,13 +368,13 @@ func TestListSortAsc(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "zig"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
 	require.NoError(t, err)
 
 	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{Sorts: []string{"+text"}})
@@ -391,13 +391,13 @@ func TestListSortDesc(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "zig"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
 	require.NoError(t, err)
 
 	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{Sorts: []string{"-text"}})
@@ -414,13 +414,13 @@ func TestListSortBeforeOffset(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "zig"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
 	require.NoError(t, err)
 
 	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
@@ -440,13 +440,13 @@ func TestListSortBeforeLimit(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "zig"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
 	require.NoError(t, err)
 
 	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
@@ -466,7 +466,7 @@ func TestListPrev(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	list, err := patchyc.List[testType](ctx, ta.pyc, nil)
@@ -499,13 +499,13 @@ func TestListHook(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "zig"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
 	require.NoError(t, err)
 
 	list, err := patchyc.List[testType](ctx, ta.pyc, nil)

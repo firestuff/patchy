@@ -52,10 +52,10 @@ func TestStreamListInitial(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
 	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, nil)
@@ -86,7 +86,7 @@ func TestStreamListAdd(t *testing.T) {
 	require.NotNil(t, s1, stream.Error())
 	require.Len(t, s1, 0)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	s2 := stream.Read()
@@ -103,7 +103,7 @@ func TestStreamListUpdate(t *testing.T) {
 
 	ctx := context.Background()
 
-	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, nil)
@@ -133,7 +133,7 @@ func TestStreamListDelete(t *testing.T) {
 
 	ctx := context.Background()
 
-	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, nil)
@@ -162,10 +162,10 @@ func TestStreamListOpts(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
 	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Limit: 1})
@@ -187,10 +187,10 @@ func TestStreamListIgnoreIrrelevant(t *testing.T) {
 
 	ctx := context.Background()
 
-	created1, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	created1, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
 	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Sorts: []string{"+text"}, Limit: 1})
@@ -231,7 +231,7 @@ func TestStreamListPrev(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream1, err := patchyc.StreamList[testType](ctx, ta.pyc, nil)
@@ -266,7 +266,7 @@ func TestStreamListDiffInitial(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Stream: "diff"})
@@ -297,7 +297,7 @@ func TestStreamListDiffCreate(t *testing.T) {
 	require.NotNil(t, s1, stream.Error())
 	require.Len(t, s1, 0)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	s2 := stream.Read()
@@ -314,7 +314,7 @@ func TestStreamListDiffUpdate(t *testing.T) {
 
 	ctx := context.Background()
 
-	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo", Num: 1})
+	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo", Num: 1})
 	require.NoError(t, err)
 
 	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Stream: "diff"})
@@ -346,7 +346,7 @@ func TestStreamListDiffReplace(t *testing.T) {
 
 	ctx := context.Background()
 
-	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo", Num: 1})
+	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo", Num: 1})
 	require.NoError(t, err)
 
 	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Stream: "diff"})
@@ -378,7 +378,7 @@ func TestStreamListDiffDelete(t *testing.T) {
 
 	ctx := context.Background()
 
-	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Stream: "diff"})
@@ -407,7 +407,7 @@ func TestStreamListDiffSort(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{
@@ -424,7 +424,7 @@ func TestStreamListDiffSort(t *testing.T) {
 	require.Len(t, s1, 1)
 	require.Equal(t, "foo", s1[0].Text)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
 	s2 := stream.Read()
@@ -441,10 +441,10 @@ func TestStreamListDiffIgnoreIrrelevant(t *testing.T) {
 
 	ctx := context.Background()
 
-	created1, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	created1, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
 	stream, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Stream: "diff", Sorts: []string{"+text"}, Limit: 1})
@@ -485,7 +485,7 @@ func TestStreamListDiffPrev(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream1, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Stream: "diff"})
@@ -511,7 +511,7 @@ func TestStreamListDiffPrev(t *testing.T) {
 	require.Equal(t, "foo", s3[0].Text)
 	require.EqualValues(t, 5, s3[0].Num)
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
 	s4 := stream2.Read()
@@ -527,7 +527,7 @@ func TestStreamListDiffPrevMiss(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream1, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Stream: "diff"})
@@ -542,7 +542,7 @@ func TestStreamListDiffPrevMiss(t *testing.T) {
 
 	s1[0].Num = 5
 
-	_, err = patchyc.Create(ctx, ta.pyc, &testType{Text: "bar"})
+	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
 	stream2, err := patchyc.StreamList[testType](ctx, ta.pyc, &patchyc.ListOpts{Stream: "diff", Prev: s1})

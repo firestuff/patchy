@@ -254,7 +254,7 @@ func TestAcceptJSON(t *testing.T) {
 
 	ctx := context.Background()
 
-	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	get := &testType{}
@@ -279,7 +279,7 @@ func TestAcceptEventStream(t *testing.T) {
 
 	ctx := context.Background()
 
-	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	resp, err := ta.r().
@@ -301,7 +301,7 @@ func TestAcceptFailure(t *testing.T) {
 
 	ctx := context.Background()
 
-	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	resp, err := ta.r().
@@ -321,7 +321,7 @@ func TestAcceptListFailure(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	resp, err := ta.r().
@@ -358,7 +358,7 @@ func TestRequestHookError(t *testing.T) {
 		return nil, fmt.Errorf("test reject") //nolint:goerr113
 	})
 
-	created, err := patchyc.Create(ctx, ta.pyc, &testType{Text: "foo"})
+	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.Error(t, err)
 	require.Nil(t, created)
 }
