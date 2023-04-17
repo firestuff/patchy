@@ -312,11 +312,14 @@ export class ListStreamFull<T extends MetadataResponse> extends ListStream<T> {
 
 export class ListStreamDiff<T extends MetadataResponse> extends ListStream<T> {
 	private prev: T[] | null;
+	private sorts: string[];
+
 	private objs: Map<string, T> = new Map();
 
-	constructor(resp: Response, controller: AbortController, prev: T[] | null | undefined) {
+	constructor(resp: Response, controller: AbortController, opts: ListOpts<T> | null | undefined) {
 		super(resp, controller);
-		this.prev = prev ?? null;
+		this.prev = opts?.prev ?? null;
+		this.sorts = opts?.sorts ?? [];
 	}
 
 	async read(): Promise<T[] | null> {
@@ -336,9 +339,7 @@ export class ListStreamDiff<T extends MetadataResponse> extends ListStream<T> {
 
 			} else if (ev.eventType == 'sync') {
 				const list = Array.from(this.objs.values());
-
-				// TODO: sort
-
+				this.applySorts(list);
 				return list;
 
 			} else if (ev.eventType == 'notModified') {
@@ -358,6 +359,50 @@ export class ListStreamDiff<T extends MetadataResponse> extends ListStream<T> {
 			} else if (ev.eventType == 'heartbeat') {
 				continue;
 
+			}
+		}
+	}
+
+	private applySorts(list: T[]) {
+		for (const sort of this.sorts) {
+			this.applySort(sort, list);
+		}
+	}
+
+	private applySort(sort: string, list: T[]) {
+		let dir: string = '+';
+
+		if (sort.startsWith('+') || sort.startsWith('-')) {
+			dir = sort[0]!;
+			sort = sort.substring(1);
+		}
+
+		list.sort((a, b) => this.compare(this.getField(sort, a), this.getField(sort, b), dir));
+	}
+
+	private getField(path: string, obj: T): any {
+		const parts = path.split('.');
+
+		let iter: any = obj;
+		for (const part of parts) {
+			iter = iter[part];
+		}
+
+		return iter;
+	}
+
+	private compare(a: any, b: any, dir: string): number {
+		if (typeof a == 'number') {
+			if (dir == '+') {
+				return b - a;
+			} else {
+				return a - b;
+			}
+		} else {
+			if (dir == '+') {
+				return a.localeCompare(b);
+			} else {
+				return b.localeCompare(a);
 			}
 		}
 	}
@@ -502,7 +547,7 @@ class ClientCore {
 				return new ListStreamFull<TOut>(resp, controller, opts?.prev);
 
 			case 'diff':
-				return new ListStreamDiff<TOut>(resp, controller, opts?.prev);
+				return new ListStreamDiff<TOut>(resp, controller, opts);
 
 			default:
 				throw new Error({
