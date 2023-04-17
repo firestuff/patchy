@@ -128,12 +128,14 @@ func (ls *ListStream[T]) writeError(err error) {
 
 type streamEvent struct {
 	eventType string
-	id        string
+	params    map[string]string
 	data      []byte
 }
 
 func readEvent(scan *bufio.Scanner) (*streamEvent, error) {
-	event := &streamEvent{}
+	event := &streamEvent{
+		params: map[string]string{},
+	}
 	data := [][]byte{}
 
 	for scan.Scan() {
@@ -146,15 +148,16 @@ func readEvent(scan *bufio.Scanner) (*streamEvent, error) {
 		case strings.HasPrefix(line, "event: "):
 			event.eventType = strings.TrimPrefix(line, "event: ")
 
-		case strings.HasPrefix(line, "id: "):
-			event.id = strings.TrimPrefix(line, "id: ")
-
 		case strings.HasPrefix(line, "data: "):
 			data = append(data, bytes.TrimPrefix(scan.Bytes(), []byte("data: ")))
 
 		case line == "":
 			event.data = bytes.Join(data, []byte("\n"))
 			return event, nil
+
+		case strings.Contains(line, ": "):
+			parts := strings.SplitN(line, ": ", 2)
+			event.params[parts[0]] = parts[1]
 		}
 	}
 

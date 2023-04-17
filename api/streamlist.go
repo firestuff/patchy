@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/firestuff/patchy/jsrest"
@@ -162,42 +163,49 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 			for pos, obj := range list {
 				objMD := metadata.GetMetadata(obj)
 
+				cur[objMD.ID] = &listEntry{
+					pos: pos,
+					obj: obj,
+				}
+			}
+
+			for id, lastEntry := range last {
+				if cur[id] != nil {
+					continue
+				}
+
+				err = writeEvent(w, "remove", map[string]string{"old-position": strconv.Itoa(lastEntry.pos)}, lastEntry.obj, false)
+				if err != nil {
+					return jsrest.Errorf(jsrest.ErrInternalServerError, "write remove failed (%w)", err)
+				}
+			}
+
+			for pos, obj := range list {
+				objMD := metadata.GetMetadata(obj)
+
 				lastEntry := last[objMD.ID]
 				if lastEntry == nil {
-					err = writeEvent(w, "add", nil, obj, false)
+					err = writeEvent(w, "add", map[string]string{"new-position": strconv.Itoa(pos)}, obj, false)
 					if err != nil {
 						return jsrest.Errorf(jsrest.ErrInternalServerError, "write add failed (%w)", err)
 					}
 				} else {
 					lastMD := metadata.GetMetadata(lastEntry.obj)
 					if objMD.ETag != lastMD.ETag {
-						err = writeEvent(w, "update", nil, obj, false)
+						params := map[string]string{
+							"old-position": strconv.Itoa(lastEntry.pos),
+							"new-position": strconv.Itoa(pos),
+						}
+
+						err = writeEvent(w, "update", params, obj, false)
 						if err != nil {
 							return jsrest.Errorf(jsrest.ErrInternalServerError, "write update failed (%w)", err)
 						}
 					}
 				}
-
-				cur[objMD.ID] = &listEntry{
-					pos: pos,
-					obj: obj,
-				}
-
-				last[objMD.ID] = cur[objMD.ID]
 			}
 
-			for id, old := range last {
-				if cur[id] != nil {
-					continue
-				}
-
-				err = writeEvent(w, "remove", nil, old.obj, false)
-				if err != nil {
-					return jsrest.Errorf(jsrest.ErrInternalServerError, "write remove failed (%w)", err)
-				}
-
-				delete(last, id)
-			}
+			last = cur
 
 			err = writeEvent(w, "sync", map[string]string{"id": etag}, emptyEvent, true)
 			if err != nil {

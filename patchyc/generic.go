@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"strconv"
 	"strings"
 
-	"github.com/firestuff/patchy/api"
 	"github.com/firestuff/patchy/jsrest"
-	"github.com/firestuff/patchy/metadata"
+	"golang.org/x/exp/slices"
 )
 
 var (
@@ -388,7 +388,40 @@ func streamListFull[T any](scan *bufio.Scanner, stream *ListStream[T], opts *Lis
 }
 
 func streamListDiff[T any](scan *bufio.Scanner, stream *ListStream[T], opts *ListOpts) {
-	objs := map[string]*T{}
+	list := []*T{}
+
+	if opts != nil && opts.Prev != nil {
+		list = opts.Prev.([]*T)
+	}
+
+	add := func(event *streamEvent) error {
+		obj := new(T)
+
+		err := event.decode(obj)
+		if err != nil {
+			return err
+		}
+
+		pos, err := strconv.Atoi(event.params["new-position"])
+		if err != nil {
+			return err
+		}
+
+		list = slices.Insert(list, pos, obj)
+
+		return nil
+	}
+
+	remove := func(event *streamEvent) error {
+		pos, err := strconv.Atoi(event.params["old-position"])
+		if err != nil {
+			return err
+		}
+
+		list = slices.Delete(list, pos, pos+1)
+
+		return nil
+	}
 
 	for {
 		event, err := readEvent(scan)
@@ -399,44 +432,33 @@ func streamListDiff[T any](scan *bufio.Scanner, stream *ListStream[T], opts *Lis
 
 		switch event.eventType {
 		case "add":
-			fallthrough
-		case "update":
-			obj := new(T)
-
-			err = event.decode(obj)
+			err = add(event)
 			if err != nil {
 				stream.writeError(err)
 				return
 			}
 
-			id := metadata.GetMetadata(obj).ID
-			objs[id] = obj
+		case "update":
+			err = remove(event)
+			if err != nil {
+				stream.writeError(err)
+				return
+			}
+
+			err = add(event)
+			if err != nil {
+				stream.writeError(err)
+				return
+			}
 
 		case "remove":
-			obj := new(T)
-
-			err = event.decode(obj)
+			err = remove(event)
 			if err != nil {
 				stream.writeError(err)
 				return
 			}
-
-			id := metadata.GetMetadata(obj).ID
-			delete(objs, id)
 
 		case "sync":
-			list := []*T{}
-
-			for _, obj := range objs {
-				list = append(list, obj)
-			}
-
-			list, err := api.ApplySorts(list, opts)
-			if err != nil {
-				stream.writeError(err)
-				return
-			}
-
 			stream.writeEvent(list)
 
 		case "notModified":
