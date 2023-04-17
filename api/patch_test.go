@@ -20,7 +20,7 @@ func TestUpdate(t *testing.T) {
 	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo", Num: 1})
 	require.NoError(t, err)
 
-	updated, err := patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
+	updated, err := patchyc.Update[testType](ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
 	require.NoError(t, err)
 	require.NotNil(t, updated)
 	require.Equal(t, "bar", updated.Text)
@@ -42,7 +42,7 @@ func TestUpdateNotExist(t *testing.T) {
 
 	ctx := context.Background()
 
-	updated, err := patchyc.Update(ctx, ta.pyc, "doesnotexist", &testType{Text: "bar"}, nil)
+	updated, err := patchyc.Update[testType](ctx, ta.pyc, "doesnotexist", &testType{Text: "bar"}, nil)
 	require.Error(t, err)
 	require.Nil(t, updated)
 }
@@ -58,7 +58,7 @@ func TestUpdateIfMatchETagSuccess(t *testing.T) {
 	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	updated, err := patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, &patchyc.UpdateOpts{Prev: created})
+	updated, err := patchyc.Update[testType](ctx, ta.pyc, created.ID, &testType{Text: "bar"}, &patchyc.UpdateOpts{Prev: created})
 	require.NoError(t, err)
 	require.Equal(t, "bar", updated.Text)
 
@@ -80,7 +80,7 @@ func TestUpdateIfMatchETagMismatch(t *testing.T) {
 
 	created.ETag = "etag:doesnotmatch"
 
-	updated, err := patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, &patchy.UpdateOpts{Prev: created})
+	updated, err := patchyc.Update[testType](ctx, ta.pyc, created.ID, &testType{Text: "bar"}, &patchy.UpdateOpts{Prev: created})
 	require.Error(t, err)
 	require.Nil(t, updated)
 
@@ -102,7 +102,7 @@ func TestUpdateIfMatchInvalid(t *testing.T) {
 
 	ta.pyc.SetHeader("If-Match", `"foobar"`)
 
-	updated, err := patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
+	updated, err := patchyc.Update[testType](ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
 	require.Error(t, err)
 	require.Nil(t, updated)
 

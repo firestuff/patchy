@@ -121,7 +121,7 @@ func TestDeleteIfMatchETagMismatch(t *testing.T) {
 	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
+	_, err = patchyc.Update[testType](ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
 	require.NoError(t, err)
 
 	err = patchyc.Delete[testType](ctx, ta.pyc, created.ID, &patchyc.UpdateOpts{Prev: created})

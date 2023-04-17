@@ -19,7 +19,7 @@ func TestReplace(t *testing.T) {
 	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo", Num: 1})
 	require.NoError(t, err)
 
-	replaced, err := patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
+	replaced, err := patchyc.Replace[testType](ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
 	require.NoError(t, err)
 	require.NotNil(t, replaced)
 	require.Equal(t, "bar", replaced.Text)
@@ -41,7 +41,7 @@ func TestReplaceNotExist(t *testing.T) {
 
 	ctx := context.Background()
 
-	replaced, err := patchyc.Replace(ctx, ta.pyc, "doesnotexist", &testType{Text: "bar"}, nil)
+	replaced, err := patchyc.Replace[testType](ctx, ta.pyc, "doesnotexist", &testType{Text: "bar"}, nil)
 	require.Error(t, err)
 	require.Nil(t, replaced)
 }
@@ -57,7 +57,7 @@ func TestReplaceIfMatchETagSuccess(t *testing.T) {
 	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	replaced, err := patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, &patchyc.UpdateOpts{Prev: created})
+	replaced, err := patchyc.Replace[testType](ctx, ta.pyc, created.ID, &testType{Text: "bar"}, &patchyc.UpdateOpts{Prev: created})
 	require.NoError(t, err)
 	require.Equal(t, "bar", replaced.Text)
 
@@ -79,7 +79,7 @@ func TestReplaceIfMatchETagMismatch(t *testing.T) {
 
 	created.ETag = "etag:doesnotmatch"
 
-	replaced, err := patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, &patchyc.UpdateOpts{Prev: created})
+	replaced, err := patchyc.Replace[testType](ctx, ta.pyc, created.ID, &testType{Text: "bar"}, &patchyc.UpdateOpts{Prev: created})
 	require.Error(t, err)
 	require.Nil(t, replaced)
 
@@ -101,7 +101,7 @@ func TestReplaceIfMatchInvalid(t *testing.T) {
 
 	ta.pyc.SetHeader("If-Match", `"foobar"`)
 
-	replaced, err := patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
+	replaced, err := patchyc.Replace[testType](ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
 	require.Error(t, err)
 	require.Nil(t, replaced)
 

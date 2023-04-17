@@ -138,7 +138,7 @@ func TestMayWriteReplaceSuccess(t *testing.T) {
 	created, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
 
-	_, err = patchyc.Replace(ctx, ta.pyc, created.ID, &mayType{}, nil)
+	_, err = patchyc.Replace[mayType](ctx, ta.pyc, created.ID, &mayType{}, nil)
 	require.NoError(t, err)
 }
 
@@ -158,7 +158,7 @@ func TestMayWriteReplaceRefuse(t *testing.T) {
 
 	ta.pyc.SetHeader("X-Refuse-Write", "x")
 
-	_, err = patchyc.Replace(ctx, ta.pyc, created.ID, &mayType{}, nil)
+	_, err = patchyc.Replace[mayType](ctx, ta.pyc, created.ID, &mayType{}, nil)
 	require.Error(t, err)
 }
 
@@ -176,7 +176,7 @@ func TestMayWriteUpdateSuccess(t *testing.T) {
 	created, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
 
-	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &mayType{}, nil)
+	_, err = patchyc.Update[mayType](ctx, ta.pyc, created.ID, &mayType{}, nil)
 	require.NoError(t, err)
 }
 
@@ -196,7 +196,7 @@ func TestMayWriteUpdateRefuse(t *testing.T) {
 
 	ta.pyc.SetHeader("X-Refuse-Write", "x")
 
-	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &mayType{}, nil)
+	_, err = patchyc.Update[mayType](ctx, ta.pyc, created.ID, &mayType{}, nil)
 	require.Error(t, err)
 }
 
@@ -466,7 +466,7 @@ func TestMayReadReplaceSuccess(t *testing.T) {
 	created, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
 
-	_, err = patchyc.Replace(ctx, ta.pyc, created.ID, &mayType{}, nil)
+	_, err = patchyc.Replace[mayType](ctx, ta.pyc, created.ID, &mayType{}, nil)
 	require.NoError(t, err)
 }
 
@@ -486,7 +486,7 @@ func TestMayReadReplaceRefuse(t *testing.T) {
 
 	ta.pyc.SetHeader("X-Refuse-Read", "x")
 
-	_, err = patchyc.Replace(ctx, ta.pyc, created.ID, &mayType{}, nil)
+	_, err = patchyc.Replace[mayType](ctx, ta.pyc, created.ID, &mayType{}, nil)
 	require.Error(t, err)
 }
 
@@ -504,7 +504,7 @@ func TestMayReadUpdateSuccess(t *testing.T) {
 	created, err := patchyc.Create[mayType](ctx, ta.pyc, &mayType{})
 	require.NoError(t, err)
 
-	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &mayType{}, nil)
+	_, err = patchyc.Update[mayType](ctx, ta.pyc, created.ID, &mayType{}, nil)
 	require.NoError(t, err)
 }
 
@@ -524,7 +524,7 @@ func TestMayReadUpdateRefuse(t *testing.T) {
 
 	ta.pyc.SetHeader("X-Refuse-Read", "x")
 
-	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &mayType{}, nil)
+	_, err = patchyc.Update[mayType](ctx, ta.pyc, created.ID, &mayType{}, nil)
 	require.Error(t, err)
 }
 
@@ -565,7 +565,7 @@ func TestMayWriteMutateReplace(t *testing.T) {
 
 	ta.pyc.SetHeader("X-Text1-Write", "2345")
 
-	_, err = patchyc.Replace(ctx, ta.pyc, created.ID, &mayType{Text1: "bar"}, nil)
+	_, err = patchyc.Replace[mayType](ctx, ta.pyc, created.ID, &mayType{Text1: "bar"}, nil)
 	require.NoError(t, err)
 
 	get, err := patchyc.Get[mayType](ctx, ta.pyc, created.ID, nil)
@@ -589,7 +589,7 @@ func TestMayWriteMutateUpdate(t *testing.T) {
 
 	ta.pyc.SetHeader("X-Text1-Write", "3456")
 
-	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &mayType{Text1: "bar"}, nil)
+	_, err = patchyc.Update[mayType](ctx, ta.pyc, created.ID, &mayType{Text1: "bar"}, nil)
 	require.NoError(t, err)
 
 	get, err := patchyc.Get[mayType](ctx, ta.pyc, created.ID, nil)
@@ -658,7 +658,7 @@ func TestMayReadMutateReplace(t *testing.T) {
 
 	ta.pyc.SetHeader("X-Text1-Read", "3456")
 
-	replaced, err := patchyc.Replace(ctx, ta.pyc, created.ID, &mayType{Text1: "bar"}, nil)
+	replaced, err := patchyc.Replace[mayType](ctx, ta.pyc, created.ID, &mayType{Text1: "bar"}, nil)
 	require.NoError(t, err)
 	require.Equal(t, "3456", replaced.Text1)
 
@@ -685,7 +685,7 @@ func TestMayReadMutateUpdate(t *testing.T) {
 
 	ta.pyc.SetHeader("X-Text1-Read", "4567")
 
-	updated, err := patchyc.Update(ctx, ta.pyc, created.ID, &mayType{Text1: "bar"}, nil)
+	updated, err := patchyc.Update[mayType](ctx, ta.pyc, created.ID, &mayType{Text1: "bar"}, nil)
 	require.NoError(t, err)
 	require.Equal(t, "4567", updated.Text1)
 

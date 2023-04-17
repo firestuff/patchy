@@ -86,7 +86,7 @@ func TestStreamGetUpdate(t *testing.T) {
 	require.NotNil(t, s1, stream.Error())
 	require.Equal(t, "foo", s1.Text)
 
-	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
+	_, err = patchyc.Update[testType](ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
 	require.NoError(t, err)
 
 	s2 := stream.Read()

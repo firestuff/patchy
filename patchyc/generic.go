@@ -44,7 +44,7 @@ func Create[TOut, TIn any](ctx context.Context, c *Client, obj *TIn) (*TOut, err
 	return CreateName[TOut, TIn](ctx, c, objName(obj), obj)
 }
 
-func DeleteName[T any](ctx context.Context, c *Client, name, id string, opts *UpdateOpts) error {
+func DeleteName[TOut any](ctx context.Context, c *Client, name, id string, opts *UpdateOpts) error {
 	r := c.rst.R().
 		SetContext(ctx).
 		SetPathParam("name", name).
@@ -66,11 +66,11 @@ func DeleteName[T any](ctx context.Context, c *Client, name, id string, opts *Up
 	return nil
 }
 
-func Delete[T any](ctx context.Context, c *Client, id string, opts *UpdateOpts) error {
-	return DeleteName[T](ctx, c, objName(new(T)), id, opts)
+func Delete[TOut any](ctx context.Context, c *Client, id string, opts *UpdateOpts) error {
+	return DeleteName[TOut](ctx, c, objName(new(TOut)), id, opts)
 }
 
-func FindName[T any](ctx context.Context, c *Client, name, shortID string) (*T, error) {
+func FindName[TOut any](ctx context.Context, c *Client, name, shortID string) (*TOut, error) {
 	listOpts := &ListOpts{
 		Filters: []*Filter{
 			{
@@ -81,7 +81,7 @@ func FindName[T any](ctx context.Context, c *Client, name, shortID string) (*T, 
 		},
 	}
 
-	objs, err := ListName[T](ctx, c, name, listOpts)
+	objs, err := ListName[TOut](ctx, c, name, listOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -97,12 +97,12 @@ func FindName[T any](ctx context.Context, c *Client, name, shortID string) (*T, 
 	return objs[0], nil
 }
 
-func Find[T any](ctx context.Context, c *Client, shortID string) (*T, error) {
-	return FindName[T](ctx, c, objName(new(T)), shortID)
+func Find[TOut any](ctx context.Context, c *Client, shortID string) (*TOut, error) {
+	return FindName[TOut](ctx, c, objName(new(TOut)), shortID)
 }
 
-func GetName[T any](ctx context.Context, c *Client, name, id string, opts *GetOpts) (*T, error) {
-	obj := new(T)
+func GetName[TOut any](ctx context.Context, c *Client, name, id string, opts *GetOpts) (*TOut, error) {
+	obj := new(TOut)
 
 	r := c.rst.R().
 		SetContext(ctx).
@@ -124,7 +124,7 @@ func GetName[T any](ctx context.Context, c *Client, name, id string, opts *GetOp
 	}
 
 	if opts != nil && opts.Prev != nil && resp.StatusCode() == http.StatusNotModified {
-		return opts.Prev.(*T), nil
+		return opts.Prev.(*TOut), nil
 	}
 
 	if resp.IsError() {
@@ -134,12 +134,12 @@ func GetName[T any](ctx context.Context, c *Client, name, id string, opts *GetOp
 	return obj, nil
 }
 
-func Get[T any](ctx context.Context, c *Client, id string, opts *GetOpts) (*T, error) {
-	return GetName[T](ctx, c, objName(new(T)), id, opts)
+func Get[TOut any](ctx context.Context, c *Client, id string, opts *GetOpts) (*TOut, error) {
+	return GetName[TOut](ctx, c, objName(new(TOut)), id, opts)
 }
 
-func ListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts) ([]*T, error) {
-	objs := []*T{}
+func ListName[TOut any](ctx context.Context, c *Client, name string, opts *ListOpts) ([]*TOut, error) {
+	objs := []*TOut{}
 
 	r := c.rst.R().
 		SetContext(ctx).
@@ -159,7 +159,7 @@ func ListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts
 	}
 
 	if opts != nil && opts.Prev != nil && resp.StatusCode() == http.StatusNotModified {
-		return opts.Prev.([]*T), nil
+		return opts.Prev.([]*TOut), nil
 	}
 
 	if resp.IsError() {
@@ -169,12 +169,12 @@ func ListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts
 	return objs, nil
 }
 
-func List[T any](ctx context.Context, c *Client, opts *ListOpts) ([]*T, error) {
-	return ListName[T](ctx, c, objName(new(T)), opts)
+func List[TOut any](ctx context.Context, c *Client, opts *ListOpts) ([]*TOut, error) {
+	return ListName[TOut](ctx, c, objName(new(TOut)), opts)
 }
 
-func ReplaceName[T any](ctx context.Context, c *Client, name, id string, obj *T, opts *UpdateOpts) (*T, error) {
-	replaced := new(T)
+func ReplaceName[TOut, TIn any](ctx context.Context, c *Client, name, id string, obj *TIn, opts *UpdateOpts) (*TOut, error) {
+	replaced := new(TOut)
 
 	r := c.rst.R().
 		SetContext(ctx).
@@ -199,12 +199,12 @@ func ReplaceName[T any](ctx context.Context, c *Client, name, id string, obj *T,
 	return replaced, nil
 }
 
-func Replace[T any](ctx context.Context, c *Client, id string, obj *T, opts *UpdateOpts) (*T, error) {
-	return ReplaceName[T](ctx, c, objName(obj), id, obj, opts)
+func Replace[TOut, TIn any](ctx context.Context, c *Client, id string, obj *TIn, opts *UpdateOpts) (*TOut, error) {
+	return ReplaceName[TOut, TIn](ctx, c, objName(obj), id, obj, opts)
 }
 
-func UpdateName[T any](ctx context.Context, c *Client, name, id string, obj *T, opts *UpdateOpts) (*T, error) {
-	updated := new(T)
+func UpdateName[TOut, TIn any](ctx context.Context, c *Client, name, id string, obj *TIn, opts *UpdateOpts) (*TOut, error) {
+	updated := new(TOut)
 
 	r := c.rst.R().
 		SetContext(ctx).
@@ -229,11 +229,11 @@ func UpdateName[T any](ctx context.Context, c *Client, name, id string, obj *T, 
 	return updated, nil
 }
 
-func Update[T any](ctx context.Context, c *Client, id string, obj *T, opts *UpdateOpts) (*T, error) {
-	return UpdateName[T](ctx, c, objName(obj), id, obj, opts)
+func Update[TOut, TIn any](ctx context.Context, c *Client, id string, obj *TIn, opts *UpdateOpts) (*TOut, error) {
+	return UpdateName[TOut, TIn](ctx, c, objName(obj), id, obj, opts)
 }
 
-func StreamGetName[T any](ctx context.Context, c *Client, name, id string, opts *GetOpts) (*GetStream[T], error) {
+func StreamGetName[TOut any](ctx context.Context, c *Client, name, id string, opts *GetOpts) (*GetStream[TOut], error) {
 	r := c.rst.R().
 		SetDoNotParseResponse(true).
 		SetHeader("Accept", "text/event-stream").
@@ -256,8 +256,8 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string, opts 
 	body := resp.RawBody()
 	scan := bufio.NewScanner(body)
 
-	stream := &GetStream[T]{
-		ch:   make(chan *T, 100),
+	stream := &GetStream[TOut]{
+		ch:   make(chan *TOut, 100),
 		body: body,
 	}
 
@@ -273,7 +273,7 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string, opts 
 			case "initial":
 				fallthrough
 			case "update":
-				obj := new(T)
+				obj := new(TOut)
 
 				err = event.decode(obj)
 				if err != nil {
@@ -285,7 +285,7 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string, opts 
 
 			case "notModified":
 				if opts != nil && opts.Prev != nil {
-					stream.writeEvent(opts.Prev.(*T))
+					stream.writeEvent(opts.Prev.(*TOut))
 				} else {
 					stream.writeError(fmt.Errorf("notModified without If-None-Match (%w)", ErrInvalidStreamEvent))
 					return
@@ -300,11 +300,11 @@ func StreamGetName[T any](ctx context.Context, c *Client, name, id string, opts 
 	return stream, nil
 }
 
-func StreamGet[T any](ctx context.Context, c *Client, id string, opts *GetOpts) (*GetStream[T], error) {
-	return StreamGetName[T](ctx, c, objName(new(T)), id, opts)
+func StreamGet[TOut any](ctx context.Context, c *Client, id string, opts *GetOpts) (*GetStream[TOut], error) {
+	return StreamGetName[TOut](ctx, c, objName(new(TOut)), id, opts)
 }
 
-func StreamListName[T any](ctx context.Context, c *Client, name string, opts *ListOpts) (*ListStream[T], error) {
+func StreamListName[TOut any](ctx context.Context, c *Client, name string, opts *ListOpts) (*ListStream[TOut], error) {
 	r := c.rst.R().
 		SetDoNotParseResponse(true).
 		SetHeader("Accept", "text/event-stream").
@@ -333,8 +333,8 @@ func StreamListName[T any](ctx context.Context, c *Client, name string, opts *Li
 	body := resp.RawBody()
 	scan := bufio.NewScanner(body)
 
-	stream := &ListStream[T]{
-		ch:   make(chan []*T, 100),
+	stream := &ListStream[TOut]{
+		ch:   make(chan []*TOut, 100),
 		body: body,
 	}
 
@@ -353,7 +353,7 @@ func StreamListName[T any](ctx context.Context, c *Client, name string, opts *Li
 	return stream, nil
 }
 
-func streamListFull[T any](scan *bufio.Scanner, stream *ListStream[T], opts *ListOpts) {
+func streamListFull[TOut any](scan *bufio.Scanner, stream *ListStream[TOut], opts *ListOpts) {
 	for {
 		event, err := readEvent(scan)
 		if err != nil {
@@ -363,7 +363,7 @@ func streamListFull[T any](scan *bufio.Scanner, stream *ListStream[T], opts *Lis
 
 		switch event.eventType {
 		case "list":
-			list := []*T{}
+			list := []*TOut{}
 
 			err = event.decode(&list)
 			if err != nil {
@@ -375,7 +375,7 @@ func streamListFull[T any](scan *bufio.Scanner, stream *ListStream[T], opts *Lis
 
 		case "notModified":
 			if opts != nil && opts.Prev != nil {
-				stream.writeEvent(opts.Prev.([]*T))
+				stream.writeEvent(opts.Prev.([]*TOut))
 			} else {
 				stream.writeError(fmt.Errorf("notModified without If-None-Match (%w)", ErrInvalidStreamEvent))
 				return
@@ -387,11 +387,11 @@ func streamListFull[T any](scan *bufio.Scanner, stream *ListStream[T], opts *Lis
 	}
 }
 
-func streamListDiff[T any](scan *bufio.Scanner, stream *ListStream[T], opts *ListOpts) {
-	list := []*T{}
+func streamListDiff[TOut any](scan *bufio.Scanner, stream *ListStream[TOut], opts *ListOpts) {
+	list := []*TOut{}
 
 	add := func(event *streamEvent) error {
-		obj := new(T)
+		obj := new(TOut)
 
 		err := event.decode(obj)
 		if err != nil {
@@ -458,7 +458,7 @@ func streamListDiff[T any](scan *bufio.Scanner, stream *ListStream[T], opts *Lis
 			stream.writeEvent(list)
 
 		case "notModified":
-			list = opts.Prev.([]*T)
+			list = opts.Prev.([]*TOut)
 			stream.writeEvent(list)
 
 		case "heartbeat":
@@ -467,8 +467,8 @@ func streamListDiff[T any](scan *bufio.Scanner, stream *ListStream[T], opts *Lis
 	}
 }
 
-func StreamList[T any](ctx context.Context, c *Client, opts *ListOpts) (*ListStream[T], error) {
-	return StreamListName[T](ctx, c, objName(new(T)), opts)
+func StreamList[TOut any](ctx context.Context, c *Client, opts *ListOpts) (*ListStream[TOut], error) {
+	return StreamListName[TOut](ctx, c, objName(new(TOut)), opts)
 }
 
 func objName[T any](obj *T) string {

@@ -116,7 +116,7 @@ func TestStreamListUpdate(t *testing.T) {
 	require.Len(t, s1, 1)
 	require.Equal(t, "foo", s1[0].Text)
 
-	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
+	_, err = patchyc.Update[testType](ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
 	require.NoError(t, err)
 
 	s2 := stream.Read()
@@ -203,7 +203,7 @@ func TestStreamListIgnoreIrrelevant(t *testing.T) {
 	require.Len(t, s1, 1)
 	require.Equal(t, "bar", s1[0].Text)
 
-	_, err = patchyc.Update(ctx, ta.pyc, created1.ID, &testType{Text: "zig"}, nil)
+	_, err = patchyc.Update[testType](ctx, ta.pyc, created1.ID, &testType{Text: "zig"}, nil)
 	require.NoError(t, err)
 
 	time.Sleep(1 * time.Second)
@@ -214,7 +214,7 @@ func TestStreamListIgnoreIrrelevant(t *testing.T) {
 	default:
 	}
 
-	_, err = patchyc.Update(ctx, ta.pyc, created1.ID, &testType{Text: "aaa"}, nil)
+	_, err = patchyc.Update[testType](ctx, ta.pyc, created1.ID, &testType{Text: "aaa"}, nil)
 	require.NoError(t, err)
 
 	s3 := stream.Read()
@@ -328,7 +328,7 @@ func TestStreamListDiffUpdate(t *testing.T) {
 	require.Equal(t, "foo", s1[0].Text)
 	require.EqualValues(t, 1, s1[0].Num)
 
-	_, err = patchyc.Update(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
+	_, err = patchyc.Update[testType](ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
 	require.NoError(t, err)
 
 	s2 := stream.Read()
@@ -360,7 +360,7 @@ func TestStreamListDiffReplace(t *testing.T) {
 	require.Equal(t, "foo", s1[0].Text)
 	require.EqualValues(t, 1, s1[0].Num)
 
-	_, err = patchyc.Replace(ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
+	_, err = patchyc.Replace[testType](ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
 	require.NoError(t, err)
 
 	s2 := stream.Read()
@@ -457,7 +457,7 @@ func TestStreamListDiffIgnoreIrrelevant(t *testing.T) {
 	require.Len(t, s1, 1)
 	require.Equal(t, "bar", s1[0].Text)
 
-	_, err = patchyc.Update(ctx, ta.pyc, created1.ID, &testType{Text: "zig"}, nil)
+	_, err = patchyc.Update[testType](ctx, ta.pyc, created1.ID, &testType{Text: "zig"}, nil)
 	require.NoError(t, err)
 
 	time.Sleep(1 * time.Second)
@@ -468,7 +468,7 @@ func TestStreamListDiffIgnoreIrrelevant(t *testing.T) {
 	default:
 	}
 
-	_, err = patchyc.Update(ctx, ta.pyc, created1.ID, &testType{Text: "aaa"}, nil)
+	_, err = patchyc.Update[testType](ctx, ta.pyc, created1.ID, &testType{Text: "aaa"}, nil)
 	require.NoError(t, err)
 
 	s3 := stream.Read()
