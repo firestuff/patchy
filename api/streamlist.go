@@ -117,6 +117,8 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 	first := true
 	previousETag := ""
 
+	// TODO: Communicate sort order to client
+
 	for {
 		select {
 		case <-ticker.C:
