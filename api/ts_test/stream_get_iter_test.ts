@@ -5,12 +5,12 @@ import { TestClient } from './util.js';
 test('stream get iter success', async () => {
 	const tc = new TestClient();
 
-	const create = await tc.client.createTestType({text: "foo"});
+	const create = await tc.client.createTestType({text: 'foo'});
 
 	const stream = await tc.client.streamGetTestType(create.id);
 
 	try {
-		await tc.client.updateTestType(create.id, {text: "bar"});
+		await tc.client.updateTestType(create.id, {text: 'bar'});
 
 		const objs = [];
 
@@ -23,8 +23,8 @@ test('stream get iter success', async () => {
 		}
 
 		assert.equal(objs.length, 2);
-		assert.equal(objs[0]!.text, "foo");
-		assert.equal(objs[1]!.text, "bar");
+		assert.equal(objs[0]!.text, 'foo');
+		assert.equal(objs[1]!.text, 'bar');
 	} finally {
 		await stream.close();
 	}

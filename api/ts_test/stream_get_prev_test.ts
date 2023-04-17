@@ -5,7 +5,7 @@ import { TestClient } from './util.js';
 test('stream get prev success', async () => {
 	const tc = new TestClient();
 
-	const create = await tc.client.createTestType({text: "foo"});
+	const create = await tc.client.createTestType({text: 'foo'});
 
 	// This is test-only
 	// Don't mutate objects and pass them back in GetOpts.prev
@@ -15,7 +15,7 @@ test('stream get prev success', async () => {
 
 	try {
 		const s1 = await stream.read();
-		assert.equal(s1!.text, "foo");
+		assert.equal(s1!.text, 'foo');
 		assert.equal(s1!.num, 5);
 	} finally {
 		await stream.close();

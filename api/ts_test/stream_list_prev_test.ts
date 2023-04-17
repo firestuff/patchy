@@ -5,8 +5,8 @@ import { TestClient } from './util.js';
 test('stream list prev success', async () => {
 	const tc = new TestClient();
 
-	await tc.client.createTestType({text: "foo"});
-	await tc.client.createTestType({text: "bar"});
+	await tc.client.createTestType({text: 'foo'});
+	await tc.client.createTestType({text: 'bar'});
 
 	const list = await tc.client.listTestType();
 	assert.equal(list!.length, 2);

@@ -5,12 +5,12 @@ import { TestClient } from './util.js';
 test('update success', async () => {
 	const tc = new TestClient();
 
-	const create = await tc.client.createTestType({text: "foo", num: 5});
+	const create = await tc.client.createTestType({text: 'foo', num: 5});
 	const get1 = await tc.client.getTestType(create.id);
-	await tc.client.updateTestType(create.id, {text: "bar"});
+	await tc.client.updateTestType(create.id, {text: 'bar'});
 
-	assert.rejects(tc.client.updateTestType(create.id, {text: "zig"}, {prev: get1}));
+	assert.rejects(tc.client.updateTestType(create.id, {text: 'zig'}, {prev: get1}));
 
 	const get2 = await tc.client.getTestType(create.id);
-	assert.equal(get2.text, "bar");
+	assert.equal(get2.text, 'bar');
 });
