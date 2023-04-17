@@ -387,7 +387,7 @@ class ClientCore {
 
 	//// Generic
 
-	async createName<TIn, TOut extends MetadataResponse>(name: string, obj: TIn): Promise<TOut> {
+	async createName<TOut extends MetadataResponse, TIn>(name: string, obj: TIn): Promise<TOut> {
 		return this.fetch(
 			'POST',
 			encodeURIComponent(name),
@@ -397,7 +397,7 @@ class ClientCore {
 		);
 	}
 
-	async deleteName<T extends MetadataResponse>(name: string, id: string, opts?: UpdateOpts<T> | null): Promise<void> {
+	async deleteName<TOut extends MetadataResponse>(name: string, id: string, opts?: UpdateOpts<TOut> | null): Promise<void> {
 		return this.fetch(
 			'DELETE',
 			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
@@ -454,7 +454,7 @@ class ClientCore {
 		);
 	}
 
-	async replaceName<TIn, TOut extends MetadataResponse>(name: string, id: string, obj: TIn, opts?: UpdateOpts<TOut> | null): Promise<TOut> {
+	async replaceName<TOut extends MetadataResponse, TIn>(name: string, id: string, obj: TIn, opts?: UpdateOpts<TOut> | null): Promise<TOut> {
 		return this.fetch(
 			'PUT',
 			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
@@ -465,7 +465,7 @@ class ClientCore {
 		);
 	}
 
-	async updateName<TIn, TOut extends MetadataResponse>(name: string, id: string, obj: TIn, opts?: UpdateOpts<TOut> | null): Promise<TOut> {
+	async updateName<TOut extends MetadataResponse, TIn>(name: string, id: string, obj: TIn, opts?: UpdateOpts<TOut> | null): Promise<TOut> {
 		return this.fetch(
 			'PATCH',
 			`${encodeURIComponent(name)}/${encodeURIComponent(id)}`,
@@ -695,7 +695,7 @@ export class Client extends ClientCore {
 	//// {{ $type.NameUpperCamel }}
 
 	async create{{ $type.NameUpperCamel }}(obj: {{ $type.TypeUpperCamel }}Request): Promise<{{ $type.TypeUpperCamel }}Response> {
-		return this.createName<{{ $type.TypeUpperCamel }}Request, {{ $type.TypeUpperCamel }}Response>('{{ $type.NameLower }}', obj);
+		return this.createName<{{ $type.TypeUpperCamel }}Response, {{ $type.TypeUpperCamel }}Request>('{{ $type.NameLower }}', obj);
 	}
 
 	async delete{{ $type.NameUpperCamel }}(id: string, opts?: UpdateOpts<{{ $type.TypeUpperCamel }}Response> | null): Promise<void> {
@@ -715,11 +715,11 @@ export class Client extends ClientCore {
 	}
 
 	async replace{{ $type.NameUpperCamel }}(id: string, obj: {{ $type.TypeUpperCamel }}Request, opts?: UpdateOpts<{{ $type.TypeUpperCamel }}Response> | null): Promise<{{ $type.TypeUpperCamel }}Response> {
-		return this.replaceName<{{ $type.TypeUpperCamel }}Request, {{ $type.TypeUpperCamel }}Response>('{{ $type.NameLower }}', id, obj, opts);
+		return this.replaceName<{{ $type.TypeUpperCamel }}Response, {{ $type.TypeUpperCamel }}Request>('{{ $type.NameLower }}', id, obj, opts);
 	}
 
 	async update{{ $type.NameUpperCamel }}(id: string, obj: {{ $type.TypeUpperCamel }}Request, opts?: UpdateOpts<{{ $type.TypeUpperCamel }}Response> | null): Promise<{{ $type.TypeUpperCamel }}Response> {
-		return this.updateName<{{ $type.TypeUpperCamel }}Request, {{ $type.TypeUpperCamel }}Response>('{{ $type.NameLower }}', id, obj, opts);
+		return this.updateName<{{ $type.TypeUpperCamel }}Response, {{ $type.TypeUpperCamel }}Request>('{{ $type.NameLower }}', id, obj, opts);
 	}
 
 	async streamGet{{ $type.NameUpperCamel }}(id: string, opts?: GetOpts<{{ $type.TypeUpperCamel }}Response> | null): Promise<GetStream<{{ $type.TypeUpperCamel }}Response>> {
