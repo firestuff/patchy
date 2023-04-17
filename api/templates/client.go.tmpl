@@ -18,6 +18,7 @@ import (
 	{{- if .UsesCivil }}
 	"cloud.google.com/go/civil"
 	{{- end }}
+	"github.com/firestuff/patchy/metadata"
 	"github.com/firestuff/patchy/patchyc"
 )
 
@@ -31,6 +32,7 @@ type (
 {{- range $type := .Types }}
 
 type {{ $type.TypeUpperCamel }} struct {
+	metadata.Metadata
 	{{- range $field := .Fields }}
 	{{- if $field.Optional }}
 	{{ padRight $field.NameUpperCamel $type.FieldNameMaxLen }} {{ padRight (printf "*%s" $field.GoType) (add $type.FieldGoTypeMaxLen 2) }} `json:"{{ $field.NameLower }}"`

@@ -7,14 +7,12 @@
 
 export interface {{ $type.TypeUpperCamel }}Request {
 	{{- range $field := .Fields }}
-	{{- if eq $field.NameLower "id" "etag" "generation" }} {{- continue }} {{- end }}
 	{{ padRight (printf "%s?:" $field.NameLowerCamel) (add $type.FieldNameMaxLen 2) }} {{ $field.TSType }};
 	{{- end }}
 }
 
 export interface {{ $type.TypeUpperCamel }}Response extends MetadataResponse {
 	{{- range $field := .Fields }}
-	{{- if eq $field.NameLower "id" "etag" "generation" }} {{- continue }} {{- end }}
 	{{- if $field.Optional }}
 	{{ padRight (printf "%s?:" $field.NameLowerCamel) (add $type.FieldNameMaxLen 2) }} {{ $field.TSType }};
 	{{- else }}

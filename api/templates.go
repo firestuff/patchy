@@ -120,6 +120,12 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 					return
 				}
 
+				if tt.NameLower != "" && (parts[0] == "id" ||
+					parts[0] == "etag" ||
+					parts[0] == "generation") {
+					return
+				}
+
 				tf := &templateField{
 					NameLower:      parts[0],
 					NameUpperCamel: upperFirst(parts[0]),
