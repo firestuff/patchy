@@ -3,23 +3,33 @@
 {{- end }}
 
 {{- range $type := .Types }}
+{{- if $type.NameLower }}
 
-export interface {{ $type.TypeUpperCamel }} {
+export interface {{ $type.TypeUpperCamel }}Request {
 	{{- range $field := .Fields }}
 	{{- if eq $field.NameLower "id" "etag" "generation" }} {{- continue }} {{- end }}
 	{{ padRight (printf "%s?:" $field.NameLowerCamel) (add $type.FieldNameMaxLen 2) }} {{ $field.TSType }};
 	{{- end }}
 }
-
-{{- if $type.NameLower }}
 
 export interface {{ $type.TypeUpperCamel }}Response extends MetadataResponse {
 	{{- range $field := .Fields }}
 	{{- if eq $field.NameLower "id" "etag" "generation" }} {{- continue }} {{- end }}
+	{{- if $field.Optional }}
 	{{ padRight (printf "%s?:" $field.NameLowerCamel) (add $type.FieldNameMaxLen 2) }} {{ $field.TSType }};
+	{{- else }}
+	{{ padRight (printf "%s:" $field.NameLowerCamel) (add $type.FieldNameMaxLen 2) }} {{ $field.TSType }};
+	{{- end }}
 	{{- end }}
 }
 
+{{- else }}
+
+export interface {{ $type.TypeUpperCamel }} {
+	{{- range $field := .Fields }}
+	{{ padRight (printf "%s?:" $field.NameLowerCamel) (add $type.FieldNameMaxLen 2) }} {{ $field.TSType }};
+	{{- end }}
+}
 {{- end }}
 {{- end }}
 
@@ -684,8 +694,8 @@ export class Client extends ClientCore {
 
 	//// {{ $type.NameUpperCamel }}
 
-	async create{{ $type.NameUpperCamel }}(obj: {{ $type.TypeUpperCamel }}): Promise<{{ $type.TypeUpperCamel }}Response> {
-		return this.createName<{{ $type.TypeUpperCamel }}, {{ $type.TypeUpperCamel }}Response>('{{ $type.NameLower }}', obj);
+	async create{{ $type.NameUpperCamel }}(obj: {{ $type.TypeUpperCamel }}Request): Promise<{{ $type.TypeUpperCamel }}Response> {
+		return this.createName<{{ $type.TypeUpperCamel }}Request, {{ $type.TypeUpperCamel }}Response>('{{ $type.NameLower }}', obj);
 	}
 
 	async delete{{ $type.NameUpperCamel }}(id: string, opts?: UpdateOpts<{{ $type.TypeUpperCamel }}Response> | null): Promise<void> {
@@ -704,12 +714,12 @@ export class Client extends ClientCore {
 		return this.listName<{{ $type.TypeUpperCamel }}Response>('{{ $type.NameLower }}', opts);
 	}
 
-	async replace{{ $type.NameUpperCamel }}(id: string, obj: {{ $type.TypeUpperCamel }}, opts?: UpdateOpts<{{ $type.TypeUpperCamel }}Response> | null): Promise<{{ $type.TypeUpperCamel }}Response> {
-		return this.replaceName<{{ $type.TypeUpperCamel }}, {{ $type.TypeUpperCamel }}Response>('{{ $type.NameLower }}', id, obj, opts);
+	async replace{{ $type.NameUpperCamel }}(id: string, obj: {{ $type.TypeUpperCamel }}Request, opts?: UpdateOpts<{{ $type.TypeUpperCamel }}Response> | null): Promise<{{ $type.TypeUpperCamel }}Response> {
+		return this.replaceName<{{ $type.TypeUpperCamel }}Request, {{ $type.TypeUpperCamel }}Response>('{{ $type.NameLower }}', id, obj, opts);
 	}
 
-	async update{{ $type.NameUpperCamel }}(id: string, obj: {{ $type.TypeUpperCamel }}, opts?: UpdateOpts<{{ $type.TypeUpperCamel }}Response> | null): Promise<{{ $type.TypeUpperCamel }}Response> {
-		return this.updateName<{{ $type.TypeUpperCamel }}, {{ $type.TypeUpperCamel }}Response>('{{ $type.NameLower }}', id, obj, opts);
+	async update{{ $type.NameUpperCamel }}(id: string, obj: {{ $type.TypeUpperCamel }}Request, opts?: UpdateOpts<{{ $type.TypeUpperCamel }}Response> | null): Promise<{{ $type.TypeUpperCamel }}Response> {
+		return this.updateName<{{ $type.TypeUpperCamel }}Request, {{ $type.TypeUpperCamel }}Response>('{{ $type.NameLower }}', id, obj, opts);
 	}
 
 	async streamGet{{ $type.NameUpperCamel }}(id: string, opts?: GetOpts<{{ $type.TypeUpperCamel }}Response> | null): Promise<GetStream<{{ $type.TypeUpperCamel }}Response>> {

@@ -32,7 +32,11 @@ type (
 
 type {{ $type.TypeUpperCamel }} struct {
 	{{- range $field := .Fields }}
-	{{ padRight $field.NameUpperCamel $type.FieldNameMaxLen }} {{ padRight $field.GoType $type.FieldGoTypeMaxLen }} `json:"{{ $field.NameLower }}"`
+	{{- if $field.Optional }}
+	{{ padRight $field.NameUpperCamel $type.FieldNameMaxLen }} {{ padRight (printf "*%s" $field.GoType) (add $type.FieldGoTypeMaxLen 2) }} `json:"{{ $field.NameLower }}"`
+	{{- else }}
+	{{ padRight $field.NameUpperCamel $type.FieldNameMaxLen }} {{ padRight $field.GoType (add $type.FieldGoTypeMaxLen 2) }} `json:"{{ $field.NameLower }}"`
+	{{- end }}
 	{{- end }}
 }
 {{- end }}

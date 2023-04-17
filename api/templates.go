@@ -58,6 +58,7 @@ type templateField struct {
 	NameLowerCamel string // "streetName"
 	GoType         string // "bool"
 	TSType         string // "boolean"
+	Optional       bool
 }
 
 func (api *API) registerTemplates() {
@@ -125,6 +126,7 @@ func (api *API) writeTemplate(name string) func(http.ResponseWriter, *http.Reque
 					NameLowerCamel: lowerFirst(parts[0]),
 					GoType:         goType(field.Type),
 					TSType:         tsType(field.Type),
+					Optional:       field.Type.Kind() == reflect.Pointer,
 				}
 
 				if strings.EqualFold(tf.NameUpperCamel, field.Name) {
@@ -197,11 +199,7 @@ func goType(t reflect.Type) string {
 	elemType := path.MaybeIndirectType(t)
 
 	if elemType.Kind() != reflect.Struct || elemType == path.TimeTimeType || elemType == path.CivilDateType {
-		return t.String()
-	}
-
-	if t.Kind() == reflect.Pointer {
-		return fmt.Sprintf("*%s", upperFirst(elemType.Name()))
+		return elemType.String()
 	}
 
 	return upperFirst(elemType.Name())
