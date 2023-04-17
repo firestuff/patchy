@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { TestClient } from './util.js';
 
-test('stream list success', async () => {
+test('stream list full success', async () => {
 	const tc = new TestClient();
 
 	await tc.client.createTestType({text: 'foo'});
