@@ -51,7 +51,7 @@ func (api *API) streamGetWrite(ctx context.Context, w http.ResponseWriter, ch <-
 
 		case obj, ok := <-ch:
 			if !ok {
-				err := writeEvent(w, "delete", nil, emptyEvent, true)
+				err := writeEvent(w, "delete", nil, nil, true)
 				if err != nil {
 					return jsrest.Errorf(jsrest.ErrInternalServerError, "write delete failed (%w)", err)
 				}
@@ -70,7 +70,7 @@ func (api *API) streamGetWrite(ctx context.Context, w http.ResponseWriter, ch <-
 
 				if httpheader.MatchWeak(opts.IfNoneMatch, httpheader.EntityTag{Opaque: md.ETag}) ||
 					httpheader.MatchWeak(opts.IfNoneMatch, httpheader.EntityTag{Opaque: gen}) {
-					err := writeEvent(w, "notModified", map[string]string{"id": md.ETag}, emptyEvent, true)
+					err := writeEvent(w, "notModified", map[string]string{"id": md.ETag}, nil, true)
 					if err != nil {
 						return jsrest.Errorf(jsrest.ErrInternalServerError, "write update failed (%w)", err)
 					}
@@ -87,7 +87,7 @@ func (api *API) streamGetWrite(ctx context.Context, w http.ResponseWriter, ch <-
 			}
 
 		case <-ticker.C:
-			err := writeEvent(w, "heartbeat", nil, emptyEvent, true)
+			err := writeEvent(w, "heartbeat", nil, nil, true)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "write heartbeat failed (%w)", err)
 			}

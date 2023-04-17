@@ -66,7 +66,7 @@ func (api *API) streamListFull(ctx context.Context, cfg *config, w http.Response
 			return nil
 
 		case <-ticker.C:
-			err = writeEvent(w, "heartbeat", nil, emptyEvent, true)
+			err = writeEvent(w, "heartbeat", nil, nil, true)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "write heartbeat failed (%w)", err)
 			}
@@ -81,7 +81,7 @@ func (api *API) streamListFull(ctx context.Context, cfg *config, w http.Response
 				first = false
 
 				if httpheader.MatchWeak(opts.IfNoneMatch, httpheader.EntityTag{Opaque: etag}) {
-					err = writeEvent(w, "notModified", map[string]string{"id": etag}, emptyEvent, true)
+					err = writeEvent(w, "notModified", map[string]string{"id": etag}, nil, true)
 					if err != nil {
 						return jsrest.Errorf(jsrest.ErrInternalServerError, "write list failed (%w)", err)
 					}
@@ -126,7 +126,7 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 	for {
 		select {
 		case <-ticker.C:
-			err = writeEvent(w, "heartbeat", nil, emptyEvent, true)
+			err = writeEvent(w, "heartbeat", nil, nil, true)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "write heartbeat failed (%w)", err)
 			}
@@ -143,7 +143,7 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 			}
 
 			if first && httpheader.MatchWeak(opts.IfNoneMatch, httpheader.EntityTag{Opaque: etag}) {
-				err = writeEvent(w, "notModified", map[string]string{"id": etag}, emptyEvent, true)
+				err = writeEvent(w, "notModified", map[string]string{"id": etag}, nil, true)
 				if err != nil {
 					return jsrest.Errorf(jsrest.ErrInternalServerError, "write list failed (%w)", err)
 				}
@@ -207,7 +207,7 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 
 			last = cur
 
-			err = writeEvent(w, "sync", map[string]string{"id": etag}, emptyEvent, true)
+			err = writeEvent(w, "sync", map[string]string{"id": etag}, nil, true)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "write sync failed (%w)", err)
 			}

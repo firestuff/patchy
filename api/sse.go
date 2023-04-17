@@ -9,10 +9,6 @@ import (
 	"github.com/firestuff/patchy/jsrest"
 )
 
-type EmptyEventType map[string]any
-
-var emptyEvent = EmptyEventType{}
-
 func writeEvent(w http.ResponseWriter, event string, params map[string]string, obj any, flush bool) error {
 	buf := &bytes.Buffer{}
 
