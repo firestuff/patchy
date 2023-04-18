@@ -24,13 +24,20 @@ var (
 )
 
 func Get(obj any, path string) (any, error) {
-	parts := strings.Split(path, ".")
-	v := reflect.ValueOf(obj)
+	v, err := GetValue(reflect.ValueOf(obj), path)
+	if err != nil {
+		return nil, err
+	}
 
+	return v.Interface(), nil
+}
+
+func GetValue(v reflect.Value, path string) (reflect.Value, error) {
+	parts := strings.Split(path, ".")
 	return getRecursive(v, parts, []string{})
 }
 
-func getRecursive(v reflect.Value, parts []string, prev []string) (any, error) {
+func getRecursive(v reflect.Value, parts []string, prev []string) (reflect.Value, error) {
 	if v.Kind() == reflect.Pointer {
 		if v.IsNil() {
 			v = reflect.Zero(v.Type().Elem())
@@ -40,18 +47,18 @@ func getRecursive(v reflect.Value, parts []string, prev []string) (any, error) {
 	}
 
 	if len(parts) == 0 {
-		return v.Interface(), nil
+		return v, nil
 	}
 
 	if v.Kind() != reflect.Struct {
-		return nil, jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", strings.Join(prev, "."), ErrNotAStruct)
+		return reflect.Value{}, jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", strings.Join(prev, "."), ErrNotAStruct)
 	}
 
 	part := parts[0]
 
 	sub, found := getField(v, part)
 	if !found {
-		return nil, jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", errorPath(prev, part), ErrUnknownFieldName)
+		return reflect.Value{}, jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", errorPath(prev, part), ErrUnknownFieldName)
 	}
 
 	newPrev := []string{}
@@ -71,9 +78,11 @@ func getField(v reflect.Value, name string) (reflect.Value, bool) {
 }
 
 func Set(obj any, path string, val string) error {
-	parts := strings.Split(path, ".")
-	v := reflect.ValueOf(obj)
+	return SetValue(reflect.ValueOf(obj), path, val)
+}
 
+func SetValue(v reflect.Value, path string, val string) error {
+	parts := strings.Split(path, ".")
 	return setRecursive(v, parts, []string{}, val)
 }
 
