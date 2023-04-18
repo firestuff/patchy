@@ -12,9 +12,12 @@ import (
 func TestTSNode(t *testing.T) {
 	t.Parallel()
 
-	buildTS(t, "ts_test/node")
+	dir := buildTS(t)
+	t.Cleanup(func() {
+		os.RemoveAll(dir)
+	})
 
-	paths, err := filepath.Glob("ts_test/node/*_test.js")
+	paths, err := filepath.Glob(filepath.Join(dir, "*.js"))
 	require.NoError(t, err)
 
 	for _, path := range paths {
@@ -40,26 +43,26 @@ func testPath(t *testing.T, path string) {
 		"BASE_URL":         ta.baseURL,
 	}
 
-	runNoError(t, "ts_test/node", env, "node", "--test", "--enable-source-maps", filepath.Base(path))
-
-	require.NoError(t, os.Remove(path))
+	runNoError(t, filepath.Dir(path), env, "node", "--test", "--enable-source-maps", filepath.Base(path))
 }
 
-func buildTS(t *testing.T, path string) {
-	ta := newTestAPI(t)
+func buildTS(t *testing.T) string {
+	dir, err := os.MkdirTemp("", "ts_test")
+	require.NoError(t, err)
 
-	t.Cleanup(func() {
-		ta.shutdown(t)
+	paths, err := filepath.Glob("ts_test/*")
+	require.NoError(t, err)
 
-		paths, err := filepath.Glob(filepath.Join(path, "*.js"))
+	for _, path := range paths {
+		abs, err := filepath.Abs(path)
 		require.NoError(t, err)
 
-		for _, path := range paths {
-			os.Remove(path)
-		}
+		err = os.Symlink(abs, filepath.Join(dir, filepath.Base(path)))
+		require.NoError(t, err)
+	}
 
-		os.Remove(filepath.Join(path, "client.ts"))
-	})
+	ta := newTestAPI(t)
+	defer ta.shutdown(t)
 
 	ctx := context.Background()
 
@@ -67,8 +70,10 @@ func buildTS(t *testing.T, path string) {
 	require.NoError(t, err)
 	require.NotEmpty(t, tc)
 
-	err = os.WriteFile(filepath.Join(path, "client.ts"), []byte(tc), 0o600)
+	err = os.WriteFile(filepath.Join(dir, "client.ts"), []byte(tc), 0o600)
 	require.NoError(t, err)
 
-	runNoError(t, path, nil, "tsc", "--pretty")
+	runNoError(t, dir, nil, "tsc", "--pretty")
+
+	return dir
 }

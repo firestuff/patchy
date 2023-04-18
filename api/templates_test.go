@@ -66,7 +66,7 @@ func runNoError(t *testing.T, dir string, env map[string]string, name string, ar
 	}
 
 	out, err := cmd.Output()
-	t.Logf("cmd='%s'\nargs=%v\nout='%s'\nerr='%s'", name, arg, string(out), getStderr(err))
+	t.Logf("dir='%s'\n,cmd='%s'\nargs=%v\nout='%s'\nerr='%s'", dir, name, arg, string(out), getStderr(err))
 	require.NoError(t, err)
 }
 

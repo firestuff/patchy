@@ -376,7 +376,7 @@ class ClientCore {
 	protected headers: Headers = new Headers();
 
 	constructor(baseURL: string) {
-		this.baseURL = new URL(baseURL, window?.location.href);
+		this.baseURL = new URL(baseURL, globalThis?.location?.href);
 	}
 
 	async debugInfo(): Promise<DebugInfo> {
