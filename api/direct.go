@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/firestuff/patchy/jsrest"
+	"github.com/firestuff/patchy/path"
 )
 
 func CreateName[T any](ctx context.Context, api *API, name string, obj *T) (*T, error) {
@@ -139,7 +140,12 @@ func UpdateName[T any](ctx context.Context, api *API, name, id string, obj *T, o
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
 	}
 
-	updated, err := api.updateInt(ctx, cfg, id, obj, opts)
+	patch, err := path.ToMap(obj)
+	if err != nil {
+		return nil, jsrest.Errorf(jsrest.ErrBadRequest, "invalid patch content (%w)", err)
+	}
+
+	updated, err := api.updateInt(ctx, cfg, id, patch, opts)
 	if err != nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "update failed (%w)", err)
 	}

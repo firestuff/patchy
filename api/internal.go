@@ -177,7 +177,7 @@ func (api *API) replaceInt(ctx context.Context, cfg *config, id string, replace 
 	return replace, nil
 }
 
-func (api *API) updateInt(ctx context.Context, cfg *config, id string, patch any, opts *UpdateOpts) (any, error) {
+func (api *API) updateInt(ctx context.Context, cfg *config, id string, patch map[string]any, opts *UpdateOpts) (any, error) {
 	if opts == nil {
 		opts = &UpdateOpts{}
 	}
@@ -186,7 +186,9 @@ func (api *API) updateInt(ctx context.Context, cfg *config, id string, patch any
 	defer cfg.unlock(id)
 
 	// Metadata is immutable or server-owned
-	metadata.ClearMetadata(patch)
+	delete(patch, "id")
+	delete(patch, "etag")
+	delete(patch, "generation")
 
 	obj, err := api.sb.Read(ctx, cfg.typeName, id, cfg.factory)
 	if err != nil {
@@ -207,8 +209,11 @@ func (api *API) updateInt(ctx context.Context, cfg *config, id string, patch any
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "clone failed (%w)", err)
 	}
 
-	// TODO: Take a map[string]any as the merge source to make non-pointer fields optional
-	path.Merge(obj, patch)
+	err = path.MergeMap(obj, patch)
+	if err != nil {
+		return nil, jsrest.Errorf(jsrest.ErrBadRequest, "merge failed (%w)", err)
+	}
+
 	metadata.GetMetadata(obj).Generation++
 
 	obj, err = cfg.checkWrite(ctx, obj, prev, api)

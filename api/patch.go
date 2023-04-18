@@ -7,10 +7,10 @@ import (
 )
 
 func (api *API) patch(cfg *config, id string, w http.ResponseWriter, r *http.Request) error {
-	patch := cfg.factory()
+	patch := map[string]any{}
 	opts := parseUpdateOpts(r)
 
-	err := jsrest.Read(r, patch)
+	err := jsrest.Read(r, &patch)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "read request failed (%w)", err)
 	}
