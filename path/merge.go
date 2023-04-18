@@ -31,14 +31,14 @@ func MergeValue(to, from reflect.Value) {
 }
 
 func MergeMap(to any, from map[string]any) error {
-	m, err := toMap(to)
+	m, err := ToMap(to)
 	if err != nil {
 		return err
 	}
 
 	MergeMaps(m, from)
 
-	return fromMap(to, m)
+	return FromMap(to, m)
 }
 
 func MergeMaps(to map[string]any, from map[string]any) {
