@@ -1,2 +1,4 @@
 cover.out
 cover.html
+api/ts_test/browser/client.ts
+api/ts_test/browser/*.js

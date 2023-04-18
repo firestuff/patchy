@@ -170,6 +170,18 @@ func (api *API) CheckSafe() {
 	}
 }
 
+func (api *API) Handler(method, path string, handler http.Handler) {
+	api.router.Handler(method, path, handler)
+}
+
+func (api *API) HandlerFunc(method, path string, handler http.HandlerFunc) {
+	api.router.HandlerFunc(method, path, handler)
+}
+
+func (api *API) ServeFiles(path string, fs http.FileSystem) {
+	api.router.ServeFiles(path, fs)
+}
+
 func (api *API) ListenSelfCert(bind string) error {
 	tlsConfig, err := selfcert.NewTLSConfigFromHostPort(bind)
 	if err != nil {
