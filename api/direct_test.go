@@ -83,7 +83,7 @@ func TestDirectUpdate(t *testing.T) {
 	require.Equal(t, "foo", get.Text)
 	require.EqualValues(t, 1, get.Num)
 
-	update, err := api.Update(ctx, ta.api, create.ID, &testType{Text: "bar"}, nil)
+	update, err := api.UpdateName[testType](ctx, ta.api, "testtype", create.ID, &testTypeRequest{Text: patchyc.P("bar")}, nil)
 	require.NoError(t, err)
 	require.Equal(t, create.ID, update.ID)
 	require.Equal(t, "bar", update.Text)
@@ -106,7 +106,7 @@ func TestDirectUpdateInvalidType(t *testing.T) {
 	create, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = api.UpdateName(ctx, ta.api, "doesnotexist", create.ID, &testType{Text: "bar"}, nil)
+	_, err = api.UpdateName[testType](ctx, ta.api, "doesnotexist", create.ID, &testType{Text: "bar"}, nil)
 	require.Error(t, err)
 }
 
@@ -367,7 +367,7 @@ func TestDirectStreamGetUpdate(t *testing.T) {
 	require.NotNil(t, s1, stream.Error())
 	require.Equal(t, "foo", s1.Text)
 
-	_, err = api.Update(ctx, ta.api, create.ID, &testType{Text: "bar"}, nil)
+	_, err = api.Update[testType](ctx, ta.api, create.ID, &testType{Text: "bar"}, nil)
 	require.NoError(t, err)
 
 	s2 := stream.Read()

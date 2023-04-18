@@ -23,6 +23,31 @@ type testAPI struct {
 	pyc     *patchyc.Client
 }
 
+type testType struct {
+	api.Metadata
+	Text string `json:"text"`
+	Num  int64  `json:"num"`
+}
+
+type testTypeRequest struct {
+	Text *string `json:"text"`
+	Num  *int64  `json:"num"`
+}
+
+type testType2 struct {
+	api.Metadata
+	Text string `json:"text"`
+}
+
+type testType3 struct {
+	api.Metadata
+	Text string `json:"text"`
+}
+
+type missingMetadata struct {
+	Text string `json:"text"`
+}
+
 func newTestAPI(t *testing.T) *testAPI {
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
@@ -71,26 +96,6 @@ func (ta *testAPI) shutdown(t *testing.T) {
 	require.NoError(t, err)
 
 	ta.api.Close()
-}
-
-type testType struct {
-	api.Metadata
-	Text string `json:"text"`
-	Num  int64  `json:"num"`
-}
-
-type testType2 struct {
-	api.Metadata
-	Text string `json:"text"`
-}
-
-type testType3 struct {
-	api.Metadata
-	Text string `json:"text"`
-}
-
-type missingMetadata struct {
-	Text string `json:"text"`
 }
 
 func (tt *testType) MayRead(context.Context, *api.API) error {

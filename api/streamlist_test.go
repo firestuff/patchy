@@ -328,7 +328,7 @@ func TestStreamListDiffUpdate(t *testing.T) {
 	require.Equal(t, "foo", s1[0].Text)
 	require.EqualValues(t, 1, s1[0].Num)
 
-	_, err = patchyc.Update[testType](ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
+	_, err = patchyc.UpdateName[testType](ctx, ta.pyc, "testtype", created.ID, &testTypeRequest{Text: patchyc.P("bar")}, nil)
 	require.NoError(t, err)
 
 	s2 := stream.Read()

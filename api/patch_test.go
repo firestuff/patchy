@@ -20,7 +20,7 @@ func TestUpdate(t *testing.T) {
 	created, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo", Num: 1})
 	require.NoError(t, err)
 
-	updated, err := patchyc.Update[testType](ctx, ta.pyc, created.ID, &testType{Text: "bar"}, nil)
+	updated, err := patchyc.UpdateName[testType](ctx, ta.pyc, "testtype", created.ID, &testTypeRequest{Text: patchyc.P("bar")}, nil)
 	require.NoError(t, err)
 	require.NotNil(t, updated)
 	require.Equal(t, "bar", updated.Text)

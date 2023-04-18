@@ -134,7 +134,7 @@ func Replace[T any](ctx context.Context, api *API, id string, obj *T, opts *Upda
 	return ReplaceName[T](ctx, api, objName(obj), id, obj, opts)
 }
 
-func UpdateName[T any](ctx context.Context, api *API, name, id string, obj *T, opts *UpdateOpts) (*T, error) {
+func UpdateName[TOut, TIn any](ctx context.Context, api *API, name, id string, obj *TIn, opts *UpdateOpts) (*TOut, error) {
 	cfg := api.registry[name]
 	if cfg == nil {
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "unknown type: %s", name)
@@ -150,11 +150,11 @@ func UpdateName[T any](ctx context.Context, api *API, name, id string, obj *T, o
 		return nil, jsrest.Errorf(jsrest.ErrInternalServerError, "update failed (%w)", err)
 	}
 
-	return updated.(*T), nil
+	return updated.(*TOut), nil
 }
 
-func Update[T any](ctx context.Context, api *API, id string, obj *T, opts *UpdateOpts) (*T, error) {
-	return UpdateName[T](ctx, api, objName(obj), id, obj, opts)
+func Update[TOut, TIn any](ctx context.Context, api *API, id string, obj *TIn, opts *UpdateOpts) (*TOut, error) {
+	return UpdateName[TOut, TIn](ctx, api, objName(obj), id, obj, opts)
 }
 
 func StreamGetName[T any](ctx context.Context, api *API, name, id string) (*GetStream[T], error) {
