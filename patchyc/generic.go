@@ -41,7 +41,7 @@ func CreateName[TOut, TIn any](ctx context.Context, c *Client, name string, obj 
 }
 
 func Create[TOut, TIn any](ctx context.Context, c *Client, obj *TIn) (*TOut, error) {
-	return CreateName[TOut, TIn](ctx, c, objName(obj), obj)
+	return CreateName[TOut, TIn](ctx, c, objName(new(TOut)), obj)
 }
 
 func DeleteName[TOut any](ctx context.Context, c *Client, name, id string, opts *UpdateOpts) error {
@@ -200,7 +200,7 @@ func ReplaceName[TOut, TIn any](ctx context.Context, c *Client, name, id string,
 }
 
 func Replace[TOut, TIn any](ctx context.Context, c *Client, id string, obj *TIn, opts *UpdateOpts) (*TOut, error) {
-	return ReplaceName[TOut, TIn](ctx, c, objName(obj), id, obj, opts)
+	return ReplaceName[TOut, TIn](ctx, c, objName(new(TOut)), id, obj, opts)
 }
 
 func UpdateName[TOut, TIn any](ctx context.Context, c *Client, name, id string, obj *TIn, opts *UpdateOpts) (*TOut, error) {
@@ -230,7 +230,7 @@ func UpdateName[TOut, TIn any](ctx context.Context, c *Client, name, id string, 
 }
 
 func Update[TOut, TIn any](ctx context.Context, c *Client, id string, obj *TIn, opts *UpdateOpts) (*TOut, error) {
-	return UpdateName[TOut, TIn](ctx, c, objName(obj), id, obj, opts)
+	return UpdateName[TOut, TIn](ctx, c, objName(new(TOut)), id, obj, opts)
 }
 
 func StreamGetName[TOut any](ctx context.Context, c *Client, name, id string, opts *GetOpts) (*GetStream[TOut], error) {

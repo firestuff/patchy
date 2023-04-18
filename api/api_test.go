@@ -129,7 +129,7 @@ func TestFileStoreAPI(t *testing.T) {
 
 	ctx := context.Background()
 
-	created, err := api.Create(ctx, a, &testType{Text: "foo"})
+	created, err := api.Create[testType](ctx, a, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	get, err := api.Get[testType](ctx, a, created.ID, nil)

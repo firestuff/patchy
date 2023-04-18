@@ -30,7 +30,7 @@ func TestDirectGetInvalidType(t *testing.T) {
 
 	ctx := context.Background()
 
-	create, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
+	create, err := api.Create[testType](ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	_, err = api.GetName[testType](ctx, ta.api, "doesnotexist", create.ID, nil)
@@ -45,7 +45,7 @@ func TestDirectCreateGet(t *testing.T) {
 
 	ctx := context.Background()
 
-	create, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
+	create, err := api.Create[testType](ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 	require.Equal(t, "foo", create.Text)
 
@@ -63,7 +63,7 @@ func TestDirectCreateInvalidType(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := api.CreateName(ctx, ta.api, "doesnotexist", &testType{Text: "foo"})
+	_, err := api.CreateName[testType](ctx, ta.api, "doesnotexist", &testType{Text: "foo"})
 	require.Error(t, err)
 }
 
@@ -75,7 +75,7 @@ func TestDirectUpdate(t *testing.T) {
 
 	ctx := context.Background()
 
-	create, err := api.Create(ctx, ta.api, &testType{Text: "foo", Num: 1})
+	create, err := api.Create[testType](ctx, ta.api, &testType{Text: "foo", Num: 1})
 	require.NoError(t, err)
 
 	get, err := api.Get[testType](ctx, ta.api, create.ID, nil)
@@ -83,7 +83,7 @@ func TestDirectUpdate(t *testing.T) {
 	require.Equal(t, "foo", get.Text)
 	require.EqualValues(t, 1, get.Num)
 
-	update, err := api.UpdateName[testType](ctx, ta.api, "testtype", create.ID, &testTypeRequest{Text: patchyc.P("bar")}, nil)
+	update, err := api.Update[testType](ctx, ta.api, create.ID, &testTypeRequest{Text: patchyc.P("bar")}, nil)
 	require.NoError(t, err)
 	require.Equal(t, create.ID, update.ID)
 	require.Equal(t, "bar", update.Text)
@@ -103,7 +103,7 @@ func TestDirectUpdateInvalidType(t *testing.T) {
 
 	ctx := context.Background()
 
-	create, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
+	create, err := api.Create[testType](ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	_, err = api.UpdateName[testType](ctx, ta.api, "doesnotexist", create.ID, &testType{Text: "bar"}, nil)
@@ -118,7 +118,7 @@ func TestDirectReplace(t *testing.T) {
 
 	ctx := context.Background()
 
-	create, err := api.Create(ctx, ta.api, &testType{Text: "foo", Num: 1})
+	create, err := api.Create[testType](ctx, ta.api, &testType{Text: "foo", Num: 1})
 	require.NoError(t, err)
 
 	get, err := api.Get[testType](ctx, ta.api, create.ID, nil)
@@ -126,7 +126,7 @@ func TestDirectReplace(t *testing.T) {
 	require.Equal(t, "foo", get.Text)
 	require.EqualValues(t, 1, get.Num)
 
-	replace, err := api.Replace(ctx, ta.api, create.ID, &testType{Text: "bar"}, nil)
+	replace, err := api.Replace[testType](ctx, ta.api, create.ID, &testType{Text: "bar"}, nil)
 	require.NoError(t, err)
 	require.Equal(t, create.ID, replace.ID)
 	require.Equal(t, "bar", replace.Text)
@@ -146,7 +146,7 @@ func TestDirectReplaceInvalidType(t *testing.T) {
 
 	ctx := context.Background()
 
-	create, err := api.Create(ctx, ta.api, &testType{Text: "foo", Num: 1})
+	create, err := api.Create[testType](ctx, ta.api, &testType{Text: "foo", Num: 1})
 	require.NoError(t, err)
 
 	get, err := api.Get[testType](ctx, ta.api, create.ID, nil)
@@ -154,7 +154,7 @@ func TestDirectReplaceInvalidType(t *testing.T) {
 	require.Equal(t, "foo", get.Text)
 	require.EqualValues(t, 1, get.Num)
 
-	_, err = api.ReplaceName(ctx, ta.api, "doesnotexist", create.ID, &testType{Text: "bar"}, nil)
+	_, err = api.ReplaceName[testType](ctx, ta.api, "doesnotexist", create.ID, &testType{Text: "bar"}, nil)
 	require.Error(t, err)
 }
 
@@ -166,7 +166,7 @@ func TestDirectDelete(t *testing.T) {
 
 	ctx := context.Background()
 
-	create, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
+	create, err := api.Create[testType](ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	_, err = api.Get[testType](ctx, ta.api, create.ID, nil)
@@ -188,7 +188,7 @@ func TestDirectDeleteInvalidType(t *testing.T) {
 
 	ctx := context.Background()
 
-	create, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
+	create, err := api.Create[testType](ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	err = api.DeleteName[testType](ctx, ta.api, "doesnotexist", create.ID, nil)
@@ -215,10 +215,10 @@ func TestDirectList(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
+	_, err := api.Create[testType](ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = api.Create(ctx, ta.api, &testType{Text: "bar"})
+	_, err = api.Create[testType](ctx, ta.api, &testType{Text: "bar"})
 	require.NoError(t, err)
 
 	list, err := api.List[testType](ctx, ta.api, nil)
@@ -235,7 +235,7 @@ func TestDirectListInvalidType(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
+	_, err := api.Create[testType](ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	_, err = api.ListName[testType](ctx, ta.api, "doesnotexist", nil)
@@ -250,7 +250,7 @@ func TestDirectFind(t *testing.T) {
 
 	ctx := context.Background()
 
-	create, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
+	create, err := api.Create[testType](ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	find, err := api.Find[testType](ctx, ta.api, create.ID[:4])
@@ -267,7 +267,7 @@ func TestDirectFindNotExist(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
+	_, err := api.Create[testType](ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	find, err := api.Find[testType](ctx, ta.api, "doesnotexist")
@@ -283,10 +283,10 @@ func TestDirectFindMultiple(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
+	_, err := api.Create[testType](ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = api.Create(ctx, ta.api, &testType{Text: "bar"})
+	_, err = api.Create[testType](ctx, ta.api, &testType{Text: "bar"})
 	require.NoError(t, err)
 
 	find, err := api.Find[testType](ctx, ta.api, "")
@@ -317,7 +317,7 @@ func TestDirectStreamGetInvalidType(t *testing.T) {
 
 	ctx := context.Background()
 
-	create, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
+	create, err := api.Create[testType](ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	_, err = api.StreamGetName[testType](ctx, ta.api, "doesnotexist", create.ID)
@@ -332,7 +332,7 @@ func TestDirectStreamGetInitial(t *testing.T) {
 
 	ctx := context.Background()
 
-	create, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
+	create, err := api.Create[testType](ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream, err := api.StreamGet[testType](ctx, ta.api, create.ID)
@@ -354,7 +354,7 @@ func TestDirectStreamGetUpdate(t *testing.T) {
 
 	ctx := context.Background()
 
-	create, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
+	create, err := api.Create[testType](ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream, err := api.StreamGet[testType](ctx, ta.api, create.ID)
@@ -396,10 +396,10 @@ func TestDirectStreamListInitial(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
+	_, err := api.Create[testType](ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = api.Create(ctx, ta.api, &testType{Text: "bar"})
+	_, err = api.Create[testType](ctx, ta.api, &testType{Text: "bar"})
 	require.NoError(t, err)
 
 	stream, err := api.StreamList[testType](ctx, ta.api, nil)
@@ -430,7 +430,7 @@ func TestDirectStreamListUpdate(t *testing.T) {
 	require.NotNil(t, s1, stream.Error())
 	require.Len(t, s1, 0)
 
-	_, err = api.Create(ctx, ta.api, &testType{Text: "foo"})
+	_, err = api.Create[testType](ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	s2 := stream.Read()
@@ -447,7 +447,7 @@ func TestDirectStreamListDelete(t *testing.T) {
 
 	ctx := context.Background()
 
-	created, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
+	created, err := api.Create[testType](ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
 	stream, err := api.StreamList[testType](ctx, ta.api, nil)
@@ -476,10 +476,10 @@ func TestDirectStreamListOpts(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := api.Create(ctx, ta.api, &testType{Text: "foo"})
+	_, err := api.Create[testType](ctx, ta.api, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	_, err = api.Create(ctx, ta.api, &testType{Text: "bar"})
+	_, err = api.Create[testType](ctx, ta.api, &testType{Text: "bar"})
 	require.NoError(t, err)
 
 	stream, err := api.StreamList[testType](ctx, ta.api, &patchyc.ListOpts{Limit: 1})
