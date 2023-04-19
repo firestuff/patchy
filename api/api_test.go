@@ -108,6 +108,9 @@ func newTestAPIInt(t *testing.T, a *api.API, scheme string) *testAPI {
 			t.Errorf("ERROR [%s] %s", name, r.Form.Get("details"))
 			ret.testError++
 			ret.testDone <- name
+
+		case "log":
+			t.Logf("  LOG [%s] %s", name, r.Form.Get("details"))
 		}
 	})
 

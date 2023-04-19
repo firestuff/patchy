@@ -11,6 +11,8 @@ export class T {
 		this.client = new client.Client(util.getBaseURL());
 		this.baseURL = new URL(util.getBaseURL(), globalThis?.location?.href);
 		this.name = name;
+
+		this.log(`getBaseURL()=${util.getBaseURL()}`);
 	}
 
 	async log(msg: string) {
