@@ -247,6 +247,19 @@ func (api *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *API) serveHTTP(w http.ResponseWriter, r *http.Request) error {
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Expose-Headers", "*")
+	w.Header().Set("Timing-Allow-Origin", "*")
+
+	if r.Method == "OPTIONS" {
+		w.Header().Set("Access-Control-Allow-Methods", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "*")
+		w.Header().Set("Access-Control-Max-Age", "86400")
+		w.WriteHeader(http.StatusNoContent)
+		return nil
+	}
+
 	err := r.ParseForm()
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrUnauthorized, "parse form failed (%w)", err)
@@ -281,10 +294,6 @@ func (api *API) serveHTTP(w http.ResponseWriter, r *http.Request) error {
 			return jsrest.Errorf(jsrest.ErrInternalServerError, "request hook failed (%w)", err)
 		}
 	}
-
-	// TODO: Gate CORs with some kind of flag
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Cache-Control", "no-store")
 
 	api.potency.ServeHTTP(w, r)
 
