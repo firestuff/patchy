@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -12,12 +13,12 @@ import (
 func TestTSNode(t *testing.T) {
 	t.Parallel()
 
-	dir := buildTS(t)
+	dir := buildTS(t, "node")
 	t.Cleanup(func() {
 		os.RemoveAll(dir)
 	})
 
-	paths, err := filepath.Glob(filepath.Join(dir, "*.js"))
+	paths, err := filepath.Glob(filepath.Join(dir, "*_test.js"))
 	require.NoError(t, err)
 
 	for _, path := range paths {
@@ -38,15 +39,16 @@ func testPath(t *testing.T, path string) {
 	defer ta.shutdown(t)
 
 	env := map[string]string{
-		"NODE_DEBUG":       os.Getenv("NODE_DEBUG"),
-		"NODE_NO_WARNINGS": "1",
-		"BASE_URL":         ta.baseURL,
+		"NODE_DEBUG":                   os.Getenv("NODE_DEBUG"),
+		"NODE_NO_WARNINGS":             "1",
+		"NODE_TLS_REJECT_UNAUTHORIZED": "0",
+		"BASE_URL":                     ta.baseURL,
 	}
 
-	runNoError(t, filepath.Dir(path), env, "node", "--test", "--enable-source-maps", filepath.Base(path))
+	runNoError(t, filepath.Dir(path), env, "node", "--enable-source-maps", filepath.Base(path))
 }
 
-func buildTS(t *testing.T) string {
+func buildTS(t *testing.T, env string) string {
 	dir, err := os.MkdirTemp("", "ts_test")
 	require.NoError(t, err)
 
@@ -54,10 +56,22 @@ func buildTS(t *testing.T) string {
 	require.NoError(t, err)
 
 	for _, path := range paths {
-		abs, err := filepath.Abs(path)
+		src, err := filepath.Abs(path)
 		require.NoError(t, err)
 
-		err = os.Symlink(abs, filepath.Join(dir, filepath.Base(path)))
+		base := filepath.Base(path)
+
+		if strings.Contains(base, ":") {
+			parts := strings.SplitN(base, ":", 2)
+
+			if parts[0] == env {
+				base = parts[1]
+			} else {
+				continue
+			}
+		}
+
+		err = os.Symlink(src, filepath.Join(dir, base))
 		require.NoError(t, err)
 	}
 

@@ -605,7 +605,7 @@ class ClientCore {
 		const url = new URL(path, this.baseURL);
 
 		if (opts?.params) {
-			url.search = `?${opts.params.toString()}`;
+			url.search = `?${opts.params}`;
 		}
 
 		// TODO: Add timeout

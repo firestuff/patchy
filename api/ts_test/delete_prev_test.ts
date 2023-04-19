@@ -1,15 +1,11 @@
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
-import { TestClient } from './util.js';
+import * as test from './test.js';
 
-test('delete prev failure', async () => {
-	const tc = new TestClient();
+test.def('delete prev failure', async (t: test.T) => {
+	const create = await t.client.createTestType({text: 'foo'});
+	const get = await t.client.getTestType(create.id);
+	await t.client.updateTestType(create.id, {text: 'bar'});
 
-	const create = await tc.client.createTestType({text: 'foo'});
-	const get = await tc.client.getTestType(create.id);
-	await tc.client.updateTestType(create.id, {text: 'bar'});
+	t.rejects(t.client.deleteTestType(create.id, {prev: get}));
 
-	assert.rejects(tc.client.deleteTestType(create.id, {prev: get}));
-
-	await tc.client.getTestType(create.id);
+	await t.client.getTestType(create.id);
 });

@@ -1,35 +1,31 @@
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
-import { TestClient } from './util.js';
+import * as test from './test.js';
 
-test('stream list full success', async () => {
-	const tc = new TestClient();
+test.def('stream list full success', async (t: test.T) => {
+	await t.client.createTestType({text: 'foo'});
 
-	await tc.client.createTestType({text: 'foo'});
-
-	const stream = await tc.client.streamListTestType({sorts: ['+text']});
+	const stream = await t.client.streamListTestType({sorts: ['+text']});
 
 	try {
 		const s1 = await stream.read();
-		assert(s1);
-		assert.equal(s1.length, 1);
-		assert.equal(s1[0]!.text, 'foo');
+		t.true(s1);
+		t.equal(s1.length, 1);
+		t.equal(s1[0]!.text, 'foo');
 
-		const create2 = await tc.client.createTestType({text: 'bar'});
+		const create2 = await t.client.createTestType({text: 'bar'});
 
 		const s2 = await stream.read();
-		assert(s2);
-		assert.equal(s2.length, 2);
-		assert.equal(s2[0]!.text, 'bar');
-		assert.equal(s2[1]!.text, 'foo');
+		t.true(s2);
+		t.equal(s2.length, 2);
+		t.equal(s2[0]!.text, 'bar');
+		t.equal(s2[1]!.text, 'foo');
 
-		await tc.client.updateTestType(create2.id, {text: 'zig'});
+		await t.client.updateTestType(create2.id, {text: 'zig'});
 
 		const s3 = await stream.read()!;
-		assert(s3);
-		assert.equal(s3.length, 2);
-		assert.equal(s3[0]!.text, 'foo');
-		assert.equal(s3[1]!.text, 'zig');
+		t.true(s3);
+		t.equal(s3.length, 2);
+		t.equal(s3[0]!.text, 'foo');
+		t.equal(s3[1]!.text, 'zig');
 	} finally {
 		await stream.close();
 	}

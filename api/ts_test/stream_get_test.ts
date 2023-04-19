@@ -1,22 +1,18 @@
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
-import { TestClient } from './util.js';
+import * as test from './test.js';
 
-test('stream get success', async () => {
-	const tc = new TestClient();
+test.def('stream get success', async (t: test.T) => {
+	const create = await t.client.createTestType({text: 'foo'});
 
-	const create = await tc.client.createTestType({text: 'foo'});
-
-	const stream = await tc.client.streamGetTestType(create.id);
+	const stream = await t.client.streamGetTestType(create.id);
 
 	try {
 		const s1 = await stream.read();
-		assert.equal(s1!.text, 'foo');
+		t.equal(s1!.text, 'foo');
 
-		await tc.client.updateTestType(create.id, {text: 'bar'});
+		await t.client.updateTestType(create.id, {text: 'bar'});
 
 		const s2 = await stream.read();
-		assert.equal(s2!.text, 'bar');
+		t.equal(s2!.text, 'bar');
 	} finally {
 		await stream.close();
 	}

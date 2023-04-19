@@ -1,21 +1,17 @@
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
-import { TestClient } from './util.js';
+import * as test from './test.js';
 
-test('update success', async () => {
-	const tc = new TestClient();
+test.def('update success', async (t: test.T) => {
+	const create = await t.client.createTestType({text: 'foo', num: 5});
+	t.equal(create.text, 'foo');
 
-	const create = await tc.client.createTestType({text: 'foo', num: 5});
-	assert.equal(create.text, 'foo');
+	const get1 = await t.client.getTestType(create.id);
+	t.equal(get1.text, 'foo');
+	t.equal(get1.num, 5);
 
-	const get1 = await tc.client.getTestType(create.id);
-	assert.equal(get1.text, 'foo');
-	assert.equal(get1.num, 5);
+	const update = await t.client.updateTestType(create.id, {text: 'bar'});
+	t.equal(update.text, 'bar');
 
-	const update = await tc.client.updateTestType(create.id, {text: 'bar'});
-	assert.equal(update.text, 'bar');
-
-	const get2 = await tc.client.getTestType(create.id);
-	assert.equal(get2.text, 'bar');
-	assert.equal(get2.num, 5);
+	const get2 = await t.client.getTestType(create.id);
+	t.equal(get2.text, 'bar');
+	t.equal(get2.num, 5);
 });

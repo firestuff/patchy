@@ -1,16 +1,12 @@
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
-import { TestClient } from './util.js';
+import * as test from './test.js';
 
-test('stream get iter success', async () => {
-	const tc = new TestClient();
+test.def('stream get iter success', async (t: test.T) => {
+	const create = await t.client.createTestType({text: 'foo'});
 
-	const create = await tc.client.createTestType({text: 'foo'});
-
-	const stream = await tc.client.streamGetTestType(create.id);
+	const stream = await t.client.streamGetTestType(create.id);
 
 	try {
-		await tc.client.updateTestType(create.id, {text: 'bar'});
+		await t.client.updateTestType(create.id, {text: 'bar'});
 
 		const objs = [];
 
@@ -22,9 +18,9 @@ test('stream get iter success', async () => {
 			}
 		}
 
-		assert.equal(objs.length, 2);
-		assert.equal(objs[0]!.text, 'foo');
-		assert.equal(objs[1]!.text, 'bar');
+		t.equal(objs.length, 2);
+		t.equal(objs[0]!.text, 'foo');
+		t.equal(objs[1]!.text, 'bar');
 	} finally {
 		await stream.close();
 	}

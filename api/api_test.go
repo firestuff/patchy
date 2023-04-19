@@ -57,6 +57,24 @@ func newTestAPI(t *testing.T) *testAPI {
 	api.Register[testType](a)
 	a.SetStripPrefix("/api")
 
+	a.HandlerFunc("GET", "/_logEvent", func(w http.ResponseWriter, r *http.Request) {
+		err := r.ParseForm()
+		require.NoError(t, err)
+
+		name := r.Form.Get("name")
+
+		switch r.Form.Get("event") {
+		case "begin":
+			t.Logf("BEGIN [%s]", name)
+
+		case "end":
+			t.Logf("  END [%s]", name)
+
+		case "error":
+			t.Errorf("ERROR [%s] %s", name, r.Form.Get("details"))
+		}
+	})
+
 	err = a.ListenSelfCert("[::1]:0")
 	require.NoError(t, err)
 

@@ -1,9 +1,6 @@
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
-import { TestClient } from './util.js';
+import * as test from './test.js';
 
-test('debug fetch success', async () => {
-	const tc = new TestClient();
-	const dbg = await tc.client.debugInfo();
-	assert(dbg);
+test.def('debug fetch success', async (t: test.T) => {
+	const dbg = await t.client.debugInfo();
+	t.true(dbg);
 });

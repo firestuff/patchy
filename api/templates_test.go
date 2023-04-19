@@ -58,7 +58,10 @@ func TestTemplateGoClient(t *testing.T) {
 }
 
 func runNoError(t *testing.T, dir string, env map[string]string, name string, arg ...string) {
-	cmd := exec.Command(name, arg...)
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+
+	cmd := exec.CommandContext(ctx, name, arg...)
 	cmd.Dir = dir
 
 	for k, v := range env {

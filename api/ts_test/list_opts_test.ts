@@ -1,16 +1,12 @@
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
-import { TestClient } from './util.js';
+import * as test from './test.js';
 
-test('list opts success', async () => {
-	const tc = new TestClient();
+test.def('list opts success', async (t: test.T) => {
+	await t.client.createTestType({text: 'foo'});
+	await t.client.createTestType({text: 'bar'});
+	await t.client.createTestType({text: 'zig'});
+	await t.client.createTestType({text: 'aaa'});
 
-	await tc.client.createTestType({text: 'foo'});
-	await tc.client.createTestType({text: 'bar'});
-	await tc.client.createTestType({text: 'zig'});
-	await tc.client.createTestType({text: 'aaa'});
-
-	const list = await tc.client.listTestType({
+	const list = await t.client.listTestType({
 		limit: 1,
 		offset: 1,
 		sorts: ['+text'],
@@ -22,5 +18,5 @@ test('list opts success', async () => {
 			},
 		],
 	});
-	assert.deepStrictEqual(list.map(x => x.text), ['foo']);
+	t.equal(list.map(x => x.text), ['foo']);
 });

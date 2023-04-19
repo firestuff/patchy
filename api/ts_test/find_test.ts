@@ -1,12 +1,8 @@
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
-import { TestClient } from './util.js';
+import * as test from './test.js';
 
-test('find success', async () => {
-	const tc = new TestClient();
+test.def('find success', async (t: test.T) => {
+	const create = await t.client.createTestType({text: 'foo'});
 
-	const create = await tc.client.createTestType({text: 'foo'});
-
-	const find = await tc.client.findTestType(create.id.substring(0, 4));
-	assert.equal(find.text, 'foo');
+	const find = await t.client.findTestType(create.id.substring(0, 4));
+	t.equal(find.text, 'foo');
 });
