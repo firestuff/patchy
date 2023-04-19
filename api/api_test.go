@@ -17,10 +17,13 @@ import (
 )
 
 type testAPI struct {
-	baseURL string
-	api     *api.API
-	rst     *resty.Client
-	pyc     *patchyc.Client
+	baseURL   string
+	api       *api.API
+	rst       *resty.Client
+	pyc       *patchyc.Client
+	testBegin int
+	testEnd   int
+	testError int
 }
 
 type testType struct {
@@ -57,6 +60,10 @@ func newTestAPI(t *testing.T) *testAPI {
 	api.Register[testType](a)
 	a.SetStripPrefix("/api")
 
+	ret := &testAPI{
+		api: a,
+	}
+
 	a.HandlerFunc("GET", "/_logEvent", func(w http.ResponseWriter, r *http.Request) {
 		err := r.ParseForm()
 		require.NoError(t, err)
@@ -66,12 +73,15 @@ func newTestAPI(t *testing.T) *testAPI {
 		switch r.Form.Get("event") {
 		case "begin":
 			t.Logf("BEGIN [%s]", name)
+			ret.testBegin++
 
 		case "end":
 			t.Logf("  END [%s]", name)
+			ret.testEnd++
 
 		case "error":
 			t.Errorf("ERROR [%s] %s", name, r.Form.Get("details"))
+			ret.testError++
 		}
 	})
 
@@ -82,31 +92,32 @@ func newTestAPI(t *testing.T) *testAPI {
 		_ = a.Serve()
 	}()
 
-	baseURL := fmt.Sprintf("https://[::1]:%d/api/", a.Addr().Port)
+	ret.baseURL = fmt.Sprintf("https://[::1]:%d/api/", a.Addr().Port)
 
-	rst := resty.New().
+	ret.rst = resty.New().
 		SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true}). //nolint:gosec
 		SetHeader("Content-Type", "application/json").
-		SetBaseURL(baseURL)
+		SetBaseURL(ret.baseURL)
 
-	pyc := patchyc.NewClient(baseURL).
+	ret.pyc = patchyc.NewClient(ret.baseURL).
 		SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true}) //nolint:gosec
 
 	if os.Getenv("PATCHY_DEBUG") != "" {
-		rst.SetDebug(true)
-		pyc.SetDebug(true)
+		ret.rst.SetDebug(true)
+		ret.pyc.SetDebug(true)
 	}
 
-	return &testAPI{
-		baseURL: baseURL,
-		api:     a,
-		rst:     rst,
-		pyc:     pyc,
-	}
+	return ret
 }
 
 func (ta *testAPI) r() *resty.Request {
 	return ta.rst.R()
+}
+
+func (ta *testAPI) checkTests(t *testing.T) {
+	require.Equal(t, ta.testBegin, ta.testEnd)
+	require.NotZero(t, ta.testEnd)
+	require.Zero(t, ta.testError)
 }
 
 func (ta *testAPI) shutdown(t *testing.T) {

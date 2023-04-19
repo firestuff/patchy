@@ -46,6 +46,8 @@ func testPath(t *testing.T, path string) {
 	}
 
 	runNoError(t, filepath.Dir(path), env, "node", "--enable-source-maps", filepath.Base(path))
+
+	ta.checkTests(t)
 }
 
 func buildTS(t *testing.T, env string) string {
