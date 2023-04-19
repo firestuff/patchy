@@ -216,6 +216,17 @@ func (api *API) ListenTLS(bind, certFile, keyFile string) error {
 	return nil
 }
 
+func (api *API) ListenInsecure(bind string) error {
+	var err error
+
+	api.listener, err = net.Listen("tcp", bind)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (api *API) Addr() *net.TCPAddr {
 	return api.listener.Addr().(*net.TCPAddr)
 }

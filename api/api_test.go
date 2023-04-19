@@ -17,13 +17,15 @@ import (
 )
 
 type testAPI struct {
-	baseURL   string
-	api       *api.API
-	rst       *resty.Client
-	pyc       *patchyc.Client
+	baseURL string
+	api     *api.API
+	rst     *resty.Client
+	pyc     *patchyc.Client
+
 	testBegin int
 	testEnd   int
 	testError int
+	testDone  chan string
 }
 
 type testType struct {
@@ -57,11 +59,33 @@ func newTestAPI(t *testing.T) *testAPI {
 	a, err := api.NewSQLiteAPI(dbname)
 	require.NoError(t, err)
 
+	err = a.ListenSelfCert("[::1]:0")
+	require.NoError(t, err)
+
+	return newTestAPIInt(t, a, "https")
+}
+
+func newTestAPIInsecure(t *testing.T, hook func(*api.API)) *testAPI {
+	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
+
+	a, err := api.NewSQLiteAPI(dbname)
+	require.NoError(t, err)
+
+	hook(a)
+
+	err = a.ListenInsecure("[::1]:0")
+	require.NoError(t, err)
+
+	return newTestAPIInt(t, a, "http")
+}
+
+func newTestAPIInt(t *testing.T, a *api.API, scheme string) *testAPI {
 	api.Register[testType](a)
 	a.SetStripPrefix("/api")
 
 	ret := &testAPI{
-		api: a,
+		api:      a,
+		testDone: make(chan string, 100),
 	}
 
 	a.HandlerFunc("GET", "/_logEvent", func(w http.ResponseWriter, r *http.Request) {
@@ -78,21 +102,20 @@ func newTestAPI(t *testing.T) *testAPI {
 		case "end":
 			t.Logf("  END [%s]", name)
 			ret.testEnd++
+			ret.testDone <- name
 
 		case "error":
 			t.Errorf("ERROR [%s] %s", name, r.Form.Get("details"))
 			ret.testError++
+			ret.testDone <- name
 		}
 	})
-
-	err = a.ListenSelfCert("[::1]:0")
-	require.NoError(t, err)
 
 	go func() {
 		_ = a.Serve()
 	}()
 
-	ret.baseURL = fmt.Sprintf("https://[::1]:%d/api/", a.Addr().Port)
+	ret.baseURL = fmt.Sprintf("%s://[::1]:%d/api/", scheme, a.Addr().Port)
 
 	ret.rst = resty.New().
 		SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true}). //nolint:gosec

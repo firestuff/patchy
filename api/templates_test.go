@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/firestuff/patchy/api"
@@ -51,18 +52,21 @@ func TestTemplateGoClient(t *testing.T) {
 	err = os.WriteFile(filepath.Join(dir, "client.go"), []byte(gc), 0o600)
 	require.NoError(t, err)
 
-	runNoError(t, dir, nil, "go", "mod", "init", "test")
-	runNoError(t, dir, nil, "go", "mod", "tidy")
-	runNoError(t, dir, nil, "go", "vet", ".")
-	runNoError(t, dir, nil, "go", "build", ".")
+	runNoError(ctx, t, dir, nil, "go", "mod", "init", "test")
+	runNoError(ctx, t, dir, nil, "go", "mod", "tidy")
+	runNoError(ctx, t, dir, nil, "go", "vet", ".")
+	runNoError(ctx, t, dir, nil, "go", "build", ".")
 }
 
-func runNoError(t *testing.T, dir string, env map[string]string, name string, arg ...string) {
-	ctx, cancel := context.WithCancel(context.Background())
+func runNoError(ctx1 context.Context, t *testing.T, dir string, env map[string]string, name string, arg ...string) {
+	ctx2, cancel := context.WithCancel(ctx1)
 	t.Cleanup(cancel)
 
-	cmd := exec.CommandContext(ctx, name, arg...)
-	cmd.Dir = dir
+	cmd := exec.CommandContext(ctx2, name, arg...)
+
+	if dir != "" {
+		cmd.Dir = dir
+	}
 
 	for k, v := range env {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
@@ -70,6 +74,11 @@ func runNoError(t *testing.T, dir string, env map[string]string, name string, ar
 
 	out, err := cmd.Output()
 	t.Logf("dir='%s'\n,cmd='%s'\nargs=%v\nout='%s'\nerr='%s'", dir, name, arg, string(out), getStderr(err))
+
+	if err != nil && strings.Contains(err.Error(), "signal: killed") {
+		return
+	}
+
 	require.NoError(t, err)
 }
 

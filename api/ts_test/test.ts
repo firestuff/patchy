@@ -4,13 +4,13 @@ import * as client from './client.js';
 export class T {
 	client: client.Client;
 
-	private baseURL: string;
+	private baseURL: URL;
 	private name: string;
 
 	constructor(name: string) {
-		this.baseURL = util.getBaseURL();
+		this.client = new client.Client(util.getBaseURL());
+		this.baseURL = new URL(util.getBaseURL(), globalThis?.location?.href);
 		this.name = name;
-		this.client = new client.Client(this.baseURL);
 	}
 
 	async log(msg: string) {

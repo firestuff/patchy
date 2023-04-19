@@ -2,18 +2,31 @@ package api_test
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/firestuff/patchy/api"
 	"github.com/stretchr/testify/require"
 )
 
-func TestTSNode(t *testing.T) {
+func TestTSNode(t *testing.T) { //nolint:tparallel
 	t.Parallel()
 
-	dir := buildTS(t, "node")
+	testTS(t, "node", true, testPathNode)
+}
+
+func TestTSFirefox(t *testing.T) { //nolint:tparallel
+	t.Parallel()
+
+	testTS(t, "browser", false, testPathFirefox)
+}
+
+func testTS(t *testing.T, env string, parallel bool, runner func(*testing.T, string)) {
+	dir := buildTS(t, env)
 	t.Cleanup(func() {
 		os.RemoveAll(dir)
 	})
@@ -25,16 +38,19 @@ func TestTSNode(t *testing.T) {
 		path := path
 
 		t.Run(
-			path,
+			filepath.Base(path),
 			func(t *testing.T) {
-				t.Parallel()
-				testPath(t, path)
+				if parallel {
+					t.Parallel()
+				}
+
+				runner(t, path)
 			},
 		)
 	}
 }
 
-func testPath(t *testing.T, path string) {
+func testPathNode(t *testing.T, path string) {
 	ta := newTestAPI(t)
 	defer ta.shutdown(t)
 
@@ -45,7 +61,35 @@ func testPath(t *testing.T, path string) {
 		"BASE_URL":                     ta.baseURL,
 	}
 
-	runNoError(t, filepath.Dir(path), env, "node", "--enable-source-maps", filepath.Base(path))
+	ctx := context.Background()
+
+	runNoError(ctx, t, filepath.Dir(path), env, "node", "--enable-source-maps", filepath.Base(path))
+
+	ta.checkTests(t)
+}
+
+func testPathFirefox(t *testing.T, path string) {
+	ta := newTestAPIInsecure(t, func(a *api.API) {
+		a.ServeFiles("/_ts_test/*filepath", http.Dir(filepath.Dir(path)))
+		a.HandlerFunc("GET", "/_ts_test.html", func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintf(w, `<!DOCTYPE html>
+<title>patchy Browser Tests</title>
+<link rel="icon" href="data:,">
+
+<script type="module" src="_ts_test/%s"></script>
+`, filepath.Base(path))
+		})
+	})
+	defer ta.shutdown(t)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	go func() {
+		<-ta.testDone
+		cancel()
+	}()
+
+	runNoError(ctx, t, "", nil, "firefox", "--headless", "--no-remote", fmt.Sprintf("%s_ts_test.html", ta.baseURL))
 
 	ta.checkTests(t)
 }
@@ -89,7 +133,7 @@ func buildTS(t *testing.T, env string) string {
 	err = os.WriteFile(filepath.Join(dir, "client.ts"), []byte(tc), 0o600)
 	require.NoError(t, err)
 
-	runNoError(t, dir, nil, "tsc", "--pretty")
+	runNoError(ctx, t, dir, nil, "tsc", "--pretty")
 
 	return dir
 }
