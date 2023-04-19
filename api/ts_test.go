@@ -25,6 +25,12 @@ func TestTSFirefox(t *testing.T) { //nolint:tparallel
 	testTS(t, "browser", false, testPathFirefox)
 }
 
+func TestTSChrome(t *testing.T) { //nolint:tparallel
+	t.Parallel()
+
+	testTS(t, "browser", false, testPathChrome)
+}
+
 func testTS(t *testing.T, env string, parallel bool, runner func(*testing.T, string)) {
 	dir := buildTS(t, env)
 	t.Cleanup(func() {
@@ -90,6 +96,32 @@ func testPathFirefox(t *testing.T, path string) {
 	}()
 
 	runNoError(ctx, t, "", nil, "firefox", "--headless", "--no-remote", fmt.Sprintf("%s_ts_test.html", ta.baseURL))
+
+	ta.checkTests(t)
+}
+
+func testPathChrome(t *testing.T, path string) {
+	ta := newTestAPIInsecure(t, func(a *api.API) {
+		a.ServeFiles("/_ts_test/*filepath", http.Dir(filepath.Dir(path)))
+		a.HandlerFunc("GET", "/_ts_test.html", func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintf(w, `<!DOCTYPE html>
+<title>patchy Browser Tests</title>
+<link rel="icon" href="data:,">
+
+<script type="module" src="_ts_test/%s"></script>
+`, filepath.Base(path))
+		})
+	})
+	defer ta.shutdown(t)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	go func() {
+		<-ta.testDone
+		cancel()
+	}()
+
+	runNoError(ctx, t, "", nil, "google-chrome", "--headless", "--disable-gpu", "--remote-debugging-port=9222", fmt.Sprintf("%s_ts_test.html", ta.baseURL))
 
 	ta.checkTests(t)
 }
