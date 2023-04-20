@@ -8,9 +8,9 @@ import (
 	"sync"
 
 	"github.com/firestuff/patchy/bus"
-	"github.com/firestuff/patchy/store"
 	"github.com/gopatchy/jsrest"
 	"github.com/gopatchy/metadata"
+	"github.com/gopatchy/store"
 )
 
 type StoreBus struct {

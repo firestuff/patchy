@@ -31,6 +31,8 @@ github.com/gopatchy/potency v0.0.0-20230420175442-cb9d3aef6203 h1:9JWrLH0YSUFBUN
 github.com/gopatchy/potency v0.0.0-20230420175442-cb9d3aef6203/go.mod h1:nGLxVbv3LAOnWpE3/KPNcSjMfhTo9koli+qzUJoqnVc=
 github.com/gopatchy/selfcert v0.0.0-20230420164828-e6e99d903058 h1:BRCbv2AQc6VCwGzzTP9p02f7qX5NDaw0x2jSQLZVaqs=
 github.com/gopatchy/selfcert v0.0.0-20230420164828-e6e99d903058/go.mod h1:g0OCB3Win9FvqvAPmU42evR2v9x/O00heZ2Hcl8tWQ8=
+github.com/gopatchy/store v0.0.0-20230420180842-570716e0aff1 h1:6Van3j5DSGsV5c+OVP7gx2Z3OjAHe9ejlmIAEi0ykJU=
+github.com/gopatchy/store v0.0.0-20230420180842-570716e0aff1/go.mod h1:4Z0CHXlhqVJasKMJ8CArEglrZVsqK/k/jj+shCZKJVE=
 github.com/gorilla/mux v1.8.0/go.mod h1:DVbg23sWSpFRCP0SfiEN6jmj59UnW/n46BH5rLB71So=
 github.com/invopop/yaml v0.1.0/go.mod h1:2XuRLgs/ouIrW3XNzuNj7J3Nvu/Dig5MXvbCEdiBN3Q=
 github.com/invopop/yaml v0.2.0 h1:7zky/qH+O0DwAyoobXUqvVBwgBFRxKoQ/3FjcVpjTMY=

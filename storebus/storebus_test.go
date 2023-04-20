@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/dchest/uniuri"
-	"github.com/firestuff/patchy/store"
 	"github.com/firestuff/patchy/storebus"
 	"github.com/gopatchy/metadata"
+	"github.com/gopatchy/store"
 	"github.com/stretchr/testify/require"
 )
 

@@ -13,8 +13,8 @@ require (
 	github.com/gopatchy/path v0.0.0-20230420180136-f50e6e228c67
 	github.com/gopatchy/potency v0.0.0-20230420175442-cb9d3aef6203
 	github.com/gopatchy/selfcert v0.0.0-20230420164828-e6e99d903058
+	github.com/gopatchy/store v0.0.0-20230420180842-570716e0aff1
 	github.com/julienschmidt/httprouter v1.3.0
-	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/stretchr/testify v1.8.2
 	github.com/vfaronov/httpheader v0.1.0
 	go.uber.org/goleak v1.2.1
@@ -30,6 +30,7 @@ require (
 	github.com/invopop/yaml v0.2.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/mattn/go-sqlite3 v1.14.16 // indirect
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/perimeterx/marshmallow v1.1.4 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
