@@ -19,6 +19,8 @@ github.com/go-resty/resty/v2 v2.7.0/go.mod h1:9PWDzw47qPphMRFfhsyk0NnSgvluHcljSM
 github.com/go-test/deep v1.0.8 h1:TDsG77qcSprGbC6vTN8OuXp5g+J+b5Pcguhf7Zt61VM=
 github.com/go-test/deep v1.0.8/go.mod h1:5C2ZWiW0ErCdrYzpqxLbTX7MG14M9iiw8DgHncVwcsE=
 github.com/google/go-cmp v0.5.9 h1:O2Tfq5qg4qc4AmwVlvv0oLiVAGB7enBSJ2x2DqQFi38=
+github.com/gopatchy/bus v0.0.0-20230420182949-6d46cf96fe01 h1:GibSdL5yMYle0k6RssUwYJppaRJWaJK5FH4nopUMMsY=
+github.com/gopatchy/bus v0.0.0-20230420182949-6d46cf96fe01/go.mod h1:ySA7GifVT/WXU+ZRVF8zj1jW+VUFzKC1iWgV1jzspy0=
 github.com/gopatchy/header v0.0.0-20230420163217-190db9cc739a h1:xdv1CJJuvqAhdMH0u6ATGklu31yxtE+LBM/W3xBlfSg=
 github.com/gopatchy/header v0.0.0-20230420163217-190db9cc739a/go.mod h1:+N5kecW6aRRDurbyuFIoWdEBVq7KFmtJR1TVlzIwPnc=
 github.com/gopatchy/jsrest v0.0.0-20230420161234-12a6d6da8b7f h1:1uGPJm9K0Fro1UEcZpuK6FNPU/U1XX3aS3x0/PdFS40=

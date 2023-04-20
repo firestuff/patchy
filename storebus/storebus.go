@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/firestuff/patchy/bus"
+	"github.com/gopatchy/bus"
 	"github.com/gopatchy/jsrest"
 	"github.com/gopatchy/metadata"
 	"github.com/gopatchy/store"
