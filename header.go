@@ -1,6 +1,6 @@
 package patchy
 
-import "github.com/firestuff/patchy/header"
+import "github.com/gopatchy/header"
 
 var (
 	ParseAuthorization = header.ParseAuthorization

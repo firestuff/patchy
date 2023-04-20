@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/firestuff/patchy/header"
 	"github.com/firestuff/patchy/path"
+	"github.com/gopatchy/header"
 	"github.com/gopatchy/jsrest"
 )
 
