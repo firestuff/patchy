@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/firestuff/patchy/jsrest"
+	"github.com/gopatchy/jsrest"
 	"golang.org/x/exp/slices"
 )
 

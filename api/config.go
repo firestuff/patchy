@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/firestuff/patchy/jsrest"
+	"github.com/gopatchy/jsrest"
 	"github.com/gopatchy/metadata"
 )
 

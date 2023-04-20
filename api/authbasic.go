@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/firestuff/patchy/header"
-	"github.com/firestuff/patchy/jsrest"
 	"github.com/firestuff/patchy/path"
+	"github.com/gopatchy/jsrest"
 	"golang.org/x/crypto/bcrypt"
 )
 

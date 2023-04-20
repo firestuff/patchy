@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/firestuff/patchy/jsrest"
+	"github.com/gopatchy/jsrest"
 )
 
 func ParseAuthorization(r *http.Request) (string, string) {

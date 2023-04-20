@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"cloud.google.com/go/civil"
-	"github.com/firestuff/patchy/jsrest"
 	"github.com/firestuff/patchy/path"
+	"github.com/gopatchy/jsrest"
 	"github.com/julienschmidt/httprouter"
 )
 

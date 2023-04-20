@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/firestuff/patchy/jsrest"
+	"github.com/gopatchy/jsrest"
 )
 
 func writeEvent(w http.ResponseWriter, event string, params map[string]string, obj any, flush bool) error {

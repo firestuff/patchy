@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/firestuff/patchy/jsrest"
+	"github.com/gopatchy/jsrest"
 )
 
 func (api *API) post(cfg *config, w http.ResponseWriter, r *http.Request) error {

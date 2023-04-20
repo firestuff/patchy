@@ -6,10 +6,10 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/firestuff/patchy/jsrest"
 	"github.com/firestuff/patchy/path"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3gen"
+	"github.com/gopatchy/jsrest"
 	"golang.org/x/net/idna"
 )
 

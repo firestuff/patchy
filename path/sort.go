@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/civil"
-	"github.com/firestuff/patchy/jsrest"
+	"github.com/gopatchy/jsrest"
 )
 
 func Sort(objs any, path string) error {

@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/firestuff/patchy/jsrest"
+	"github.com/gopatchy/jsrest"
 	"github.com/vfaronov/httpheader"
 )
 

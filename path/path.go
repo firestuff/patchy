@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/civil"
-	"github.com/firestuff/patchy/jsrest"
+	"github.com/gopatchy/jsrest"
 	"golang.org/x/exp/slices"
 )
 

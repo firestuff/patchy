@@ -5,8 +5,8 @@ import (
 	"crypto/tls"
 
 	"github.com/firestuff/patchy/api"
-	"github.com/firestuff/patchy/jsrest"
 	"github.com/go-resty/resty/v2"
+	"github.com/gopatchy/jsrest"
 )
 
 type (

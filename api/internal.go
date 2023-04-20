@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/dchest/uniuri"
-	"github.com/firestuff/patchy/jsrest"
 	"github.com/firestuff/patchy/path"
+	"github.com/gopatchy/jsrest"
 	"github.com/gopatchy/metadata"
 )
 

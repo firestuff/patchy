@@ -7,7 +7,8 @@ require (
 	github.com/dchest/uniuri v1.2.0
 	github.com/getkin/kin-openapi v0.116.0
 	github.com/go-resty/resty/v2 v2.7.0
-	github.com/gopatchy/metadata v0.0.0-20230420051728-07b5bec2199a
+	github.com/gopatchy/jsrest v0.0.0-20230420161234-12a6d6da8b7f
+	github.com/gopatchy/metadata v0.0.0-20230420053349-25837551c11d
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/stretchr/testify v1.8.2
