@@ -25,7 +25,7 @@ func TestTSNode(t *testing.T) { //nolint:tparallel
 func TestTSFirefox(t *testing.T) { //nolint:tparallel
 	t.Parallel()
 
-	testTS(t, "browser", false, testPathFirefox)
+	testTS(t, "browser", true, testPathFirefox)
 }
 
 func TestTSChrome(t *testing.T) { //nolint:tparallel
@@ -94,10 +94,15 @@ func testPathFirefox(t *testing.T, path string) {
 		cancel()
 	}()
 
+	profileDir, err := os.MkdirTemp("", "firefox_profile")
+	require.NoError(t, err)
+
+	defer os.RemoveAll(profileDir)
+
 	url := fmt.Sprintf("%shtml/%s", ssBase, strings.TrimSuffix(filepath.Base(path), ".js"))
 	t.Logf("URL: %s", url)
 
-	runNoError(ctx, t, "", nil, "firefox", "--headless", "--no-remote", url)
+	runNoError(ctx, t, "", nil, "firefox", "--headless", "--no-remote", "--profile", profileDir, url)
 
 	ta.checkTests(t)
 }
