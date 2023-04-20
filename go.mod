@@ -9,6 +9,7 @@ require (
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/gopatchy/jsrest v0.0.0-20230420161234-12a6d6da8b7f
 	github.com/gopatchy/metadata v0.0.0-20230420053349-25837551c11d
+	github.com/gopatchy/selfcert v0.0.0-20230420162533-2e660a233d76
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/stretchr/testify v1.8.2
