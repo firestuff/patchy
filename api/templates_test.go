@@ -73,7 +73,7 @@ func runNoError(ctx1 context.Context, t *testing.T, dir string, env map[string]s
 	}
 
 	out, err := cmd.Output()
-	t.Logf("dir='%s'\n,cmd='%s'\nargs=%v\nout='%s'\nerr='%s'", dir, name, arg, string(out), getStderr(err))
+	t.Logf("dir='%s'\ncmd='%s'\nargs=%v\nout='%s'\nerr='%s'", dir, name, arg, string(out), getStderr(err))
 
 	if err != nil && strings.Contains(err.Error(), "signal: killed") {
 		return

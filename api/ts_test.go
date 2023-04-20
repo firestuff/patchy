@@ -90,7 +90,7 @@ func testPathFirefox(t *testing.T, path string) {
 		cancel()
 	}()
 
-	profileDir, err := os.MkdirTemp("", "firefox_profile")
+	profileDir, err := os.MkdirTemp("", "browser_profile")
 	require.NoError(t, err)
 
 	defer os.RemoveAll(profileDir)
@@ -120,10 +120,15 @@ func testPathChrome(t *testing.T, path string) {
 		cancel()
 	}()
 
+	profileDir, err := os.MkdirTemp("", "browser_profile")
+	require.NoError(t, err)
+
+	defer os.RemoveAll(profileDir)
+
 	url := fmt.Sprintf("%shtml/%s", ssBase, strings.TrimSuffix(filepath.Base(path), ".js"))
 	t.Logf("URL: %s", url)
 
-	runNoError(ctx, t, "", nil, "google-chrome", "--headless", "--disable-gpu", "--remote-debugging-port=9222", url)
+	runNoError(ctx, t, "", nil, "google-chrome", "--headless", "--disable-gpu", "--remote-debugging-port=9222", fmt.Sprintf("--user-data-dir=%s", profileDir), url)
 
 	ta.checkTests(t)
 }
