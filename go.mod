@@ -10,6 +10,7 @@ require (
 	github.com/gopatchy/header v0.0.0-20230420163217-190db9cc739a
 	github.com/gopatchy/jsrest v0.0.0-20230420161234-12a6d6da8b7f
 	github.com/gopatchy/metadata v0.0.0-20230420053349-25837551c11d
+	github.com/gopatchy/potency v0.0.0-20230420175442-cb9d3aef6203
 	github.com/gopatchy/selfcert v0.0.0-20230420164828-e6e99d903058
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/mattn/go-sqlite3 v1.14.16

@@ -13,11 +13,11 @@ import (
 	"time"
 
 	"github.com/firestuff/patchy/path"
-	"github.com/firestuff/patchy/potency"
 	"github.com/firestuff/patchy/store"
 	"github.com/firestuff/patchy/storebus"
 	"github.com/gopatchy/jsrest"
 	"github.com/gopatchy/metadata"
+	"github.com/gopatchy/potency"
 	"github.com/gopatchy/selfcert"
 	"github.com/julienschmidt/httprouter"
 	"github.com/vfaronov/httpheader"
