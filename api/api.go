@@ -79,7 +79,7 @@ func NewAPI(st store.Storer) (*API, error) {
 	api := &API{
 		router:   router,
 		sb:       storebus.NewStoreBus(st),
-		potency:  potency.NewPotency(st, router),
+		potency:  potency.NewPotency(router),
 		registry: map[string]*config{},
 		srv: &http.Server{
 			ReadHeaderTimeout: 30 * time.Second,

@@ -10,22 +10,21 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/firestuff/patchy/store"
 	"github.com/gopatchy/jsrest"
-	"github.com/gopatchy/metadata"
 )
 
 type Potency struct {
-	store   store.Storer
 	handler http.Handler
 
-	inProgress map[string]bool
-	mu         sync.Mutex
+	// TODO: Expire based on time; probably use age-based linked list and delete at write time
+	cache   map[string]*savedResult
+	cacheMu sync.RWMutex
+
+	inProgress   map[string]bool
+	inProgressMu sync.Mutex
 }
 
 type savedResult struct {
-	metadata.Metadata
-
 	Method        string      `json:"method"`
 	URL           string      `json:"url"`
 	RequestHeader http.Header `json:"requestHeader"`
@@ -51,10 +50,10 @@ var (
 	}
 )
 
-func NewPotency(store store.Storer, handler http.Handler) *Potency {
+func NewPotency(handler http.Handler) *Potency {
 	return &Potency{
-		store:      store,
 		handler:    handler,
+		cache:      map[string]*savedResult{},
 		inProgress: map[string]bool{},
 	}
 }
@@ -79,14 +78,9 @@ func (p *Potency) serveHTTP(w http.ResponseWriter, r *http.Request, val string) 
 
 	key := val[1 : len(val)-1]
 
-	rd, err := p.store.Read(r.Context(), "idempotency-key", key, func() any { return &savedResult{} })
-	if err != nil {
-		return jsrest.Errorf(jsrest.ErrInternalServerError, "read idempotency key failed: %s (%w)", key, err)
-	}
+	saved := p.read(key)
 
-	if rd != nil {
-		saved := rd.(*savedResult)
-
+	if saved != nil {
 		if r.Method != saved.Method {
 			return jsrest.Errorf(jsrest.ErrBadRequest, "%s (%w)", r.Method, ErrMethodMismatch)
 		}
@@ -103,7 +97,7 @@ func (p *Potency) serveHTTP(w http.ResponseWriter, r *http.Request, val string) 
 
 		h := sha256.New()
 
-		_, err = io.Copy(h, r.Body)
+		_, err := io.Copy(h, r.Body)
 		if err != nil {
 			return jsrest.Errorf(jsrest.ErrBadRequest, "hash request body failed (%w)", err)
 		}
@@ -124,7 +118,7 @@ func (p *Potency) serveHTTP(w http.ResponseWriter, r *http.Request, val string) 
 	}
 
 	// Store miss, proceed to normal execution with interception
-	err = p.lockKey(key)
+	err := p.lockKey(key)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrConflict, "%s", key)
 	}
@@ -145,10 +139,6 @@ func (p *Potency) serveHTTP(w http.ResponseWriter, r *http.Request, val string) 
 	p.handler.ServeHTTP(w, r)
 
 	save := &savedResult{
-		Metadata: metadata.Metadata{
-			ID: key,
-		},
-
 		Method:        r.Method,
 		URL:           r.URL.String(),
 		RequestHeader: requestHeader,
@@ -159,15 +149,14 @@ func (p *Potency) serveHTTP(w http.ResponseWriter, r *http.Request, val string) 
 		ResponseBody:   rwi.buf.Bytes(),
 	}
 
-	// Can't really do anything with the error
-	_ = p.store.Write(r.Context(), "idempotency-key", save)
+	p.write(key, save)
 
 	return nil
 }
 
 func (p *Potency) lockKey(key string) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	p.inProgressMu.Lock()
+	defer p.inProgressMu.Unlock()
 
 	if p.inProgress[key] {
 		return ErrConflict
@@ -179,8 +168,22 @@ func (p *Potency) lockKey(key string) error {
 }
 
 func (p *Potency) unlockKey(key string) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	p.inProgressMu.Lock()
+	defer p.inProgressMu.Unlock()
 
 	delete(p.inProgress, key)
+}
+
+func (p *Potency) read(key string) *savedResult {
+	p.cacheMu.RLock()
+	defer p.cacheMu.RUnlock()
+
+	return p.cache[key]
+}
+
+func (p *Potency) write(key string, sr *savedResult) {
+	p.cacheMu.Lock()
+	defer p.cacheMu.Unlock()
+
+	p.cache[key] = sr
 }

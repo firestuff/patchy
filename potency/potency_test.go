@@ -12,7 +12,6 @@ import (
 
 	"github.com/dchest/uniuri"
 	"github.com/firestuff/patchy/potency"
-	"github.com/firestuff/patchy/store"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/require"
 )
@@ -134,9 +133,8 @@ func newTestServer(t *testing.T) *testServer {
 	dir, err := os.MkdirTemp("", "")
 	require.NoError(t, err)
 
-	store := store.NewFileStore(dir)
 	mux := http.NewServeMux()
-	p := potency.NewPotency(store, mux)
+	p := potency.NewPotency(mux)
 
 	listener, err := net.Listen("tcp", "[::]:0")
 	require.NoError(t, err)
