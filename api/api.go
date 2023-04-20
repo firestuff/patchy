@@ -18,7 +18,6 @@ import (
 	"github.com/gopatchy/path"
 	"github.com/gopatchy/potency"
 	"github.com/gopatchy/selfcert"
-	"github.com/gopatchy/store"
 	"github.com/julienschmidt/httprouter"
 	"github.com/vfaronov/httpheader"
 )
@@ -61,16 +60,16 @@ const (
 )
 
 func NewAPI(dbname string) (*API, error) {
-	st, err := store.NewSQLiteStore(dbname)
+	router := httprouter.New()
+
+	sb, err := storebus.NewStoreBus(dbname)
 	if err != nil {
 		return nil, err
 	}
 
-	router := httprouter.New()
-
 	api := &API{
 		router:   router,
-		sb:       storebus.NewStoreBus(st),
+		sb:       sb,
 		potency:  potency.NewPotency(router),
 		registry: map[string]*config{},
 		srv: &http.Server{

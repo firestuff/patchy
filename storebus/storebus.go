@@ -14,7 +14,7 @@ import (
 )
 
 type StoreBus struct {
-	store store.Storer
+	store *store.Store
 	bus   *bus.Bus
 
 	// This lock ensures that no writes interleave with read/subscribe pairs
@@ -24,12 +24,17 @@ type StoreBus struct {
 	chanMapMu sync.Mutex
 }
 
-func NewStoreBus(st store.Storer) *StoreBus {
+func NewStoreBus(dbname string) (*StoreBus, error) {
+	st, err := store.NewStore(dbname)
+	if err != nil {
+		return nil, err
+	}
+
 	return &StoreBus{
 		store:   st,
 		bus:     bus.NewBus(),
 		chanMap: map[<-chan []any]<-chan any{},
-	}
+	}, nil
 }
 
 func (sb *StoreBus) Close() {

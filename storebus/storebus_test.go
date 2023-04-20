@@ -9,7 +9,6 @@ import (
 	"github.com/dchest/uniuri"
 	"github.com/firestuff/patchy/storebus"
 	"github.com/gopatchy/metadata"
-	"github.com/gopatchy/store"
 	"github.com/stretchr/testify/require"
 )
 
@@ -25,10 +24,9 @@ func TestStoreBus(t *testing.T) {
 
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
-	st, err := store.NewSQLiteStore(dbname)
+	sb, err := storebus.NewStoreBus(dbname)
 	require.NoError(t, err)
 
-	sb := storebus.NewStoreBus(st)
 	defer sb.Close()
 
 	err = sb.Write(ctx, "storeBusTest", &storeBusTest{
@@ -136,10 +134,9 @@ func TestStoreBusDelete(t *testing.T) {
 
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
-	st, err := store.NewSQLiteStore(dbname)
+	sb, err := storebus.NewStoreBus(dbname)
 	require.NoError(t, err)
 
-	sb := storebus.NewStoreBus(st)
 	defer sb.Close()
 
 	c1, err := sb.ReadStream(ctx, "storeBusTest", "id1", newStoreBusTest)
