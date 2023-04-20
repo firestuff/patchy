@@ -24,13 +24,13 @@ func TestTSNode(t *testing.T) {
 func TestTSFirefox(t *testing.T) {
 	t.Parallel()
 
-	testTS(t, "browser", testPathFirefox)
+	testTS(t, "browser", testPathBrowser(runFirefox))
 }
 
 func TestTSChrome(t *testing.T) {
 	t.Parallel()
 
-	testTS(t, "browser", testPathChrome)
+	testTS(t, "browser", testPathBrowser(runChrome))
 }
 
 func testTS(t *testing.T, env string, runner func(*testing.T, string)) {
@@ -73,64 +73,44 @@ func testPathNode(t *testing.T, path string) {
 	ta.checkTests(t)
 }
 
-func testPathFirefox(t *testing.T, path string) {
-	ctx, cancel := context.WithCancel(context.Background())
+func testPathBrowser(runCmd func(context.Context, *testing.T, string, string)) func(t *testing.T, path string) {
+	return func(t *testing.T, path string) {
+		ctx, cancel := context.WithCancel(context.Background())
 
-	ta := newTestAPIInsecure(t)
-	defer ta.shutdown(t)
+		ta := newTestAPIInsecure(t)
+		defer ta.shutdown(t)
 
-	ss, ssBase := newStaticServer(t, filepath.Dir(path), ta.baseURL)
-	defer func() {
-		err := ss.Shutdown(ctx)
+		ss, ssBase := newStaticServer(t, filepath.Dir(path), ta.baseURL)
+		defer func() {
+			err := ss.Shutdown(ctx)
+			require.NoError(t, err)
+		}()
+
+		go func() {
+			<-ta.testDone
+			cancel()
+		}()
+
+		profileDir, err := os.MkdirTemp("", "browser_profile")
 		require.NoError(t, err)
-	}()
 
-	go func() {
-		<-ta.testDone
-		cancel()
-	}()
+		defer os.RemoveAll(profileDir)
 
-	profileDir, err := os.MkdirTemp("", "browser_profile")
-	require.NoError(t, err)
+		url := fmt.Sprintf("%shtml/%s", ssBase, strings.TrimSuffix(filepath.Base(path), ".js"))
+		t.Logf("URL: %s", url)
 
-	defer os.RemoveAll(profileDir)
+		runCmd(ctx, t, profileDir, url)
 
-	url := fmt.Sprintf("%shtml/%s", ssBase, strings.TrimSuffix(filepath.Base(path), ".js"))
-	t.Logf("URL: %s", url)
-
-	runNoError(ctx, t, "", nil, "firefox", "--headless", "--no-remote", "--profile", profileDir, url)
-
-	ta.checkTests(t)
+		ta.checkTests(t)
+	}
 }
 
-func testPathChrome(t *testing.T, path string) {
-	ctx, cancel := context.WithCancel(context.Background())
+func runFirefox(ctx context.Context, t *testing.T, profileDir, url string) {
+	runNoError(ctx, t, "", nil, "firefox", "--headless", "--no-remote", "--profile", profileDir, url)
+}
 
-	ta := newTestAPIInsecure(t)
-	defer ta.shutdown(t)
-
-	ss, ssBase := newStaticServer(t, filepath.Dir(path), ta.baseURL)
-	defer func() {
-		err := ss.Shutdown(ctx)
-		require.NoError(t, err)
-	}()
-
-	go func() {
-		<-ta.testDone
-		cancel()
-	}()
-
-	profileDir, err := os.MkdirTemp("", "browser_profile")
-	require.NoError(t, err)
-
-	defer os.RemoveAll(profileDir)
-
-	url := fmt.Sprintf("%shtml/%s", ssBase, strings.TrimSuffix(filepath.Base(path), ".js"))
-	t.Logf("URL: %s", url)
-
+func runChrome(ctx context.Context, t *testing.T, profileDir, url string) {
 	runNoError(ctx, t, "", nil, "google-chrome", "--headless", "--disable-gpu", "--remote-debugging-port=9222", fmt.Sprintf("--user-data-dir=%s", profileDir), url)
-
-	ta.checkTests(t)
 }
 
 func buildTS(t *testing.T, env string) string {
