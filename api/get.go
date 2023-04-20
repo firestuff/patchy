@@ -9,10 +9,10 @@ import (
 )
 
 type GetOpts struct {
-	IfNoneMatch []httpheader.EntityTag `json:"-"`
+	IfNoneMatch []httpheader.EntityTag
 
 	// This is "any" because making GetOpts generic complicates too many things
-	Prev any `json:"prev"`
+	Prev any
 }
 
 var (

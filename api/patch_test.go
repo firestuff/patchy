@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/firestuff/patchy"
 	"github.com/firestuff/patchy/patchyc"
 	"github.com/stretchr/testify/require"
 )
@@ -80,7 +79,7 @@ func TestUpdateIfMatchETagMismatch(t *testing.T) {
 
 	created.ETag = "etag:doesnotmatch"
 
-	updated, err := patchyc.Update[testType](ctx, ta.pyc, created.ID, &testType{Text: "bar"}, &patchy.UpdateOpts{Prev: created})
+	updated, err := patchyc.Update[testType](ctx, ta.pyc, created.ID, &testType{Text: "bar"}, &patchyc.UpdateOpts{Prev: created})
 	require.Error(t, err)
 	require.Nil(t, updated)
 

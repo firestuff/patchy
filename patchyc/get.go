@@ -3,14 +3,13 @@ package patchyc
 import (
 	"fmt"
 
-	"github.com/firestuff/patchy/api"
 	"github.com/go-resty/resty/v2"
 	"github.com/gopatchy/metadata"
 )
 
-type (
-	GetOpts = api.GetOpts
-)
+type GetOpts struct {
+	Prev any
+}
 
 func applyGetOpts(opts *GetOpts, req *resty.Request) {
 	if opts.Prev != nil {

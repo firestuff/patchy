@@ -18,7 +18,7 @@ func (api *API) getList(cfg *config, w http.ResponseWriter, r *http.Request) err
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "list failed (%w)", err)
 	}
 
-	etag, err := HashList(list)
+	etag, err := hashList(list)
 	if err != nil {
 		return jsrest.Errorf(jsrest.ErrInternalServerError, "hash list failed (%w)", err)
 	}

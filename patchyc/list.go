@@ -1,21 +1,36 @@
 package patchyc
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"net/url"
+	"reflect"
 
-	"github.com/firestuff/patchy/api"
 	"github.com/go-resty/resty/v2"
+	"github.com/gopatchy/jsrest"
+	"github.com/gopatchy/metadata"
 )
 
-type (
-	ListOpts = api.ListOpts
-	Filter   = api.Filter
-)
+type ListOpts struct {
+	Stream  string
+	Limit   int64
+	Offset  int64
+	After   string
+	Sorts   []string
+	Filters []*Filter
+
+	Prev any
+}
+
+type Filter struct {
+	Path  string
+	Op    string
+	Value string
+}
 
 func applyListOpts(opts *ListOpts, req *resty.Request) error {
 	if opts.Prev != nil {
-		etag, err := api.HashList(opts.Prev)
+		etag, err := hashList(opts.Prev)
 		if err != nil {
 			return err
 		}
@@ -52,4 +67,23 @@ func applyListOpts(opts *ListOpts, req *resty.Request) error {
 	req.SetQueryParamsFromValues(sorts)
 
 	return nil
+}
+
+func hashList(list any) (string, error) {
+	hash := sha256.New()
+
+	v := reflect.ValueOf(list)
+
+	for i := 0; i < v.Len(); i++ {
+		iter := v.Index(i)
+
+		md := metadata.GetMetadata(iter.Interface())
+
+		_, err := hash.Write([]byte(md.ETag + "\n"))
+		if err != nil {
+			return "", jsrest.Errorf(jsrest.ErrInternalServerError, "hash write failed (%w)", err)
+		}
+	}
+
+	return fmt.Sprintf("etag:%x", hash.Sum(nil)), nil
 }

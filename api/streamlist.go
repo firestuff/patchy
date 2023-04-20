@@ -72,7 +72,7 @@ func (api *API) streamListFull(ctx context.Context, cfg *config, w http.Response
 			}
 
 		case list := <-lsi.Chan():
-			etag, err := HashList(list)
+			etag, err := hashList(list)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "hash list failed (%w)", err)
 			}
@@ -137,7 +137,7 @@ func (api *API) streamListDiff(ctx context.Context, cfg *config, w http.Response
 
 		case list := <-lsi.Chan():
 			// Don't do anything if the list hasn't changed (can't trigger first time)
-			etag, err := HashList(list)
+			etag, err := hashList(list)
 			if err != nil {
 				return jsrest.Errorf(jsrest.ErrInternalServerError, "hash list failed (%w)", err)
 			}

@@ -19,23 +19,23 @@ import (
 )
 
 type ListOpts struct {
-	Stream  string    `json:"stream"`
-	Limit   int64     `json:"limit"`
-	Offset  int64     `json:"offset"`
-	After   string    `json:"after"`
-	Sorts   []string  `json:"sorts"`
-	Filters []*Filter `json:"filters"`
+	Stream  string
+	Limit   int64
+	Offset  int64
+	After   string
+	Sorts   []string
+	Filters []*Filter
 
-	IfNoneMatch []httpheader.EntityTag `json:"-"`
+	IfNoneMatch []httpheader.EntityTag
 
 	// This is "any" because making ListOpts generic complicates too many things
-	Prev any `json:"prev"`
+	Prev any
 }
 
 type Filter struct {
-	Path  string `json:"path"`
-	Op    string `json:"op"`
-	Value string `json:"value"`
+	Path  string
+	Op    string
+	Value string
 }
 
 var (
@@ -138,7 +138,7 @@ func ApplyWindow[T any](list []T, opts *ListOpts) ([]T, error) {
 	return ret, nil
 }
 
-func HashList(list any) (string, error) {
+func hashList(list any) (string, error) {
 	hash := sha256.New()
 
 	v := reflect.ValueOf(list)

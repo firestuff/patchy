@@ -482,7 +482,7 @@ func TestDirectStreamListOpts(t *testing.T) {
 	_, err = api.Create[testType](ctx, ta.api, &testType{Text: "bar"})
 	require.NoError(t, err)
 
-	stream, err := api.StreamList[testType](ctx, ta.api, &patchyc.ListOpts{Limit: 1})
+	stream, err := api.StreamList[testType](ctx, ta.api, &api.ListOpts{Limit: 1})
 	require.NoError(t, err)
 
 	defer stream.Close()

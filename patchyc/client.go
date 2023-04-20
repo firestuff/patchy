@@ -3,17 +3,46 @@ package patchyc
 import (
 	"context"
 	"crypto/tls"
+	"net/http"
 
-	"github.com/firestuff/patchy/api"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-resty/resty/v2"
 	"github.com/gopatchy/jsrest"
 )
 
 type (
-	DebugInfo = api.DebugInfo
-	OpenAPI   = openapi3.T
+	OpenAPI = openapi3.T
 )
+
+type DebugInfo struct {
+	Server *ServerInfo `json:"server"`
+	IP     *IPInfo     `json:"ip"`
+	HTTP   *HTTPInfo   `json:"http"`
+	TLS    *TLSInfo    `json:"tls"`
+}
+
+type ServerInfo struct {
+	Hostname string `json:"hostname"`
+}
+
+type IPInfo struct {
+	RemoteAddr string `json:"remoteAddr"`
+}
+
+type HTTPInfo struct {
+	Protocol string      `json:"protocol"`
+	Method   string      `json:"method"`
+	Header   http.Header `json:"header"`
+	URL      string      `json:"url"`
+}
+
+type TLSInfo struct {
+	Version            uint16 `json:"version"`
+	DidResume          bool   `json:"didResume"`
+	CipherSuite        uint16 `json:"cipherSuite"`
+	NegotiatedProtocol string `json:"negotiatedProtocol"`
+	ServerName         string `json:"serverName"`
+}
 
 type Client struct {
 	rst *resty.Client

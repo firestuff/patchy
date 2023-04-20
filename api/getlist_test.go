@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/firestuff/patchy"
 	"github.com/firestuff/patchy/api"
 	"github.com/firestuff/patchy/patchyc"
 	"github.com/stretchr/testify/require"
@@ -52,8 +51,8 @@ func TestListEquals(t *testing.T) {
 	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
-		Filters: []*patchy.Filter{
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{
+		Filters: []*patchyc.Filter{
 			{
 				Path:  "text",
 				Op:    "eq",
@@ -77,8 +76,8 @@ func TestListInvalidOp(t *testing.T) {
 	_, err := patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "foo"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
-		Filters: []*patchy.Filter{
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{
+		Filters: []*patchyc.Filter{
 			{
 				Path:  "text",
 				Op:    "invalid",
@@ -104,8 +103,8 @@ func TestListGreaterThan(t *testing.T) {
 	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
-		Filters: []*patchy.Filter{
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{
+		Filters: []*patchyc.Filter{
 			{
 				Path:  "text",
 				Op:    "gt",
@@ -135,8 +134,8 @@ func TestListGreaterThanOrEqual(t *testing.T) {
 	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
-		Filters: []*patchy.Filter{
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{
+		Filters: []*patchyc.Filter{
 			{
 				Path:  "text",
 				Op:    "gte",
@@ -163,8 +162,8 @@ func TestListHasPrefix(t *testing.T) {
 	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
-		Filters: []*patchy.Filter{
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{
+		Filters: []*patchyc.Filter{
 			{
 				Path:  "text",
 				Op:    "hp",
@@ -191,8 +190,8 @@ func TestListIn(t *testing.T) {
 	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
-		Filters: []*patchy.Filter{
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{
+		Filters: []*patchyc.Filter{
 			{
 				Path:  "text",
 				Op:    "in",
@@ -219,8 +218,8 @@ func TestListLessThan(t *testing.T) {
 	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
-		Filters: []*patchy.Filter{
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{
+		Filters: []*patchyc.Filter{
 			{
 				Path:  "text",
 				Op:    "lt",
@@ -250,8 +249,8 @@ func TestListLessThanOrEqual(t *testing.T) {
 	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
-		Filters: []*patchy.Filter{
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{
+		Filters: []*patchyc.Filter{
 			{
 				Path:  "text",
 				Op:    "lte",
@@ -278,7 +277,7 @@ func TestListLimit(t *testing.T) {
 	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "bar"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{Limit: 1})
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{Limit: 1})
 	require.NoError(t, err)
 	require.Len(t, list, 1)
 	require.Contains(t, []string{"foo", "bar"}, list[0].Text)
@@ -301,7 +300,7 @@ func TestListOffset(t *testing.T) {
 	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{Offset: 1})
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{Offset: 1})
 	require.NoError(t, err)
 	require.Len(t, list, 2)
 	require.Contains(t, []string{"foo", "bar", "zig"}, list[0].Text)
@@ -330,7 +329,7 @@ func TestListAfter(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, list1, 3)
 
-	list2, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{After: list1[0].ID})
+	list2, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{After: list1[0].ID})
 	require.NoError(t, err)
 	require.Len(t, list2, 2)
 	require.Equal(t, list2[0].Text, list1[1].Text)
@@ -354,7 +353,7 @@ func TestListSort(t *testing.T) {
 	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{Sorts: []string{"text"}})
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{Sorts: []string{"text"}})
 	require.NoError(t, err)
 	require.Len(t, list, 3)
 	require.Equal(t, []string{"bar", "foo", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
@@ -377,7 +376,7 @@ func TestListSortAsc(t *testing.T) {
 	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{Sorts: []string{"+text"}})
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{Sorts: []string{"+text"}})
 	require.NoError(t, err)
 	require.Len(t, list, 3)
 	require.Equal(t, []string{"bar", "foo", "zig"}, []string{list[0].Text, list[1].Text, list[2].Text})
@@ -400,7 +399,7 @@ func TestListSortDesc(t *testing.T) {
 	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{Sorts: []string{"-text"}})
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{Sorts: []string{"-text"}})
 	require.NoError(t, err)
 	require.Len(t, list, 3)
 	require.Equal(t, []string{"zig", "foo", "bar"}, []string{list[0].Text, list[1].Text, list[2].Text})
@@ -423,7 +422,7 @@ func TestListSortBeforeOffset(t *testing.T) {
 	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{
 		Offset: 1,
 		Sorts:  []string{"text"},
 	})
@@ -449,7 +448,7 @@ func TestListSortBeforeLimit(t *testing.T) {
 	_, err = patchyc.Create[testType](ctx, ta.pyc, &testType{Text: "zig"})
 	require.NoError(t, err)
 
-	list, err := patchyc.List[testType](ctx, ta.pyc, &patchy.ListOpts{
+	list, err := patchyc.List[testType](ctx, ta.pyc, &patchyc.ListOpts{
 		Limit: 2,
 		Sorts: []string{"text"},
 	})
