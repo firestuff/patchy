@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/firestuff/patchy/bus"
-	"github.com/firestuff/patchy/metadata"
+	"github.com/gopatchy/metadata"
 	"github.com/stretchr/testify/require"
 )
 

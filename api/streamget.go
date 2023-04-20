@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/firestuff/patchy/jsrest"
-	"github.com/firestuff/patchy/metadata"
+	"github.com/gopatchy/metadata"
 	"github.com/vfaronov/httpheader"
 )
 

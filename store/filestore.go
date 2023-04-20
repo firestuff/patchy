@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/firestuff/patchy/metadata"
+	"github.com/gopatchy/metadata"
 )
 
 type FileStore struct {

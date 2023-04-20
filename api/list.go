@@ -13,8 +13,8 @@ import (
 	"strings"
 
 	"github.com/firestuff/patchy/jsrest"
-	"github.com/firestuff/patchy/metadata"
 	"github.com/firestuff/patchy/path"
+	"github.com/gopatchy/metadata"
 	"github.com/vfaronov/httpheader"
 )
 

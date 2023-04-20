@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/firestuff/patchy/jsrest"
-	"github.com/firestuff/patchy/metadata"
+	"github.com/gopatchy/metadata"
 )
 
 var ErrMissingAuthCheck = errors.New("missing auth check")

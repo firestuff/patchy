@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/firestuff/patchy/metadata"
+	"github.com/gopatchy/metadata"
 )
 
 type Bus struct {

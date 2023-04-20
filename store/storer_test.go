@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/firestuff/patchy/metadata"
 	"github.com/firestuff/patchy/store"
+	"github.com/gopatchy/metadata"
 	"github.com/stretchr/testify/require"
 )
 

@@ -5,8 +5,8 @@ import (
 
 	"github.com/dchest/uniuri"
 	"github.com/firestuff/patchy/jsrest"
-	"github.com/firestuff/patchy/metadata"
 	"github.com/firestuff/patchy/path"
+	"github.com/gopatchy/metadata"
 )
 
 type getStreamInt struct {

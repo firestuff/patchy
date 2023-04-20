@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/firestuff/patchy/metadata"
+	"github.com/gopatchy/metadata"
 	// Register sqlite3 db handler.
 	_ "github.com/mattn/go-sqlite3"
 )

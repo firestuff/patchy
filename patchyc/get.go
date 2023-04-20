@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/firestuff/patchy/api"
-	"github.com/firestuff/patchy/metadata"
 	"github.com/go-resty/resty/v2"
+	"github.com/gopatchy/metadata"
 )
 
 type (
