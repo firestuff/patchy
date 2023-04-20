@@ -2,9 +2,11 @@ package storebus_test
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 
+	"github.com/dchest/uniuri"
 	"github.com/firestuff/patchy/store"
 	"github.com/firestuff/patchy/storebus"
 	"github.com/gopatchy/metadata"
@@ -21,7 +23,13 @@ func TestStoreBus(t *testing.T) {
 
 	ctx := context.Background()
 
-	sb := storebus.NewStoreBus(store.NewFileStore(dir))
+	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
+
+	st, err := store.NewSQLiteStore(dbname)
+	require.NoError(t, err)
+
+	sb := storebus.NewStoreBus(st)
+	defer sb.Close()
 
 	err = sb.Write(ctx, "storeBusTest", &storeBusTest{
 		Metadata: metadata.Metadata{
@@ -126,7 +134,13 @@ func TestStoreBusDelete(t *testing.T) {
 
 	ctx := context.Background()
 
-	sb := storebus.NewStoreBus(store.NewFileStore(dir))
+	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
+
+	st, err := store.NewSQLiteStore(dbname)
+	require.NoError(t, err)
+
+	sb := storebus.NewStoreBus(st)
+	defer sb.Close()
 
 	c1, err := sb.ReadStream(ctx, "storeBusTest", "id1", newStoreBusTest)
 	require.NoError(t, err)

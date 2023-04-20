@@ -22,9 +22,7 @@ type (
 var (
 	ErrUnknownAcceptType = api.ErrUnknownAcceptType
 
-	NewFileStoreAPI = api.NewFileStoreAPI
-	NewSQLiteAPI    = api.NewSQLiteAPI
-	NewAPI          = api.NewAPI
+	NewAPI = api.NewAPI
 )
 
 const (

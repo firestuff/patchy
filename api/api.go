@@ -60,20 +60,12 @@ const (
 	ContextAuthBasic
 )
 
-func NewFileStoreAPI(root string) (*API, error) {
-	return NewAPI(store.NewFileStore(root))
-}
-
-func NewSQLiteAPI(dbname string) (*API, error) {
+func NewAPI(dbname string) (*API, error) {
 	st, err := store.NewSQLiteStore(dbname)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewAPI(st)
-}
-
-func NewAPI(st store.Storer) (*API, error) {
 	router := httprouter.New()
 
 	api := &API{

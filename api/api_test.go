@@ -56,7 +56,7 @@ type missingMetadata struct {
 func newTestAPI(t *testing.T) *testAPI {
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
-	a, err := api.NewSQLiteAPI(dbname)
+	a, err := api.NewAPI(dbname)
 	require.NoError(t, err)
 
 	err = a.ListenSelfCert("[::]:0")
@@ -68,7 +68,7 @@ func newTestAPI(t *testing.T) *testAPI {
 func newTestAPIInsecure(t *testing.T) *testAPI {
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
-	a, err := api.NewSQLiteAPI(dbname)
+	a, err := api.NewAPI(dbname)
 	require.NoError(t, err)
 
 	err = a.ListenInsecure("[::]:0")
@@ -169,36 +169,12 @@ func (tt *testType3) MayWrite(context.Context, *testType3, *api.API) error {
 	return nil
 }
 
-func TestFileStoreAPI(t *testing.T) {
-	t.Parallel()
-
-	dir, err := os.MkdirTemp("", "")
-	require.NoError(t, err)
-
-	defer os.RemoveAll(dir)
-
-	a, err := api.NewFileStoreAPI(dir)
-	require.NoError(t, err)
-
-	api.Register[testType](a)
-
-	ctx := context.Background()
-
-	created, err := api.Create[testType](ctx, a, &testType{Text: "foo"})
-	require.NoError(t, err)
-
-	get, err := api.Get[testType](ctx, a, created.ID, nil)
-	require.NoError(t, err)
-	require.NotNil(t, get)
-	require.Equal(t, "foo", get.Text)
-}
-
 func TestRegisterMissingMetadata(t *testing.T) {
 	t.Parallel()
 
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
-	a, err := api.NewSQLiteAPI(dbname)
+	a, err := api.NewAPI(dbname)
 	require.NoError(t, err)
 
 	defer a.Close()
@@ -213,7 +189,7 @@ func TestIsSafeSuccess(t *testing.T) {
 
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
-	a, err := api.NewSQLiteAPI(dbname)
+	a, err := api.NewAPI(dbname)
 	require.NoError(t, err)
 
 	defer a.Close()
@@ -228,7 +204,7 @@ func TestIsSafeWithoutWrite(t *testing.T) {
 
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
-	a, err := api.NewSQLiteAPI(dbname)
+	a, err := api.NewAPI(dbname)
 	require.NoError(t, err)
 
 	defer a.Close()
@@ -245,7 +221,7 @@ func TestIsSafeWithoutRead(t *testing.T) {
 
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
-	a, err := api.NewSQLiteAPI(dbname)
+	a, err := api.NewAPI(dbname)
 	require.NoError(t, err)
 
 	defer a.Close()
@@ -262,7 +238,7 @@ func TestCheckSafeSuccess(t *testing.T) {
 
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
-	a, err := api.NewSQLiteAPI(dbname)
+	a, err := api.NewAPI(dbname)
 	require.NoError(t, err)
 
 	defer a.Close()
@@ -277,7 +253,7 @@ func TestCheckSafeWithoutWrite(t *testing.T) {
 
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
-	a, err := api.NewSQLiteAPI(dbname)
+	a, err := api.NewAPI(dbname)
 	require.NoError(t, err)
 
 	defer a.Close()
@@ -294,7 +270,7 @@ func TestCheckSafeWithoutRead(t *testing.T) {
 
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
-	a, err := api.NewSQLiteAPI(dbname)
+	a, err := api.NewAPI(dbname)
 	require.NoError(t, err)
 
 	defer a.Close()
