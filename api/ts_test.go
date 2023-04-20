@@ -15,25 +15,25 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestTSNode(t *testing.T) { //nolint:tparallel
+func TestTSNode(t *testing.T) {
 	t.Parallel()
 
-	testTS(t, "node", true, testPathNode)
+	testTS(t, "node", testPathNode)
 }
 
-func TestTSFirefox(t *testing.T) { //nolint:tparallel
+func TestTSFirefox(t *testing.T) {
 	t.Parallel()
 
-	testTS(t, "browser", true, testPathFirefox)
+	testTS(t, "browser", testPathFirefox)
 }
 
-func TestTSChrome(t *testing.T) { //nolint:tparallel
+func TestTSChrome(t *testing.T) {
 	t.Parallel()
 
-	testTS(t, "browser", true, testPathChrome)
+	testTS(t, "browser", testPathChrome)
 }
 
-func testTS(t *testing.T, env string, parallel bool, runner func(*testing.T, string)) {
+func testTS(t *testing.T, env string, runner func(*testing.T, string)) {
 	dir := buildTS(t, env)
 	t.Cleanup(func() {
 		os.RemoveAll(dir)
@@ -48,10 +48,7 @@ func testTS(t *testing.T, env string, parallel bool, runner func(*testing.T, str
 		t.Run(
 			filepath.Base(path),
 			func(t *testing.T) {
-				if parallel {
-					t.Parallel()
-				}
-
+				t.Parallel()
 				runner(t, path)
 			},
 		)
