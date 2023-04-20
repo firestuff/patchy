@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/firestuff/patchy/patchyc"
+	"github.com/gopatchy/patchyc"
 	"github.com/stretchr/testify/require"
 )
 

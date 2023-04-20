@@ -8,8 +8,9 @@ require (
 	github.com/getkin/kin-openapi v0.116.0
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/gopatchy/header v0.0.0-20230420163217-190db9cc739a
-	github.com/gopatchy/jsrest v0.0.0-20230420161234-12a6d6da8b7f
+	github.com/gopatchy/jsrest v0.0.0-20230420184928-8e3c5df83e40
 	github.com/gopatchy/metadata v0.0.0-20230420053349-25837551c11d
+	github.com/gopatchy/patchyc v0.0.0-20230420191118-96825e74cd8a
 	github.com/gopatchy/path v0.0.0-20230420180136-f50e6e228c67
 	github.com/gopatchy/potency v0.0.0-20230420175442-cb9d3aef6203
 	github.com/gopatchy/selfcert v0.0.0-20230420164828-e6e99d903058
@@ -19,7 +20,6 @@ require (
 	github.com/vfaronov/httpheader v0.1.0
 	go.uber.org/goleak v1.2.1
 	golang.org/x/crypto v0.8.0
-	golang.org/x/exp v0.0.0-20230420155640-133eef4313cb
 	golang.org/x/net v0.9.0
 )
 
@@ -36,6 +36,7 @@ require (
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/perimeterx/marshmallow v1.1.4 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	golang.org/x/exp v0.0.0-20230420155640-133eef4313cb // indirect
 	golang.org/x/text v0.9.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

@@ -23,10 +23,12 @@ github.com/gopatchy/bus v0.0.0-20230420182949-6d46cf96fe01 h1:GibSdL5yMYle0k6Rss
 github.com/gopatchy/bus v0.0.0-20230420182949-6d46cf96fe01/go.mod h1:ySA7GifVT/WXU+ZRVF8zj1jW+VUFzKC1iWgV1jzspy0=
 github.com/gopatchy/header v0.0.0-20230420163217-190db9cc739a h1:xdv1CJJuvqAhdMH0u6ATGklu31yxtE+LBM/W3xBlfSg=
 github.com/gopatchy/header v0.0.0-20230420163217-190db9cc739a/go.mod h1:+N5kecW6aRRDurbyuFIoWdEBVq7KFmtJR1TVlzIwPnc=
-github.com/gopatchy/jsrest v0.0.0-20230420161234-12a6d6da8b7f h1:1uGPJm9K0Fro1UEcZpuK6FNPU/U1XX3aS3x0/PdFS40=
-github.com/gopatchy/jsrest v0.0.0-20230420161234-12a6d6da8b7f/go.mod h1:Ryi8LRBLFDhQsMQHuh+6VL7HcFWjBXOEiOy9Ip/Q+Ps=
+github.com/gopatchy/jsrest v0.0.0-20230420184928-8e3c5df83e40 h1:O81TZmmHcnaiygHj/DtASr7THd+Pv1oC7TH2+KBHNmg=
+github.com/gopatchy/jsrest v0.0.0-20230420184928-8e3c5df83e40/go.mod h1:Ryi8LRBLFDhQsMQHuh+6VL7HcFWjBXOEiOy9Ip/Q+Ps=
 github.com/gopatchy/metadata v0.0.0-20230420053349-25837551c11d h1:chunoM47vkWSanIvLx4uRSkLMG6chDZOy09L2tt/bv8=
 github.com/gopatchy/metadata v0.0.0-20230420053349-25837551c11d/go.mod h1:VgD33raUShjDePCDBo55aj+eSXFtUEpMzs+Ie39g2zo=
+github.com/gopatchy/patchyc v0.0.0-20230420191118-96825e74cd8a h1:EdRmpyIJBo2MGZdWmMxJv2g13UzpaHXXcgE1IPrbINY=
+github.com/gopatchy/patchyc v0.0.0-20230420191118-96825e74cd8a/go.mod h1:Q3gw6yJHl7mF8KNlrVCIA2HGeEwnq1/wGbIC92xoEGA=
 github.com/gopatchy/path v0.0.0-20230420180136-f50e6e228c67 h1:oq693uPTDyCA4BQZylp6wHyHA/A4UCH4IIbh6k8GdE0=
 github.com/gopatchy/path v0.0.0-20230420180136-f50e6e228c67/go.mod h1:Ac0ZWGDta9zEB663onZ946d46fWF9yiUWIvdbCDVvjU=
 github.com/gopatchy/potency v0.0.0-20230420175442-cb9d3aef6203 h1:9JWrLH0YSUFBUNcgTLKXV8+YNChSrUzozFOQq/c6pB4=

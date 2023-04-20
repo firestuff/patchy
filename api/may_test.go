@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/firestuff/patchy/api"
-	"github.com/firestuff/patchy/patchyc"
+	"github.com/gopatchy/patchyc"
 	"github.com/stretchr/testify/require"
 )
 

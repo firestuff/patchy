@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/firestuff/patchy/patchyc"
+	"github.com/gopatchy/patchyc"
 	"github.com/stretchr/testify/require"
 )
 

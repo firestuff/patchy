@@ -11,8 +11,8 @@ import (
 	"github.com/dchest/uniuri"
 	"github.com/firestuff/patchy"
 	"github.com/firestuff/patchy/api"
-	"github.com/firestuff/patchy/patchyc"
 	"github.com/go-resty/resty/v2"
+	"github.com/gopatchy/patchyc"
 	"github.com/stretchr/testify/require"
 )
 
