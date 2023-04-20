@@ -12,9 +12,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/firestuff/patchy/path"
 	"github.com/gopatchy/jsrest"
 	"github.com/gopatchy/metadata"
+	"github.com/gopatchy/path"
 	"github.com/vfaronov/httpheader"
 )
 

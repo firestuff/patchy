@@ -25,6 +25,8 @@ github.com/gopatchy/jsrest v0.0.0-20230420161234-12a6d6da8b7f h1:1uGPJm9K0Fro1UE
 github.com/gopatchy/jsrest v0.0.0-20230420161234-12a6d6da8b7f/go.mod h1:Ryi8LRBLFDhQsMQHuh+6VL7HcFWjBXOEiOy9Ip/Q+Ps=
 github.com/gopatchy/metadata v0.0.0-20230420053349-25837551c11d h1:chunoM47vkWSanIvLx4uRSkLMG6chDZOy09L2tt/bv8=
 github.com/gopatchy/metadata v0.0.0-20230420053349-25837551c11d/go.mod h1:VgD33raUShjDePCDBo55aj+eSXFtUEpMzs+Ie39g2zo=
+github.com/gopatchy/path v0.0.0-20230420180136-f50e6e228c67 h1:oq693uPTDyCA4BQZylp6wHyHA/A4UCH4IIbh6k8GdE0=
+github.com/gopatchy/path v0.0.0-20230420180136-f50e6e228c67/go.mod h1:Ac0ZWGDta9zEB663onZ946d46fWF9yiUWIvdbCDVvjU=
 github.com/gopatchy/potency v0.0.0-20230420175442-cb9d3aef6203 h1:9JWrLH0YSUFBUNcgTLKXV8+YNChSrUzozFOQq/c6pB4=
 github.com/gopatchy/potency v0.0.0-20230420175442-cb9d3aef6203/go.mod h1:nGLxVbv3LAOnWpE3/KPNcSjMfhTo9koli+qzUJoqnVc=
 github.com/gopatchy/selfcert v0.0.0-20230420164828-e6e99d903058 h1:BRCbv2AQc6VCwGzzTP9p02f7qX5NDaw0x2jSQLZVaqs=

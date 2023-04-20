@@ -1,6 +1,6 @@
 package api
 
-import "github.com/firestuff/patchy/path"
+import "github.com/gopatchy/path"
 
 func IsCreate[T any](obj *T, prev *T) bool {
 	return obj != nil && prev == nil

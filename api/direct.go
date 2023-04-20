@@ -4,8 +4,8 @@ import (
 	"context"
 	"io"
 
-	"github.com/firestuff/patchy/path"
 	"github.com/gopatchy/jsrest"
+	"github.com/gopatchy/path"
 )
 
 func CreateName[TOut, TIn any](ctx context.Context, api *API, name string, obj *TIn) (*TOut, error) {

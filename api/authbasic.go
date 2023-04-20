@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/firestuff/patchy/path"
 	"github.com/gopatchy/header"
 	"github.com/gopatchy/jsrest"
+	"github.com/gopatchy/path"
 	"golang.org/x/crypto/bcrypt"
 )
 
