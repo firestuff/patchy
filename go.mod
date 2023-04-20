@@ -28,7 +28,7 @@ require (
 	github.com/go-openapi/jsonpointer v0.19.6 // indirect
 	github.com/go-openapi/swag v0.22.3 // indirect
 	github.com/gopatchy/bus v0.0.0-20230420182949-6d46cf96fe01 // indirect
-	github.com/gopatchy/store v0.0.0-20230420180842-570716e0aff1 // indirect
+	github.com/gopatchy/store v0.0.0-20230420182144-80597a8cafc9 // indirect
 	github.com/invopop/yaml v0.2.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect

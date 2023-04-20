@@ -5,13 +5,14 @@ import (
 	"crypto/tls"
 
 	"github.com/firestuff/patchy/api"
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-resty/resty/v2"
 	"github.com/gopatchy/jsrest"
 )
 
 type (
 	DebugInfo = api.DebugInfo
-	OpenAPI   = api.OpenAPI
+	OpenAPI   = openapi3.T
 )
 
 type Client struct {
