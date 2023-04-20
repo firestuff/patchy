@@ -65,13 +65,11 @@ func newTestAPI(t *testing.T) *testAPI {
 	return newTestAPIInt(t, a, "https")
 }
 
-func newTestAPIInsecure(t *testing.T, hook func(*api.API)) *testAPI {
+func newTestAPIInsecure(t *testing.T) *testAPI {
 	dbname := fmt.Sprintf("file:%s?mode=memory&cache=shared", uniuri.New())
 
 	a, err := api.NewSQLiteAPI(dbname)
 	require.NoError(t, err)
-
-	hook(a)
 
 	err = a.ListenInsecure("[::]:0")
 	require.NoError(t, err)

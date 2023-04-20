@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/firestuff/patchy/api"
 	"github.com/julienschmidt/httprouter"
 	"github.com/stretchr/testify/require"
 )
@@ -31,7 +30,7 @@ func TestTSFirefox(t *testing.T) { //nolint:tparallel
 func TestTSChrome(t *testing.T) { //nolint:tparallel
 	t.Parallel()
 
-	testTS(t, "browser", false, testPathChrome)
+	testTS(t, "browser", true, testPathChrome)
 }
 
 func testTS(t *testing.T, env string, parallel bool, runner func(*testing.T, string)) {
@@ -80,7 +79,7 @@ func testPathNode(t *testing.T, path string) {
 func testPathFirefox(t *testing.T, path string) {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	ta := newTestAPIInsecure(t, func(a *api.API) {})
+	ta := newTestAPIInsecure(t)
 	defer ta.shutdown(t)
 
 	ss, ssBase := newStaticServer(t, filepath.Dir(path), ta.baseURL)
@@ -108,27 +107,26 @@ func testPathFirefox(t *testing.T, path string) {
 }
 
 func testPathChrome(t *testing.T, path string) {
-	ta := newTestAPIInsecure(t, func(a *api.API) {
-		a.ServeFiles("/_ts_test/*filepath", http.Dir(filepath.Dir(path)))
-		a.HandlerFunc("GET", "/_ts_test.html", func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprintf(w, `<!DOCTYPE html>
-<title>patchy Browser Tests</title>
-<link rel="icon" href="data:,">
+	ctx, cancel := context.WithCancel(context.Background())
 
-<script type="module" src="_ts_test/%s"></script>
-`, filepath.Base(path))
-		})
-	})
+	ta := newTestAPIInsecure(t)
 	defer ta.shutdown(t)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ss, ssBase := newStaticServer(t, filepath.Dir(path), ta.baseURL)
+	defer func() {
+		err := ss.Shutdown(ctx)
+		require.NoError(t, err)
+	}()
 
 	go func() {
 		<-ta.testDone
 		cancel()
 	}()
 
-	runNoError(ctx, t, "", nil, "google-chrome", "--headless", "--disable-gpu", "--remote-debugging-port=9222", fmt.Sprintf("%s_ts_test.html", ta.baseURL))
+	url := fmt.Sprintf("%shtml/%s", ssBase, strings.TrimSuffix(filepath.Base(path), ".js"))
+	t.Logf("URL: %s", url)
+
+	runNoError(ctx, t, "", nil, "google-chrome", "--headless", "--disable-gpu", "--remote-debugging-port=9222", url)
 
 	ta.checkTests(t)
 }
