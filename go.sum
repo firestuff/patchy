@@ -25,10 +25,8 @@ github.com/gopatchy/jsrest v0.0.0-20230420161234-12a6d6da8b7f h1:1uGPJm9K0Fro1UE
 github.com/gopatchy/jsrest v0.0.0-20230420161234-12a6d6da8b7f/go.mod h1:Ryi8LRBLFDhQsMQHuh+6VL7HcFWjBXOEiOy9Ip/Q+Ps=
 github.com/gopatchy/metadata v0.0.0-20230420053349-25837551c11d h1:chunoM47vkWSanIvLx4uRSkLMG6chDZOy09L2tt/bv8=
 github.com/gopatchy/metadata v0.0.0-20230420053349-25837551c11d/go.mod h1:VgD33raUShjDePCDBo55aj+eSXFtUEpMzs+Ie39g2zo=
-github.com/gopatchy/selfcert v0.0.0-20230420162533-2e660a233d76 h1:RiA7pivrzCfyaPzm48enFOaDFGoGIceNaIUzgFyRl7o=
-github.com/gopatchy/selfcert v0.0.0-20230420162533-2e660a233d76/go.mod h1:rqgnZ9J+PQ+Uo+5XSLdcJHS7QMYvzJhhDE4bwIGZ6RU=
-github.com/gopatchy/selfcert v0.0.0-20230420164110-f898281e19c7 h1:LID0+mGZW5UiJ/CVouR6uW45hJAi9nAULBiWVZhEFcA=
-github.com/gopatchy/selfcert v0.0.0-20230420164110-f898281e19c7/go.mod h1:g0OCB3Win9FvqvAPmU42evR2v9x/O00heZ2Hcl8tWQ8=
+github.com/gopatchy/selfcert v0.0.0-20230420164828-e6e99d903058 h1:BRCbv2AQc6VCwGzzTP9p02f7qX5NDaw0x2jSQLZVaqs=
+github.com/gopatchy/selfcert v0.0.0-20230420164828-e6e99d903058/go.mod h1:g0OCB3Win9FvqvAPmU42evR2v9x/O00heZ2Hcl8tWQ8=
 github.com/gorilla/mux v1.8.0/go.mod h1:DVbg23sWSpFRCP0SfiEN6jmj59UnW/n46BH5rLB71So=
 github.com/invopop/yaml v0.1.0/go.mod h1:2XuRLgs/ouIrW3XNzuNj7J3Nvu/Dig5MXvbCEdiBN3Q=
 github.com/invopop/yaml v0.2.0 h1:7zky/qH+O0DwAyoobXUqvVBwgBFRxKoQ/3FjcVpjTMY=
