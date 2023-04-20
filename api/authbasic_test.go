@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/firestuff/patchy"
 	"github.com/firestuff/patchy/api"
 	"github.com/gopatchy/patchyc"
 	"github.com/stretchr/testify/require"
@@ -39,8 +38,8 @@ func TestBasicAuthSuccess(t *testing.T) {
 
 	validUser := false
 
-	ta.api.SetRequestHook(func(r *http.Request, api *patchy.API) (*http.Request, error) {
-		basic := r.Context().Value(patchy.ContextAuthBasic)
+	ta.api.SetRequestHook(func(r *http.Request, _ *api.API) (*http.Request, error) {
+		basic := r.Context().Value(api.ContextAuthBasic)
 		require.NotNil(t, basic)
 		require.IsType(t, &authBasicType{}, basic)
 		require.Equal(t, "foo", basic.(*authBasicType).User)
@@ -77,7 +76,7 @@ func TestBasicAuthInvalidUser(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	ta.api.SetRequestHook(func(r *http.Request, api *patchy.API) (*http.Request, error) {
+	ta.api.SetRequestHook(func(r *http.Request, api *api.API) (*http.Request, error) {
 		require.Fail(t, "should not reach request hook")
 		return r, nil
 	})
@@ -108,7 +107,7 @@ func TestBasicAuthInvalidPassword(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	ta.api.SetRequestHook(func(r *http.Request, api *patchy.API) (*http.Request, error) {
+	ta.api.SetRequestHook(func(r *http.Request, api *api.API) (*http.Request, error) {
 		require.Fail(t, "should not reach request hook")
 		return r, nil
 	})

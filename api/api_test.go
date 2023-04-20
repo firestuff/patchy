@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/dchest/uniuri"
-	"github.com/firestuff/patchy"
 	"github.com/firestuff/patchy/api"
 	"github.com/go-resty/resty/v2"
 	"github.com/gopatchy/patchyc"
@@ -390,7 +389,7 @@ func TestRequestHookError(t *testing.T) {
 
 	ctx := context.Background()
 
-	ta.api.SetRequestHook(func(*http.Request, *patchy.API) (*http.Request, error) {
+	ta.api.SetRequestHook(func(*http.Request, *api.API) (*http.Request, error) {
 		return nil, fmt.Errorf("test reject") //nolint:goerr113
 	})
 

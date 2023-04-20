@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/firestuff/patchy"
 	"github.com/firestuff/patchy/api"
 	"github.com/gopatchy/patchyc"
 	"github.com/stretchr/testify/require"
@@ -35,8 +34,8 @@ func TestBearerAuthSuccess(t *testing.T) {
 
 	validToken := false
 
-	ta.api.SetRequestHook(func(r *http.Request, api *patchy.API) (*http.Request, error) {
-		bearer := r.Context().Value(patchy.ContextAuthBearer)
+	ta.api.SetRequestHook(func(r *http.Request, _ *api.API) (*http.Request, error) {
+		bearer := r.Context().Value(api.ContextAuthBearer)
 		require.NotNil(t, bearer)
 		require.IsType(t, &authBearerType{}, bearer)
 		require.Equal(t, "foo", bearer.(*authBearerType).Name)
@@ -67,7 +66,7 @@ func TestBearerAuthInvalidToken(t *testing.T) {
 	_, err := patchyc.Create[authBearerType](ctx, ta.pyc, &authBearerType{Token: "abcd"})
 	require.NoError(t, err)
 
-	ta.api.SetRequestHook(func(r *http.Request, api *patchy.API) (*http.Request, error) {
+	ta.api.SetRequestHook(func(r *http.Request, _ *api.API) (*http.Request, error) {
 		require.Fail(t, "should not reach request hook")
 		return r, nil
 	})
