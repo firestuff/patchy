@@ -170,6 +170,10 @@ func (api *API) CheckSafe() {
 	}
 }
 
+func (api *API) Handle(method, path string, handler httprouter.Handle) {
+	api.router.Handle(method, path, handler)
+}
+
 func (api *API) Handler(method, path string, handler http.Handler) {
 	api.router.Handler(method, path, handler)
 }
@@ -252,11 +256,13 @@ func (api *API) serveHTTP(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Access-Control-Expose-Headers", "*")
 	w.Header().Set("Timing-Allow-Origin", "*")
 
-	if r.Method == "OPTIONS" {
+	if r.Method == http.MethodOptions {
 		w.Header().Set("Access-Control-Allow-Methods", "*")
 		w.Header().Set("Access-Control-Allow-Headers", "*")
 		w.Header().Set("Access-Control-Max-Age", "86400")
+
 		w.WriteHeader(http.StatusNoContent)
+
 		return nil
 	}
 

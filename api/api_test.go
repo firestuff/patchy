@@ -59,7 +59,7 @@ func newTestAPI(t *testing.T) *testAPI {
 	a, err := api.NewSQLiteAPI(dbname)
 	require.NoError(t, err)
 
-	err = a.ListenSelfCert("[::1]:0")
+	err = a.ListenSelfCert("[::]:0")
 	require.NoError(t, err)
 
 	return newTestAPIInt(t, a, "https")
@@ -73,7 +73,7 @@ func newTestAPIInsecure(t *testing.T, hook func(*api.API)) *testAPI {
 
 	hook(a)
 
-	err = a.ListenInsecure("[::1]:0")
+	err = a.ListenInsecure("[::]:0")
 	require.NoError(t, err)
 
 	return newTestAPIInt(t, a, "http")
@@ -89,6 +89,8 @@ func newTestAPIInt(t *testing.T, a *api.API, scheme string) *testAPI {
 	}
 
 	a.HandlerFunc("GET", "/_logEvent", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+
 		err := r.ParseForm()
 		require.NoError(t, err)
 

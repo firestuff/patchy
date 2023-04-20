@@ -3,13 +3,16 @@ package api_test
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/firestuff/patchy/api"
+	"github.com/julienschmidt/httprouter"
 	"github.com/stretchr/testify/require"
 )
 
@@ -75,27 +78,26 @@ func testPathNode(t *testing.T, path string) {
 }
 
 func testPathFirefox(t *testing.T, path string) {
-	ta := newTestAPIInsecure(t, func(a *api.API) {
-		a.ServeFiles("/_ts_test/*filepath", http.Dir(filepath.Dir(path)))
-		a.HandlerFunc("GET", "/_ts_test.html", func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprintf(w, `<!DOCTYPE html>
-<title>patchy Browser Tests</title>
-<link rel="icon" href="data:,">
+	ctx, cancel := context.WithCancel(context.Background())
 
-<script type="module" src="_ts_test/%s"></script>
-`, filepath.Base(path))
-		})
-	})
+	ta := newTestAPIInsecure(t, func(a *api.API) {})
 	defer ta.shutdown(t)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ss, ssBase := newStaticServer(t, filepath.Dir(path), ta.baseURL)
+	defer func() {
+		err := ss.Shutdown(ctx)
+		require.NoError(t, err)
+	}()
 
 	go func() {
 		<-ta.testDone
 		cancel()
 	}()
 
-	runNoError(ctx, t, "", nil, "firefox", "--headless", "--no-remote", fmt.Sprintf("%s_ts_test.html", ta.baseURL))
+	url := fmt.Sprintf("%shtml/%s", ssBase, strings.TrimSuffix(filepath.Base(path), ".js"))
+	t.Logf("URL: %s", url)
+
+	runNoError(ctx, t, "", nil, "firefox", "--headless", "--no-remote", url)
 
 	ta.checkTests(t)
 }
@@ -168,4 +170,39 @@ func buildTS(t *testing.T, env string) string {
 	runNoError(ctx, t, dir, nil, "tsc", "--pretty")
 
 	return dir
+}
+
+func newStaticServer(t *testing.T, dir, baseURL string) (*http.Server, string) {
+	r := httprouter.New()
+
+	r.ServeFiles("/js/*filepath", http.Dir(dir))
+
+	r.Handle("GET", "/html/*filepath", func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+		w.Header().Set("Content-Type", "text/html")
+
+		fmt.Fprintf(w, `<!DOCTYPE html>
+<link rel="icon" href="data:,">
+
+<script>
+globalThis.baseURL = "%s";
+</script>
+
+<script type="module" src="../js%s.js"></script>
+`, baseURL, params.ByName("filepath"))
+	})
+
+	srv := &http.Server{
+		Handler:           r,
+		ReadHeaderTimeout: 30 * time.Second,
+	}
+
+	l, err := net.Listen("tcp", "[::]:0")
+	require.NoError(t, err)
+
+	go func() {
+		err := srv.Serve(l)
+		require.ErrorIs(t, err, http.ErrServerClosed)
+	}()
+
+	return srv, fmt.Sprintf("http://[::1]:%d/", l.Addr().(*net.TCPAddr).Port)
 }
