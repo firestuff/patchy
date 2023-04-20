@@ -35,6 +35,8 @@ github.com/gopatchy/selfcert v0.0.0-20230420164828-e6e99d903058 h1:BRCbv2AQc6VCw
 github.com/gopatchy/selfcert v0.0.0-20230420164828-e6e99d903058/go.mod h1:g0OCB3Win9FvqvAPmU42evR2v9x/O00heZ2Hcl8tWQ8=
 github.com/gopatchy/store v0.0.0-20230420180842-570716e0aff1 h1:6Van3j5DSGsV5c+OVP7gx2Z3OjAHe9ejlmIAEi0ykJU=
 github.com/gopatchy/store v0.0.0-20230420180842-570716e0aff1/go.mod h1:4Z0CHXlhqVJasKMJ8CArEglrZVsqK/k/jj+shCZKJVE=
+github.com/gopatchy/storebus v0.0.0-20230420183507-70f06033c27a h1:J0V3q7hG9rt8idCir9kVDmH25e47a8kD0kbUpFVAWDU=
+github.com/gopatchy/storebus v0.0.0-20230420183507-70f06033c27a/go.mod h1:9Ak7yrgmU/vc/YkaC6GRgi8rY/PrVlUGT3J4N31cfbU=
 github.com/gorilla/mux v1.8.0/go.mod h1:DVbg23sWSpFRCP0SfiEN6jmj59UnW/n46BH5rLB71So=
 github.com/invopop/yaml v0.1.0/go.mod h1:2XuRLgs/ouIrW3XNzuNj7J3Nvu/Dig5MXvbCEdiBN3Q=
 github.com/invopop/yaml v0.2.0 h1:7zky/qH+O0DwAyoobXUqvVBwgBFRxKoQ/3FjcVpjTMY=
