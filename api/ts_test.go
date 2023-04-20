@@ -126,8 +126,8 @@ func buildTS(t *testing.T, env string) string {
 
 		base := filepath.Base(path)
 
-		if strings.Contains(base, ":") {
-			parts := strings.SplitN(base, ":", 2)
+		if strings.Contains(base, "__") {
+			parts := strings.SplitN(base, "__", 2)
 
 			if parts[0] == env {
 				base = parts[1]
